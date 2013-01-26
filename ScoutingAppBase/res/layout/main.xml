@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/Scroller"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fillViewport="true" >
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/Layout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:isScrollContainer="true" 
+    android:background="@color/black">
+
+    <TextView
+        android:id="@+id/ScouterLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical|right"
+        android:text="Scouter:" />
+
+    <EditText
+        android:id="@+id/ScouterEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/ScouterLabel"
+        android:background="@android:drawable/editbox_background"
+        android:textColor="@color/black" />
+
+    <TextView
+        android:id="@+id/TeamLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/ScouterLabel"
+        android:gravity="center_vertical|right"
+        android:text="Team:" />
+
+    <EditText
+        android:id="@+id/TeamEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/ScouterEntry"
+        android:layout_toRightOf="@+id/TeamLabel"
+        android:background="@android:drawable/editbox_background"
+        android:numeric="integer"
+        android:textColor="@color/black" />
+
+    <Button
+        android:id="@+id/CameraButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="21dp"
+        android:layout_toRightOf="@+id/ScouterEntry"
+        android:text="Camera" />
+
+    <Button
+        android:id="@+id/VideoButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/CameraButton"
+        android:text="Video" />
+    
+    <Button
+        android:id="@+id/SyncButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/VideoButton"
+        android:text="Sync" />
+    
+    <!-- UIGEN:XML_FIELDS_BEGIN - insert generated XML code -->
+    <!-- UIGEN:XML_FIELDS_END -->
+    
+    <!-- UICUSTOM:XML_FIELDS_BEGIN - insert custom XML code -->
+    <!-- UICUSTOM:XML_FIELDS_END -->
+    
+    <!-- Begin Notes field text label and entry field -->
+    <TextView
+        android:id="@+id/NotesLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/TeamLabel"
+        android:gravity="center_vertical|right"
+        android:text="Notes:" />
+
+    <EditText
+        android:id="@+id/NotesEntry"
+        android:layout_width="480dp"
+        android:layout_height="120dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/TeamLabel"
+        android:layout_toRightOf="@+id/NotesLabel"
+        android:gravity="top|left"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Notes field text label and entry field -->
+
+ 
+    <Button
+        android:id="@+id/SaveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_alignParentLeft="true"
+        android:text="  Save  "/>
+
+    <Button
+        android:id="@+id/DiscardButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_centerInParent="true"        
+        android:text="Discard"/>
+
+    <Button
+        android:id="@+id/ReloadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_alignParentRight="true"
+        android:text="Reload"/>
+
+</RelativeLayout>
+
+</ScrollView>    
+    
+    
+    
