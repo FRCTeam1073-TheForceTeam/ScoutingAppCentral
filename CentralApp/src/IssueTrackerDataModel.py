@@ -12,6 +12,7 @@ from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
+import time
 
 
 
@@ -69,44 +70,60 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base(cls=Base)
 
 
-class TeamRank(Base):
-    __tablename__ = 'rankings'
-
-    # Constructor parameters.
-    team            = Column(Integer)
-    competition     = Column(String(32))
-    score           = Column(Float)
-
-class TeamAttribute(Base):
-    __tablename__ = 'attributes'
-
-    # Constructor parameters.
-    team             = Column(Integer)
-    competition      = Column(String(32))
-    attr_name        = Column(String(32), nullable=False)
-    attr_value       = Column(Float)
-    attr_type        = Column(String(32))
-    num_occurs       = Column(Integer)
-    cumulative_value = Column(Float)
-    avg_value        = Column(Float)
-    all_values       = Column(String(512))
+class IssueType(Base):
+    __tablename__ = "issue_types"
     
+    issue_type  = Column(String(32))
+    max_id      = Column(Integer)    
+    
+class Issue(Base):
+    __tablename__ = 'issues'
+
+    # Constructor parameters.
+    issue_id         = Column(String(32))
+    summary          = Column(String(80))
+    status           = Column(String(32))
+    priority         = Column(String(32))
+    subgroup         = Column(String(32))
+    component        = Column(String(32))
+    owner            = Column(String(32))
+    description      = Column(String(512))
+    submitter        = Column(String(32))
+    
+class IssueComment(Base):
+    __tablename__ = "issue_comments"
+
+    issue_id    = Column(String(32))
+    data        = Column(String(1024))
+    tag         = Column(String(64))
+    submitter   = Column(String(32))
+    
+class User(Base):
+    __tablename__ = "users"
+    
+    username        = Column(String(32))
+    email_address   = Column(String(64))
+    cellphone       = Column(String(32))
+    carrier         = Column(String(32))
+    subgroup        = Column(String(128))
+    password        = Column(String(32))
+    display_name    = Column(String(64))
+    role            = Column(String(32))
+    contact_mode    = Column(String(32))
+    
+class TaskgroupMember(Base):
+    __tablename__ = "taskgroups"
+    
+    taskgroup = Column(String(32))
+    username  = Column(String(32))
+
 class ProcessedFiles(Base):
     __tablename__ = "processed_files"
 
     filename = Column(String(256), nullable=False)
 
-class NotesEntry(Base):
-    __tablename__ = "team_notes"
-
-    team        = Column(Integer)
-    competition = Column(String(32))
-    data        = Column(String(1024))
-    tag         = Column(String(64))
-    
 def isFileProcessed(session, filename):
     
-
     file_list = session.query(ProcessedFiles).filter(ProcessedFiles.filename==filename).all()
     if len(file_list)>0:
         return True
@@ -117,180 +134,311 @@ def addProcessedFile(session, name):
     file_name = ProcessedFiles(filename=name)
     session.add(file_name)
     
-def addNotesEntry(session, teamnum, comp, notes, notestag):
-    notes = NotesEntry(team=teamnum, competition=comp, data=notes, tag=notestag)
+
+
+
+def getIssueComments(session, issue_id):
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).all()
+    print str(comments)
+    return comments
+        
+def getIssue(session, issue_id):
+    issue_list = session.query(Issue).filter(Issue.issue_id==issue_id).all()
+    print str(issue_list)
+    if len(issue_list) > 0:
+        issue = issue_list[0]
+    else:
+        issue = None
+        
+    return issue
+
+def getIssuesByOwner(session, owner):
+    issue_list = session.query(Issue).filter(Issue.owner==owner).all()
+    print str(issue_list)
+    return issue_list
+
+def getIssuesByStatus(session, status):
+    issue_list = session.query(Issue).filter(Issue.status==status).all()
+    print str(issue_list)
+    return issue_list
+
+def getIssuesInNumericOrder(session, max_issues=100):
+    issueList = session.query(Issue).\
+            order_by(Issue.issue_id).\
+            all()    
+    return issueList
+
+def addIssueComment(session, issue_id, notes, notestag):
+    notes = IssueComment(issue_id=issue_id, data=notes, tag=notestag)
     session.add(notes)
     
-def getTeamNotes(session, teamId, comp):
-    notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
-                                      filter(NotesEntry.competition==comp).all()
-    print str(notes)
-    return notes
-        
-def getTeamAttributes(session, teamId, comp):
-    attrList = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
-                                      filter(TeamAttribute.competition==comp).all()
-    print str(attrList)
-    return attrList
+def addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description):
 
-def getTeamAttributesInOrder(session, teamId, comp):
-    attrList = session.query(TeamAttribute).\
-            filter(TeamAttribute.team==teamId).\
-            filter(TeamAttribute.competition==comp).\
-            order_by(TeamAttribute.attr_name).all()
-    return attrList
-
-def getTeamAttribute(session, team, comp, name):
-    attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
-                                            filter(TeamAttribute.competition==comp).\
-                                            filter(TeamAttribute.attr_name==name)
-    return attrList.first()
-
-def getTeamsInRankOrder(session, comp, max_teams=100):
-    teamList = session.query(TeamRank).\
-            filter(TeamRank.competition==comp).\
-            order_by(TeamRank.score.desc()).\
-            all()    
-    return teamList
-
-def getTeamsInNumericOrder(session, max_teams=100):
-    teamList = session.query(TeamRank).\
-            order_by(TeamRank.team).\
-            all()    
-    return teamList
-
-def getTeamScore(session, teamId, comp):
-    return session.query(TeamRank).filter(TeamRank.team==teamId).\
-                                   filter(TeamRank.competition==comp).all()
-        
-def calculateTeamScore(session, teamId, comp, attr_defs):
-    attributes = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
-                                              filter(TeamAttribute.competition==comp).all()
-    total = 0.0
-    for item in attributes:
-        item_def = attr_defs.get_definition(item.attr_name)
-        weight = item_def['Weight']
-        # only include attributes with statistics types other than 'None'
-        if item_def['Statistic_Type'] == 'Average':
-            total += float(weight)*item.avg_value
-        elif item_def['Statistic_Type'] == 'Total':
-            total += float(weight)*item.cumulative_value
-
-    return total
+    issueList = session.query(Issue).filter(Issue.issue_id==issue_id)
     
-def setTeamScore(session, teamId, comp, score):
-    teamList = session.query(TeamRank).filter(TeamRank.team==teamId).\
-                                       filter(TeamRank.competition==comp).all()    
-    if len(teamList)>0:
-        team = teamList[0]
-        team.team=teamId
-        team.score=score
-        print team.json()
+    # should only be one issue in the list
+    issue = issueList.first()
+    if issue:
+        # issue exists, so update it
+        issue.issue_id = issue_id
+        issue.description = description
+        issue.owner = owner
+        issue.priority = priority
+        issue.subgroup = subgroup
+        issue.component = component
+        issue.status = status
+        issue.submitter = submitter
+        issue.summary = summary
     else:
-        team = TeamRank(team=teamId, competition=comp, score=score)
-        session.add(team)
+        issue = Issue(issue_id=issue_id, summary=summary, status=status, 
+                      priority=priority, subgroup=subgroup, component=component,
+                      submitter=submitter, owner=owner, description=description)
+        session.add(issue)
+    print issue.json()
 
-def mapValueFromString(string_value, map_values):
+def addOrUpdateIssueComment(session, issue_id, submitter, tag, data): 
+
+    commentList = session.query(IssueComment).filter(IssueComment.issue_id==issue_id). \
+                                              filter(IssueComment.tag==tag)
     
-    values = string_value.split(',')
-    for value in values:
-        tokens = map_values.split(':')
-        for token in tokens:
-            name, token_val = token.split('=')
-            if name == value:
-                mapped_value = token_val
-                break
-    return mapped_value
-
-def mapValueToString(value, all_values, attr_def, need_quote=False):
-    if attr_def['Type'] == 'Map_Integer':
-        value_list = all_values.split(':')
-        unique_values = []
-        for item in value_list:
-            single_value_list = item.split(',')
-            for single_item in single_value_list:
-                if len(unique_values) == 0:
-                    unique_values.append( single_item )
-                else:
-                    found_match = False
-                    for value in unique_values:
-                        if ( value == single_item ):
-                            found_match = True
-                    if found_match == False:
-                        unique_values.append( single_item )
-        value_string = ''
-        if ( need_quote == True ):
-            value_string = "'"
-        for index in range(len(unique_values)):
-            if index == 0:
-                value_string += unique_values[index]
-            else:
-                value_string += '-' + unique_values[index]
-        if ( need_quote == True ):
-            value_string += "'"
-        return value_string
+    # should only be one issue in the list
+    comment = commentList.first()
+    if comment:
+        # issue exists, so update it
+        comment.issue_id = issue_id
+        comment.tag = tag
+        comment.submitter = submitter
+        comment.data = data
     else:
-        return str(value)
-    
+        comment = IssueComment(issue_id=issue_id, tag=tag, 
+                      submitter=submitter, data=data)
+        session.add(comment)
         
-def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
-    attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
-                                            filter(TeamAttribute.competition==comp).\
-                                            filter(TeamAttribute.attr_name==name)
-    attr = attrList.first()
-    attr_type = attribute_def['Type']
-    date = datetime.datetime.now(); #gets the current date and time down to the microsecond
-    
-    if attr_type == 'String':
-        addNotesEntry(session, team, comp, value, date)
-    else:
-        attr_value = convertValues(attr_type, value, attribute_def)
-    
-        if attr:
-            attr.attr_value = attr_value
-            attr.num_occurs+=1
-            attr.cumulative_value += attr_value
-            attr.avg_value = attr.cumulative_value / attr.num_occurs
-            attr.all_values += ':' + value
-            print attr.json()
+    print comment.json()
+
+def addIssueFromAttributes(session, issue_attributes):
+    try:
+        issue_type  = issue_attributes['Platform']
+        # extract the issue id from the attributes or generate one for this type
+        if issue_attributes.has_key('Id'):
+            issue_id = issue_attributes['Id']
         else:
-            attr = TeamAttribute(team=team, competition=comp, attr_name=name, 
-                                 attr_type=attr_type, num_occurs=1,
-                                 attr_value=attr_value, cumulative_value=attr_value, 
-                                 avg_value=attr_value, all_values=value)
-            session.add(attr)
-            print attr.json()
+            issue_id = getIssueId(session, issue_type)
+            
+        if issue_attributes.has_key('Summary'):
+            summary = issue_attributes['Summary']
+        else:
+            summary = ''
+            
+        if issue_attributes.has_key('Status'):
+            status = issue_attributes['Status']
+        else:
+            status = ''
+            
+        if issue_attributes.has_key('Priority'):
+            priority = issue_attributes['Priority']
+        else:
+            priority = ''
         
-def convertValues(attr_type, value, attribute_def):
-    if attr_type == 'Float':
-        attr_value = float(value)
-    elif attr_type == 'Integer':
-        attr_value = float(value)
-    elif attr_type == 'Map_Integer':
-        attr_value = float(mapValueFromString(value, attribute_def['Map_Values']))
-    return attr_value
+        if issue_attributes.has_key('Subgroup'):
+            subgroup = issue_attributes['Subgroup']
+        else:
+            subgroup = ''
+            
+        if issue_attributes.has_key('Component'):
+            component = issue_attributes['Component']
+        else:
+            component = ''
+        
+        if issue_attributes.has_key('Submitter'):
+            submitter = issue_attributes['Submitter']
+        else:
+            submitter = ''
+            
+        if issue_attributes.has_key('Owner'):
+            owner = issue_attributes['Owner']
+        else:
+            owner = 'Unassigned'
+        
+        if issue_attributes.has_key('Description'):
+            description = issue_attributes['Description']
+        else:
+            description = ''
+        
+        if issue_attributes.has_key('Timestamp'):
+            timestamp = issue_attributes['Timestamp']
+        else:
+            timestamp = str(int(time.time()))
+        
+        if issue_attributes.has_key('Comment'):
+            comment = issue_attributes['Comment']
+        else:
+            comment = ''
+        
+    except KeyError:
+        raise Exception( 'Incomplete Issue Record' )
+    
+    addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description)
+    
+    if comment != '':
+        addOrUpdateIssueComment(session, issue_id, submitter, timestamp, comment)
+    
+    session.commit()
 
+'''    
+        if carrier == 'Verizon':
+            user.textmsg_address = cellphone + '@vtext.com'
+        elif carrier == 'ATT':
+            user.textmsg_address = cellphone + '@txt.att.net'
+        elif carrier == 'USCell':
+            user.textmsg_address = cellphone + '@email.uscc.net'
+'''
+    
+def addOrUpdateUser(session, username, email_address, cellphone, carrier, 
+                    subgroup, password, display_name, role, contact_mode):
+
+    userList = session.query(User).filter(User.username==username)
+    
+    # should only be one issue in the list
+    user = userList.first()
+    if user:
+        # user exists, so update it
+        user.username = username
+        user.email_address = email_address
+        user.cellphone = cellphone
+        user.password = password
+        user.display_name = display_name
+        user.contact_mode = contact_mode
+        user.subgroup = subgroup
+        user.role = role
+        user.carrier = carrier
+    else:
+        user = User(username=username, email_address=email_address, cellphone=cellphone,
+                    password=password, display_name=display_name, contact_mode=contact_mode,
+                    subgroup=subgroup,role=role,carrier=carrier)
+        session.add(user)
+    print user.json()
+
+def addUserToTaskgroup(session, taskgroup, username):
+    userList = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).\
+                                              filter(TaskgroupMember.username==username)
+    user = userList.first()
+    if not user:
+        user = TaskgroupMember(taskgroup=taskgroup, username=username)
+        session.add(user)
+    print user.json()
+    
+def addUserFromAttributes(session, user_attributes):
+    try:
+        username = user_attributes['Username']
+        email_address = user_attributes['Email_Address']
+        cellphone = user_attributes['Cellphone']
+        password = user_attributes['Password']
+        display_name = user_attributes['Display_Name']
+        contact_mode = user_attributes['Contact_Mode']
+        subgroup = user_attributes['Subgroup']
+        role = user_attributes['Role']
+        carrier = user_attributes['Carrier']
+        
+    except KeyError:
+        raise Exception( 'Incomplete User Record' )
+    
+    addOrUpdateUser(session, username, email_address, cellphone, carrier, 
+                    subgroup, password, display_name, role, contact_mode)
+    
+    taskgroups = user_attributes['Taskgroups'].split(',')
+    for group in taskgroups:
+        addUserToTaskgroup(session, group, username)
+    
+    session.commit()
+
+def getTaskgroupList(session):
+    taskgroups = []
+    results = session.query(TaskgroupMember.taskgroup).distinct().all()
+    for result in results:
+        taskgroups.append(str(result[0]))
+    return taskgroups.sort()
+
+def getSubgroupList(session):
+    subgroups = []
+    results = session.query(User.subgroup).distinct().all()
+    for result in results:
+        subgroups.append(str(result[0]))
+    return subgroups.sort()
+
+def getTaskgroupMembers(session, taskgroup):
+    members = []
+    results = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).all()
+    for result in results:
+        members.append(str(result.username))
+    return members
+            
+def getUserList(session):
+    users = []
+    results = session.query(User.username).all()
+    
+    for result in results:
+        users.append(str(result[0]))
+        
+    return users.sort()
+    
+def getDisplayNameList(session):
+    users = []
+    results = session.query(User.display_name).all()
+    
+    for result in results:
+        users.append(str(result[0]))
+        
+    return users.sort()
+    
+def getIssueId(session, issue_type):
+
+    issueTypes = session.query(IssueType).filter(IssueType.issue_type==issue_type)
+    
+    # should only be one issue in the list
+    issue = issueTypes.first()
+    if issue:
+        # issue type exists, so update it
+        issue.max_id += 1
+    else:
+        issue = IssueType(issue_type=issue_type, max_id=1)
+        session.add(issue)
+        
+    session.commit()
+    return '%s-%d' % (issue_type,issue.max_id)
+        
+
+
+        
 def deleteAllProcessedFiles(session):
     p_list = session.query(ProcessedFiles).all()
     for item in p_list:
         session.delete(item)
     session.flush()
     
-def deleteAllTeamAttributes(session):
-    a_list = session.query(TeamAttribute).all()
+def deleteAllIssues(session):
+    a_list = session.query(Issue).all()
     for item in a_list:
         session.delete(item)
     session.flush()
 
-def deleteAllTeamNotes(session):
-    n_list = session.query(NotesEntry).all()
-    for item in n_list:
+def deleteAllUsers(session):
+    a_list = session.query(User).all()
+    for item in a_list:
         session.delete(item)
     session.flush()
-    
-def deleteAllTeamRanks(session):
-    r_list = session.query(TeamRank).all()
-    for item in r_list:
+
+def deleteAllTaskgroupMembers(session):
+    a_list = session.query(TaskgroupMember).all()
+    for item in a_list:
+        session.delete(item)
+    session.flush()
+
+def deleteAllIssueComments(session):
+    n_list = session.query(IssueComment).all()
+    for item in n_list:
         session.delete(item)
     session.flush()
     
@@ -302,96 +450,6 @@ def dump_db_tables(my_db):
     meta.reflect()
     meta.drop_all()
 
-# The run_test method contains just a bunch of little operations to test out how the various
-# database mechanisms work...    
-def run_test():
-    Session = sessionmaker(bind=my_db)
-    session = Session()
-    
-    myteam=1075
-    mycomp='TestComp'
-    myattr='Teleop_Points'
-    myvalue='42'
-
-    # Build the attribute definition dictionary from the definitions csv file
-    attrdef_filename = 'AttributeDefinitions-reboundrumble.xlsx'    
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
-    attr_definitions.parse(attrdef_filename)
-    attr_definition = attr_definitions.get_definition(myattr)
-    attr_type = attr_definition['Type']
-    attr_value = convertValues(attr_type, myvalue, attr_definition)
-
-    # create a query that will search the database for all records that match the specified
-    # team
-    q1 = session.query(TeamRank).filter(TeamRank.team==myteam).filter(TeamRank.competition==mycomp)
-    if q1:
-        a = q1.first()
-        # retrieve the first element that matches the team number. If there is one,
-        # then we'll just print it out. If not, then we'll create an instance and 
-        # add it to the database
-        if a: 
-            print str(a)
-            print a.json()
-        else:
-            a1 = TeamRank(team=myteam, competition=mycomp, score=42.0)
-            print str(a1)
-            print a1.json()
-            session.add(a1)
-
-    # create a query that retrieves the first record that matches the team and attribute
-    # if the attribure is found, then modify it in some way and store the new values
-    # if the attribute is not found, then create an instance and add it to the
-    # database
-    q2 = session.query(TeamAttribute).filter(TeamAttribute.team==myteam and TeamAttribute.competition==mycomp and TeamAttribute.attr_name==myattr)
-    if q2:
-        b = q2.first()
-        if b:
-            b.attr_value+=5
-            b.num_occurs+=1
-            print str(b)
-            print b.json()
-        else:
-            b1 = TeamAttribute(team=myteam, competition=mycomp, attr_name=myattr, attr_value=attr_value, 
-                               cumulative_value=attr_value, attr_type=attr_type, num_occurs=1, avg_value=attr_value,
-                               all_values=myvalue)
-            print str(b1)
-            print b1.json()
-            session.add(b1)
-
-    # retrieve a list of all the attributes from the database for the specified team using a 
-    # utility method and print them out          
-    myteam=1073
-    allAttr = getTeamAttributes( session, myteam, mycomp )
-    for d in allAttr:
-        print d.json()        
-
-    # given that same list, find a specific attribute in the list and update it
-    # this loop construct is a nested for loop in one line...
-    attr = next((i for i in allAttr if i.attr_name == myattr), None)
-    if attr is not None:
-        # attribute is found, so update the attribute with the new values
-        attr.attr_value+=5
-        attr.num_occurs+=1
-        print attr.json()
-    else:
-        # attribute is not found, so create a new instance and add it to the database
-        attr = TeamAttribute(team=myteam, competition=mycomp, attr_name=myattr, attr_value=attr_value, 
-                             cumulative_value=attr_value, attr_type=attr_type, num_occurs=1, avg_value=attr_value,
-                             all_values=myvalue)
-        session.add(attr)
-        print attr.json()
-        
-    # retrieve an ordered list of all teams in descending order (#1 team is first)
-    rankList = getTeamsInRankOrder(session, mycomp)      
-    for t in rankList:
-        print t.json()        
-    
-    # exercise the attribute create/update utility method
-    if (attr_definition['Database_Store']=='Yes'):
-        createOrUpdateAttribute(session, myteam, mycomp, myattr, myvalue, attr_definition)
-                    
-    session.commit()
-
 
 if __name__ == '__main__':
 
@@ -401,7 +459,7 @@ if __name__ == '__main__':
     parser.add_option(
         "-u","--user",dest="user", default='root', help='Database user name')
     parser.add_option(
-        "-d","--db",dest="db", default='test', help='Database name')
+        "-d","--db",dest="db", default='issues2013', help='Database name')
     parser.add_option(
         "-p","--password",dest="password", default='team1073',
         help='Database password')
@@ -440,7 +498,5 @@ if __name__ == '__main__':
     if options.drop:
         dump_db_tables(my_db)
 
-    if options.test:
-        run_test()
 
 

@@ -58,7 +58,24 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         above_miss_label  = 'ABOVELabel'
         first_level = True
         left_label = ''
+        left_level_label = ''
         for level in self.values:
+            # The label for this level
+            level_label = 'NAME_' + level[0] + '_Label'
+            xml_str += "    <TextView\n"
+            xml_str += "        android:id=\"@+id/" + level_label + "\"\n"
+            xml_str += "        android:layout_width=\"80dp\"\n"
+            xml_str += "        android:layout_height=\"50dp\"\n"
+            xml_str += "        android:gravity=\"center_vertical|right\"\n"
+            xml_str += "        android:layout_below=\"@+id/" + above_minus_label + "\"\n"
+            if first_level == True:
+                left_level_label = level_label
+                xml_str += "        android:layout_marginLeft=\"120dp\"\n"
+                xml_str += "        android:layout_marginTop=\"20dp\"\n"
+            else:
+                xml_str += "        android:layout_alignLeft=\"@+id/" + left_level_label + "\"\n"
+            xml_str += "        android:text=\"" + level[0] + ":\" />\n\n"
+            
             # The Minus button
             minus_label = 'NAME_' + level[0] + '_Minus'
             xml_str += "    <Button\n"
@@ -67,7 +84,8 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_height=\"wrap_content\"\n"
             if first_level == True:
                 left_label = minus_label
-                xml_str += "        android:layout_marginLeft=\"130dp\"\n"
+                #xml_str += "        android:layout_marginLeft=\"130dp\"\n"
+                xml_str += "        android:layout_marginLeft=\"200dp\"\n"
                 xml_str += "        android:layout_marginTop=\"20dp\"\n"
             else:
                 xml_str += "        android:layout_alignLeft=\"@+id/" + left_label + "\"\n"
@@ -152,6 +170,8 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         # are in the scoring matrix
         if self.num_levels > 2:
             offset = self.num_levels - 2
+        elif self.num_levels > 0:
+            offset = self.num_levels - 1
         else:
             offset = 0
         label = self.values[offset][0]
@@ -185,6 +205,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         xml_str += "        android:layout_alignBottom=\"@+id/NAME_TotalLabel\"\n"
         xml_str += "        android:layout_toRightOf=\"@+id/NAME_TotalLabel\"\n"
         xml_str += "        android:inputType=\"number\" />\n\n"
+        xml_str += "    <!-- Last label on control: " + self.get_last_label() + " -->\n"
         xml_str += "    <!-- End NAME field text label and entry field -->\n\n"
         return xml_str
 

@@ -35,8 +35,14 @@ class TextFieldUiGenControl( UiGenControl ):
             xml_str += "        android:layout_width=\"480dp\"\n"
         else:
             xml_str += "        android:layout_width=\"200dp\"\n"
-        xml_str += "        android:layout_height=\"40dp\"\n"
-        
+            
+        if self.attr_def['Options'].find('5_Lines') != -1:
+            xml_str += "        android:layout_height=\"200dp\"\n"
+        elif self.attr_def['Options'].find('3_Lines') != -1:
+            xml_str += "        android:layout_height=\"120dp\"\n"
+        else:
+            xml_str += "        android:layout_height=\"40dp\"\n"
+                
         if self.attr_def['Type'] == 'Integer':
             xml_str += "        android:numeric=\"integer\"\n"
         xml_str += "        android:textColor=\"@color/black\"\n"

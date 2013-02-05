@@ -6,6 +6,8 @@ Created on Feb 4, 2012
 import os
 import re
 import DataModel
+import IssueTrackerDataModel
+import DebriefDataModel
 import FileParser
 import AttributeDefinitions
 from sqlalchemy import create_engine
@@ -18,7 +20,12 @@ import csv
 import socket
 from bluetooth import *
 
-global_config = {'this_competition':None, 'other_competitions':None, 'db_name': 'scouting2013', 'team_list':None}
+global_config = { 'this_competition'   : None, 
+                  'other_competitions' : None, 
+                  'db_name'            : 'scouting2013', 
+                  'issues_db_name'     : 'issues2013', 
+                  'team_list'          : None}
+
 def read_config(config_filename):
     cfg_file = open(config_filename, 'r')
     for cfg_line in cfg_file:
@@ -91,7 +98,14 @@ Args:
 Returns:
     A list of files.
 '''
-def get_files(session, input_dir, pattern, recursive, test_mode):    
+def isFileProcessed(session, db_name, filepath):
+    if db_name == global_config['db_name']:
+        is_processed = DataModel.isFileProcessed(session, filepath)
+    elif db_name == global_config['issues_db_name']:
+        is_processed = IssueTrackerDataModel.isFileProcessed(session, filepath)
+    return is_processed
+                                                 
+def get_files(session, db_name, input_dir, pattern, recursive, test_mode):    
     file_list = []    
     
     if recursive:
@@ -99,14 +113,14 @@ def get_files(session, input_dir, pattern, recursive, test_mode):
             print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
             for name in files:
                 if pattern.match(name):
-                    if((test_mode == True) or (DataModel.isFileProcessed(session, os.path.join(root, name))) == False):
+                    if((test_mode == True) or (isFileProcessed(session, db_name, os.path.join(root, name))) == False):
                         file_list.append(os.path.join(root, name))
     else:
         files = os.listdir(input_dir)
         print 'Files:', files
         for name in files:
             if pattern.match(name):
-                if((test_mode == True) or (DataModel.isFileProcessed(session, os.path.join(root, name))) == False):
+                if((test_mode == True) or (isFileProcessed(session, db_name, os.path.join(root, name))) == False):
                     file_list.append(os.path.join(input_dir, name))
 
     print 'FileList:', file_list
@@ -177,13 +191,13 @@ def dump_database_as_csv_file(session, attr_definitions, competition=None):
     fo.close()
 
   
-def process_files(session, attr_definitions, input_dir, recursive, test):
+def process_files(session, db_name, attr_definitions, input_dir, recursive, test):
     # The following regular expression will select all files that conform to 
     # the file naming format Team*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Team[a-zA-Z0-9_]+.txt')
-    files = get_files(session, input_dir, file_regex, recursive, test)
+    files = get_files(session, db_name, input_dir, file_regex, recursive, test)
     
     # Process data files
     for data_filename in files:
@@ -233,6 +247,78 @@ def process_files(session, attr_definitions, input_dir, recursive, test):
         # Commit all updates to the database
         session.commit()
 
+def process_issue_files(db_name, input_dir, recursive, test):
+
+    # Initialize the database session connection
+    db_connect='sqlite:///%s'%(db_name)
+    my_db = create_engine(db_connect)
+    Session = sessionmaker(bind=my_db)
+    session = Session()
+    
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + db_name):    
+        IssueTrackerDataModel.create_db_tables(my_db)
+
+    # The following regular expression will select all files that conform to 
+    # the file naming format Issue*.txt. Build a list of all datafiles that match
+    # the naming format within the directory passed in via command line 
+    # arguments.
+    file_regex = re.compile('Issue[a-zA-Z0-9_-]+.txt')
+    files = get_files(session, db_name, input_dir, file_regex, recursive, test)
+    
+    # Process data files
+    for data_filename in files:
+        print 'processing %s'%data_filename
+        
+        # Initialize the file_attributes dictionary in preparation for the
+        # parsing of the data file
+        issue_attributes = {}
+        
+        # Parse the data file, storing all the information in the file_attributes
+        # dictionary
+        FileParser.FileParser(data_filename).parse(issue_attributes)
+        IssueTrackerDataModel.addProcessedFile(session, data_filename)
+
+        IssueTrackerDataModel.addIssueFromAttributes(session, issue_attributes)
+        
+    
+def process_debrief_files(db_name, input_dir, recursive, test):
+
+    # Initialize the database session connection
+    db_connect='sqlite:///%s'%(db_name)
+    my_db = create_engine(db_connect)
+    Session = sessionmaker(bind=my_db)
+    session = Session()
+    
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + db_name):    
+        DebriefDataModel.create_db_tables(my_db)
+
+    # The following regular expression will select all files that conform to 
+    # the file naming format Issue*.txt. Build a list of all datafiles that match
+    # the naming format within the directory passed in via command line 
+    # arguments.
+    file_regex = re.compile('Debrief[a-zA-Z0-9_-]+.txt')
+    files = get_files(session, db_name, input_dir, file_regex, recursive, test)
+    
+    # Process data files
+    for data_filename in files:
+        print 'processing %s'%data_filename
+        
+        # Initialize the file_attributes dictionary in preparation for the
+        # parsing of the data file
+        issue_attributes = {}
+        
+        # Parse the data file, storing all the information in the file_attributes
+        # dictionary
+        FileParser.FileParser(data_filename).parse(issue_attributes)
+        DebriefDataModel.addProcessedFile(session, data_filename)
+
+        DebriefDataModel.addIssueFromAttributes(session, issue_attributes)
+
+
+
+
   
 if __name__ == '__main__':
         
@@ -272,6 +358,9 @@ if __name__ == '__main__':
     parser.add_option(
         "-p","--processfiles",action="store_true", dest="processfiles", default=False,
         help='Process Team Files')
+    parser.add_option(
+        "-i","--processissues",action="store_true", dest="processissues", default=False,
+        help='Process Issues Files')
     parser.add_option(
         "-z","--bluetooth",action="store_true", dest="bluetoothServer", default=False,
         help='Run Bluetooth Server')
@@ -323,8 +412,14 @@ if __name__ == '__main__':
 
     if options.processfiles:
         competition = global_config['this_competition']
-        process_files(session, attr_definitions, input_dir, options.recursive, options.test)
+        process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
         dump_database_as_csv_file(session, attr_definitions, competition)
+        
+    if options.processissues:
+        # process any accumulated issues files
+        issues_db_name = global_config['issues_db_name']
+        issues_input_dir = './static/Issues/'
+        process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
         
     # recalculate the team scores 
     if options.recalculate:
@@ -423,6 +518,8 @@ if __name__ == '__main__':
             if files_received > 0:
                 process_files(session, attr_definitions, input_dir, options.recursive, options.test)
                 dump_database_as_csv_file(session, attr_definitions)
+
+                process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
 
 
         server_sock.close()

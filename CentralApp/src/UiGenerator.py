@@ -52,6 +52,7 @@ def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
 
     # initialize the build_filename string to include the team number and the scouting sheet type into
     # the filename that contains the collected scouting data
+    java_build_filename_string_rewritten = False
     java_build_filename_string = '                    final String filename = buildFilename( TeamEntry, "' + \
                                  sheet_type + '", "" );\n'
     
@@ -92,16 +93,24 @@ def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
             
             if (item['Control'] == 'Scoring_Matrix'):
                 above_name = ctrl_gen.get_last_label()
+            elif item['Control'] == 'Text': 
+                above_name = item['Name'] + 'Entry'
             else:
                 above_name = item['Name'] + 'Label'
                 
-            if item['Name'] == 'Match':
-                # if this item indicates a match entry field, rewrite the build_filename string
-                # to include the parameter that will insert the match number into the filename in
-                # order to create unique file names for the collected data
+            if sheet_type == 'Match' and java_build_filename_string_rewritten == False:
+                java_build_filename_string_rewritten = True
                 java_build_filename_string = '                    final String filename = buildFilename( TeamEntry, "' + \
                                              sheet_type + '", MatchEntry.getText().toString() );\n'
-        
+            elif sheet_type == 'Debrief' and java_build_filename_string_rewritten == False:
+                java_build_filename_string_rewritten = True
+                java_build_filename_string = '                    final String filename = buildDebriefFilename( "' + \
+                                             sheet_type + '", "Match", MatchEntry.getText().toString() );\n'
+            elif sheet_type == 'Issue' and java_build_filename_string_rewritten == False:
+                java_build_filename_string_rewritten = True
+                java_build_filename_string = '                    final String filename = buildIssueFilename( IdEntry, "' + \
+                                             sheet_type + '");\n'
+         
     if create_fragment_file == True:
         # write out the xml file fragment
         outputFilename = './tmp/gen-ui-' + sheet_type + '.txt'

@@ -13,8 +13,10 @@ from web import form
 import logging
 import logging.config
 import xlrd
+import time
 
 import DataModel
+import IssueTrackerDataModel
 import FileParser
 import AttributeDefinitions
 import UiGenerator
@@ -37,7 +39,9 @@ urls = (
     '/ScoutingData/(.*)', 'TeamDataFile',
     '/notes/(.*)', 'TeamNotes',
     '/genui', 'GenUi',
-    '/config', 'SetConfig'
+    '/config', 'SetConfig',
+    '/newissue', 'NewIssue',
+    '/issue/(.*)', 'Issue'
 )
 
 
@@ -45,7 +49,8 @@ logging.config.fileConfig('config/logging.conf')
 logger = logging.getLogger('scouting.webapp')
 
 global_config = {'this_competition':None, 'other_competitions':None, 'db_name': 'scouting2013', \
-                 'team_list':None, 'attr_definitions_file':'AttributeDefinitions-reboundrumble.xlsx'}
+                 'team_list':None, 'attr_definitions_file':'AttributeDefinitions-reboundrumble.xlsx', \
+                 'issues_db_name': 'issues2013'}
 def read_config(config_filename):
     cfg_file = open(config_filename, 'r')
     for cfg_line in cfg_file:
@@ -363,8 +368,10 @@ class TeamDataFile(object):
         return result
 
 # Form definition and callback class for the user interface code generator
+base_root_dir_label = "Base Project Root:"
 base_dir_label = "Base Project Directory:"
 base_project_label = "Base Project Name:"
+dest_root_dir_label = "Destination Project Root:"
 dest_dir_label = "Destination Project Directory:"
 dest_project_label = "Destination Project Name:"
 app_name_label = "Application Name:"
@@ -373,13 +380,15 @@ sheet_type_label = "Sheet Type:"
 attr_defs_label = "Attributes Definition File:"
 gen_action_label = 'Generate:'
 myform = form.Form( 
+    form.Textbox(base_root_dir_label, size=60),
     form.Textbox(base_dir_label, size=60),
     form.Textbox(base_project_label, size=60),
+    form.Textbox(dest_root_dir_label, size=60),
     form.Textbox(dest_dir_label, size=60),
     form.Textbox(dest_project_label, size=60),
     form.Textbox(app_name_label, size=60),
     form.Textbox(app_title_label, size=60),
-    form.Dropdown(sheet_type_label, ['Pit', 'Match', 'Demo']), 
+    form.Dropdown(sheet_type_label, ['Pit', 'Match', 'Issue', 'Debrief', 'Demo']), 
     form.Textbox(attr_defs_label,form.notnull,form.regexp('[\w_-]+\.xlsx', 'Must be .xlsx file'),size=60),
     form.Dropdown(gen_action_label, ['Complete App', 'UI Components', 'Base App']),
     form.Checkbox('mycheckbox', value='ischecked', checked=False)) 
@@ -400,10 +409,12 @@ class GenUi(object):
         else:
             # form.d.boe and form['boe'].value are equivalent ways of
             # extracting the validated arguments from the form.
-            workspace_dir = 'D:\Documents and Settings\ksthilaire\Workspace'
-            base_project_path = os.path.join(workspace_dir, form[base_dir_label].value)
+            #workspace_dir = 'D:\Documents and Settings\ksthilaire\Workspace'
+            base_root_dir = form[base_root_dir_label].value
+            base_project_path = os.path.join(base_root_dir, form[base_dir_label].value)
             base_projectname = form[base_project_label].value
-            dest_project_path = os.path.join(workspace_dir, form[dest_dir_label].value)
+            dest_root_dir = form[dest_root_dir_label].value
+            dest_project_path = os.path.join(dest_root_dir, form[dest_dir_label].value)
             dest_projectname = form[dest_project_label].value
             dest_activity_prefix = form[sheet_type_label].value
             dest_app_label = form[app_name_label].value
@@ -456,6 +467,203 @@ class SetConfig(object):
             global_config['attr_definitions_file'] = form[cfg_attr_defs_label].value
             
             return render.cfg_form_done(form)
+
+# Form definition and callback class for the issue get and post operations
+issue_platforms = ['', 'Robot', 'Tablet']
+issue_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business', 'Unassigned']
+issue_components = ['','Drivetrain', 'Shooter', 'Collector', 'Climber', 'Strategy', 'Business', 'Unassigned']
+issue_statuses = ['','Open', 'Closed', 'Working', 'Resolved']
+issue_priorities = ['Low', 'High', 'Critical', 'Blocking']
+issue_owners = ['','Michael Ross', 'Aaron Pepin', 'Sarah Drazin', 'Unassigned']
+
+issue_id_label = 'Id:'
+issue_summary_label ='Summary:'
+issue_platform_label ='Platform:'
+issue_status_label ='Status:'
+issue_priority_label = 'Priority:'
+issue_subgroup_label = 'Subgroup:'
+issue_component_label = 'Component:'
+issue_owner_label = 'Owner:'
+issue_submitter_label = 'Submitter:'
+issue_description_label = 'Description:'
+issue_comment_label = 'Comment:'
+issueform = form.Form( 
+    form.Textbox(issue_id_label, size=20),
+    form.Dropdown(issue_platform_label, issue_platforms),
+    form.Textbox(issue_summary_label, size=60),
+    form.Dropdown(issue_status_label, issue_statuses),
+    form.Dropdown(issue_priority_label, issue_priorities),
+    form.Dropdown(issue_subgroup_label, issue_subgroups),
+    form.Dropdown(issue_component_label, issue_components),
+    form.Dropdown(issue_owner_label, issue_owners),
+    form.Dropdown(issue_submitter_label, issue_owners),
+    form.Textarea(issue_description_label, size=1024),
+    form.Textarea(issue_comment_label, size=256))
+
+new_issueform = form.Form(                        
+    form.Dropdown(issue_platform_label, issue_platforms),
+    form.Textbox(issue_summary_label, size=60),
+    form.Dropdown(issue_status_label, issue_statuses),
+    form.Dropdown(issue_priority_label, issue_priorities),
+    form.Dropdown(issue_subgroup_label, issue_subgroups),
+    form.Dropdown(issue_component_label, issue_components),
+    form.Dropdown(issue_owner_label, issue_owners),
+    form.Dropdown(issue_submitter_label, issue_owners),
+    form.Textarea(issue_description_label, size=1024),
+    form.Textarea(issue_comment_label, size=256))
+
+class NewIssue(object):
+    def GET(self):
+        
+        form = new_issueform()
+        # make sure you create a copy of the form by calling it (line above)
+        # Otherwise changes will appear globally
+        return render.new_issue_form(form)
+
+    def POST(self):
+        
+        db_name = global_config['issues_db_name']
+        db_connect='sqlite:///%s'%(db_name)
+        my_db = create_engine(db_connect)
+        Session = sessionmaker(bind=my_db)
+        session = Session()
+        
+        form = new_issueform()
+        
+        if not form.validates(): 
+            return render.new_issue_form_done(form)
+        else:
+            # TODO: need to come up with a way to generate the next available issue number
+            platform = form[issue_platform_label].value
+            issue_id = IssueTrackerDataModel.getIssueId(session, platform)
+            
+            summary = form[issue_summary_label].value
+            status = form[issue_status_label].value
+            priority = form[issue_priority_label].value
+            subgroup = form[issue_subgroup_label].value
+            owner = form[issue_owner_label].value
+            submitter = form[issue_submitter_label].value
+            component = form[issue_component_label].value
+            description = form[issue_description_label].value
+            comment = form[issue_comment_label].value
+            timestamp = str(int(time.time()))
+            
+            issue_string =  'Id:' + issue_id + '\n'
+            issue_string += 'Timestamp:%s\n' % timestamp 
+            issue_string += issue_platform_label + platform + '\n'
+            issue_string += issue_summary_label + summary + '\n'
+            issue_string += issue_status_label + status + '\n'
+            issue_string += issue_priority_label + priority + '\n'
+            issue_string += issue_subgroup_label + subgroup + '\n'
+            issue_string += issue_component_label + component + '\n'
+            issue_string += issue_owner_label + owner + '\n'
+            issue_string += issue_submitter_label + submitter + '\n'
+            issue_string += issue_description_label + description + '\n'
+            issue_string += issue_comment_label + comment + '\n'
+            
+            filename = './static/Issues/Web_%s.txt' % issue_id
+            fd = open(filename, 'w')
+            fd.write(issue_string)
+            fd.close()
+            
+            #TODO: Add component to the data model
+            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, 
+                                                   status, priority, subgroup, 
+                                                   component, submitter, owner, 
+                                                   description)
+            IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
+                                                          submitter, timestamp,
+                                                          comment)
+            session.commit()
+            
+            return issue_string            
+
+class Issue(object):
+    
+    def GET(self, issue_id):
+        db_name = global_config['issues_db_name']
+        db_connect='sqlite:///%s'%(db_name)
+        my_db = create_engine(db_connect)
+        Session = sessionmaker(bind=my_db)
+        session = Session()
+
+        logger.debug( 'GET Issue: %s', issue_id )
+        issue_id = issue_id
+        platform = issue_id.split('-')[0]
+        
+        issue = IssueTrackerDataModel.getIssue(session, issue_id)
+        
+        form = issueform()
+        form[issue_id_label].value = issue_id
+        form[issue_platform_label].value = platform
+        form[issue_summary_label].value = issue.summary
+        form[issue_status_label].value = issue.status
+        form[issue_priority_label].value = issue.priority
+        form[issue_subgroup_label].value = issue.subgroup
+        form[issue_owner_label].value = issue.owner
+        form[issue_submitter_label].value = issue.submitter
+        form[issue_component_label].value = issue.component
+        form[issue_description_label].value = issue.description
+
+        # make sure you create a copy of the form by calling it (line above)
+        # Otherwise changes will appear globally
+        return render.new_issue_form(form)
+
+    def POST(self, issue_id):
+        
+        db_name = global_config['issues_db_name']
+        db_connect='sqlite:///%s'%(db_name)
+        my_db = create_engine(db_connect)
+        Session = sessionmaker(bind=my_db)
+        session = Session()
+        
+        form = new_issueform()
+        
+        if not form.validates(): 
+            return render.new_issue_form_done(form)
+        else:
+            platform = issue_id.split('-')[0]
+            summary = form[issue_summary_label].value
+            status = form[issue_status_label].value
+            priority = form[issue_priority_label].value
+            subgroup = form[issue_subgroup_label].value
+            owner = form[issue_owner_label].value
+            submitter = form[issue_submitter_label].value
+            component = form[issue_component_label].value
+            description = form[issue_description_label].value
+            comment = form[issue_comment_label].value
+            timestamp = str(int(time.time()))
+            
+            issue_string =  'Id:' + issue_id + '\n'
+            issue_string += 'Timestamp:%s\n' % timestamp 
+            issue_string += issue_platform_label + platform + '\n'
+            issue_string += issue_summary_label + summary + '\n'
+            issue_string += issue_status_label + status + '\n'
+            issue_string += issue_priority_label + priority + '\n'
+            issue_string += issue_subgroup_label + subgroup + '\n'
+            issue_string += issue_component_label + component + '\n'
+            issue_string += issue_owner_label + owner + '\n'
+            issue_string += issue_submitter_label + submitter + '\n'
+            issue_string += issue_description_label + description + '\n'
+            issue_string += issue_comment_label + comment + '\n'
+            
+            filename = './static/Issues/Web_%s.txt' % issue_id
+            fd = open(filename, 'w')
+            fd.write(issue_string)
+            fd.close()
+            
+            #TODO: Add platform to the data model
+            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, 
+                                                   status, priority, subgroup, 
+                                                   component, submitter, owner, 
+                                                   description)
+            IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
+                                                          submitter, timestamp,
+                                                          comment)
+            session.commit()
+            
+            return issue_string            
+
 
 def generate_js_store_files():
     js_store_fragment_start = "Ext.define('MyApp.store.MyJsonStore', {\n" + \
@@ -620,15 +828,28 @@ if __name__ == "__main__":
 
     logger.debug("Running the Scouting App Web Server")
 
+    # create the issues database if required
+    db_name = global_config['issues_db_name']
+    
     # Determine which database type to initialize based on the passed in command
     # arguments    
     if options.dbtype == 'sqlite':
-        db_connect='sqlite:///%s'%(options.db_name)
+        db_connect='sqlite:///%s'%(db_name)
     elif options.dbtype == 'mysql':
-        db_connect='mysql://%s:%s@localhost/%s'%(options.user, options.password, options.db_name)
+        db_connect='mysql://%s:%s@localhost/%s'%(options.user, options.password, db_name)
     else:
         raise Exception("No Database Type Defined!")
 
+    # Initialize the database session connection
+    my_db = create_engine(db_connect)
+    Session = sessionmaker(bind=my_db)
+    session = Session()
+
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + db_name):    
+        IssueTrackerDataModel.create_db_tables(my_db)
+
+    
     # Build the attribute definition dictionary from the definitions csv file
     attrdef_filename = './config/' + global_config['attr_definitions_file']
     attr_definitions = AttributeDefinitions.AttrDefinitions()

@@ -153,8 +153,15 @@ def update_generated_xml_code(dest_project_path, gen_fragments):
             elif line.find('NotesEntry') != -1:
                 editing_notes_entry = True
             elif line.find('Label') != -1:
-                label_above_notes_field = line.replace('android:id=', 'android:layout_below=')
-        
+                label_above_notes_field = line.replace('android:id=', 'android:layout_below=')       
+        elif line.find('Last label on control') != -1:
+            # some controls will have an explicit comment line that indicates the label of the last
+            # field within the control field (e.g. scoring matrix), and if so, then extract the
+            # label from the comment line
+            tokens = line.split(':')
+            label = tokens[1].split('-->')[0].replace(' ', '')
+            label_above_notes_field = "        android:layout_below=\"@+id/" + label + "\n"
+
         if editing_notes_label == True:
             if line.find('android:layout_below=') != -1:
                 editing_notes_label = False
