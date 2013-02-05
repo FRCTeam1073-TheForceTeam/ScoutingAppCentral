@@ -131,6 +131,34 @@ public class ScoutingAppActivity extends Activity {
         return filename;
 	}
 
+	private String buildIssueFilename(EditText entry, String type){
+		String filename="";
+		if ( entry.getText().toString().isEmpty() ) {
+			Integer count=1;
+			boolean found=false;
+			filename="";
+			while ( !found ) {
+				filename = type + "_" + count.toString() + "_" + device_id + ".txt";
+				if ( !doesFileExist(filename) )
+					found = true;
+				else
+					count++;
+			}
+		} else {
+			filename = type + "_" + entry.getText().toString() + "_" + device_id + ".txt";
+		}
+		
+        return filename;
+	}
+	
+	private String buildDebriefFilename(String type, String label, String otherKey){
+
+		String filename = type + "_" + label + otherKey + "_" +
+				device_id + ".txt";
+		
+        return filename;
+	}
+
 	
 	// helper function to process key actions for an EditText field
 	private boolean onKey(View v, int keyCode, KeyEvent event, EditText entry) {
