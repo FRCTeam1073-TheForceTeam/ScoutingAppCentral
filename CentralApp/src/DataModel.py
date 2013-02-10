@@ -172,6 +172,8 @@ def calculateTeamScore(session, teamId, comp, attr_defs):
     for item in attributes:
         item_def = attr_defs.get_definition(item.attr_name)
         weight = item_def['Weight']
+        if not weight:
+            weight = '0.0'
         # only include attributes with statistics types other than 'None'
         if item_def['Statistic_Type'] == 'Average':
             total += float(weight)*item.avg_value
@@ -245,7 +247,7 @@ def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
     attr_type = attribute_def['Type']
     date = datetime.datetime.now(); #gets the current date and time down to the microsecond
     
-    if attr_type == 'String':
+    if attribute_def['Name'] == 'Notes':
         addNotesEntry(session, team, comp, value, date)
     else:
         attr_value = convertValues(attr_type, value, attribute_def)
