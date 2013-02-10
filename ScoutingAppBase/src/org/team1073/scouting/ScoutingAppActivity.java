@@ -30,6 +30,27 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+/* Following is how to send an email to a list of addresses from the tablet application       		
+String emailList[] = { "kensthilaire@gmail.com", "6033208262@vtext.com",
+					   "libramen@charter.net", "6032047335@email.uscc.net",
+					   "dstanizzi@gmail.com" };
+String emailSubject = "Hello from Saggy the tablet!";
+String emailText = "This is a test message, sending an email to a distribution list from a tablet application.";
+
+Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+emailIntent.setType("plain/text");
+emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, emailList);
+//emailIntent.putExtra(android.content.Intent.EXTRA_CC, emailCCList);
+//emailIntent.putExtra(android.content.Intent.EXTRA_BCC, emailBCCList);
+emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, emailSubject);
+emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, emailText);
+
+startActivity(emailIntent);
+*/
+
+
+
+
 public class ScoutingAppActivity extends Activity {
 	private String device_name="unknown";
 	private String device_id="un";
