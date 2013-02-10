@@ -23,7 +23,8 @@ from bluetooth import *
 global_config = { 'this_competition'   : None, 
                   'other_competitions' : None, 
                   'db_name'            : 'scouting2013', 
-                  'issues_db_name'     : 'issues2013', 
+                  'issues_db_name'     : 'issues2013',
+                  'attr_definitions'   : None,
                   'team_list'          : None}
 
 def read_config(config_filename):
@@ -147,19 +148,30 @@ def dump_database_as_csv_file(session, attr_definitions, competition=None):
     # read in the attribute definitions and sort them in the colum order
     attr_dict = attr_definitions.get_definitions()
     attr_order = [{} for i in range(len(attr_dict))]
-    for key, value in attr_dict.items():
-        attr_order[(int(float(value['Column_Order']))-1)] = value
-        #attr_order[(int(value['Column_Order'])-1)] = value
+    
+    try:
+        for key, value in attr_dict.items():
+            attr_order[(int(float(value['Column_Order']))-1)] = value
+            #attr_order[(int(value['Column_Order'])-1)] = value
+    except Exception, e:
+        print 'Exception: %s' % str(e)
 
     # open up the output filename that matches the database name
-    outputFilename = './static/attr/' + competition + '.csv'
+    path = './static/attr'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    outputFilename = path + '/' + competition + '.csv'
     fo = open(outputFilename, "w+")
 
     # Write out the column headers
     mystring = 'Team,Score'
-    for attr_def in attr_order:
-        if attr_def['Database_Store'] == 'Yes':
-            mystring += ',' + attr_def['Name']
+    try:
+        for attr_def in attr_order:
+            if attr_def['Database_Store'] == 'Yes':
+                mystring += ',' + attr_def['Name']
+    except Exception, e:
+        print 'Exception: %s' % str(e)
+
     mystring += '\n'
     fo.write( mystring )
     
@@ -347,12 +359,6 @@ if __name__ == '__main__':
         "-b","--dbtype",dest="dbtype", default='sqlite',
         help='Select database type (mysql or sqlite')
     parser.add_option(
-        "-c","--create",action="store_true", dest="create", default=False,
-        help='Create database schema')
-    parser.add_option(
-        "-D","--drop",action="store_true", dest="drop", default=False,
-        help='Drop database schema')
-    parser.add_option(
         "-r","--recalculate",action="store_true", dest="recalculate", default=False,
         help='Recalculate Team Scores')
     parser.add_option(
@@ -375,6 +381,9 @@ if __name__ == '__main__':
     read_config(options.cfg_filename)
     input_dir = './static/' + global_config['this_competition'] + '/ScoutingData/'
     db_name = global_config['db_name']
+
+    issues_db_name = global_config['issues_db_name']
+    issues_input_dir = './static/Issues/'
     
     # Determine which database type to initialize based on the passed in command
     # arguments    
@@ -391,24 +400,15 @@ if __name__ == '__main__':
     Session = sessionmaker(bind=my_db)
     session = Session()
 
-    # Create the database if requested through the command option    
-    if options.create:
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + db_name):    
         DataModel.create_db_tables(my_db)
 
-    # Dump the contents of the database if requested through the command option
-    if options.drop:
-        DataModel.dump_db_tables(my_db)
-
-    #testfile = 'AttributeDefinitions-reboundrumble.xlsx'
-    #testoutfile = 'attr2.csv'
-    #AttributeDefinitions.xls_to_csv( testfile, testoutfile )
-                
     # Build the attribute definition dictionary from the definitions csv file
     #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
-    attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble-clear.xlsx'    
+    attrdef_filename = './config/' + global_config['attr_definitions']    
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
-
 
     if options.processfiles:
         competition = global_config['this_competition']
@@ -417,8 +417,6 @@ if __name__ == '__main__':
         
     if options.processissues:
         # process any accumulated issues files
-        issues_db_name = global_config['issues_db_name']
-        issues_input_dir = './static/Issues/'
         process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
         
     # recalculate the team scores 
@@ -516,7 +514,7 @@ if __name__ == '__main__':
             # if we received files from the client, then go ahead and process them to keep
             # the database up to date in real time
             if files_received > 0:
-                process_files(session, attr_definitions, input_dir, options.recursive, options.test)
+                process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
                 dump_database_as_csv_file(session, attr_definitions)
 
                 process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
