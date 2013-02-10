@@ -23,6 +23,8 @@ class AttrDefinitions:
     def parse(self, filename, sheet_type=None):
         first_row = True
         header_row = []
+        extra_attrdefinitions = {}
+        extra_column_order = 1000
         
         # if the specified file is an Excel spreadsheet, convert the
         # spreadsheet into a csv file that we will then process.
@@ -47,6 +49,36 @@ class AttrDefinitions:
                 sheet_qualifier = definition['Sheet']
                 if sheet_type == None or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
                     self._attrdefinitions[definition['Name']] = definition
+                    
+                    # for the scoring matrix, add default attribute definitions for the individual scoring fields
+                    # if explicit attributes have not been defined in the spreadsheet
+                    if definition['Control'] == 'Scoring_Matrix':
+                        map_values_str = definition['Map_Values']
+                        map_values = map_values_str.split(':')
+                        for map_value in map_values:
+                            label = map_value.split('=')[0]
+                            attr_name = definition['Name'] + '_' + label
+                            
+                            new_definition = definition.copy()
+                            new_definition['Name'] = attr_name
+                            new_definition['Order'] = ''
+                            new_definition['Control'] = 'None'
+                            new_definition['Options'] = ''
+                            new_definition['Weight'] = '0.0'
+                            new_definition['Map_Values'] = ''
+                            new_definition['Type'] = 'Integer'
+                            new_definition['Column_Order'] = str(extra_column_order)
+                            extra_column_order += 1
+
+                            extra_attrdefinitions[attr_name] = new_definition
+        
+        extra_column_order = float(len(self._attrdefinitions) + 1)            
+        for key, extra_attr in extra_attrdefinitions.iteritems():
+            if not self._attrdefinitions.has_key(key):
+                extra_attr['Column_Order'] = str(extra_column_order)
+                extra_column_order += 1
+                self._attrdefinitions[key] = extra_attr
+                
 
     # function will convert Excel spreadsheet files (xls or xlsx) to a csv file that can
     # then be parsed by this class
