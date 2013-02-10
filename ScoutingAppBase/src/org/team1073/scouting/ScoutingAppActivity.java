@@ -31,9 +31,7 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 
 /* Following is how to send an email to a list of addresses from the tablet application       		
-String emailList[] = { "kensthilaire@gmail.com", "6033208262@vtext.com",
-					   "libramen@charter.net", "6032047335@email.uscc.net",
-					   "dstanizzi@gmail.com" };
+String emailList[] = { "foo@email.com", "6031234567@vtext.com" };
 String emailSubject = "Hello from Saggy the tablet!";
 String emailText = "This is a test message, sending an email to a distribution list from a tablet application.";
 
