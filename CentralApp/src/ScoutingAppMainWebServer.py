@@ -7,6 +7,8 @@ Created on Dec 19, 2011
 
 import os
 import web
+import sys
+import traceback
 
 import logging
 import logging.config
@@ -207,5 +209,17 @@ if __name__ == "__main__":
 
     WebGenExtJsStoreFiles.gen_js_store_files(attr_definitions)
     
-    webserver_app.run()
+    try:
+    	webserver_app.run()
 
+    except Exception, e:
+        global_config['logger'].debug('Exception Caught Processing Request: %s' % str(e) )
+        traceback.print_exc(file=sys.stdout)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+        for line in exception_info:
+            line = line.replace('\n','')
+            global_config['logger'].debug(line)
+
+        print 'Program terminated, press <CTRL-C> to exit'
+        data = sys.stdin.readlines()
