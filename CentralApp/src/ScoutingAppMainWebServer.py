@@ -50,7 +50,8 @@ urls = (
 logging.config.fileConfig('config/logging.conf')
 logger = logging.getLogger('scouting.webapp')
 
-global_config = {'this_competition':None, 
+global_config = {'my_team': '1074',
+                 'this_competition':None, 
                  'other_competitions':None, 
                  'db_name': 'scouting2013',
                  'team_list':None,
