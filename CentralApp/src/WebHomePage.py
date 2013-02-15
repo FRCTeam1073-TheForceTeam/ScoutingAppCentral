@@ -16,7 +16,10 @@ def get_page(global_config):
     page += '<html>'
     page += '<head>'
     page += '<body>'
-    page += '<h2> Team 1073 Scouting Application Home Page' + '</h3>'
+    if global_config.has_key('my_team'):
+        page += '<h2> Team ' + global_config['my_team'] + ' Scouting Application Home Page' + '</h3>'
+    else:
+        page += '<h2> Team 1073 Scouting Application Home Page' + '</h3>'
     page += '<hr>'
     page += '<br>'
     page += '<a href="/issues"> IssueTracker</a></td>'

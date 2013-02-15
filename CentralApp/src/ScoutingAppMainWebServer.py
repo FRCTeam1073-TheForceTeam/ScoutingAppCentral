@@ -7,6 +7,7 @@ Created on Dec 19, 2011
 
 import os
 import web
+import sys
 
 import logging
 import logging.config
@@ -24,6 +25,7 @@ import WebUiGen
 import WebSetConfig
 import WebLogin
 import WebIssueTracker
+import WebUsers
 
 render = web.template.render('templates/')
 
@@ -41,7 +43,8 @@ urls = (
     '/config',              'SetConfig',
     '/newissue',            'NewIssue',
     '/issue/(.*)',          'Issue',
-    '/issues',              'IssuesHomePage'
+    '/issues',              'IssuesHomePage',
+    '/users',               'Users'
 )
 
 
@@ -178,7 +181,17 @@ class IssuesHomePage(object):
     def GET(self):
         return WebIssueTracker.get_issues_home_page(global_config)
 
-
+class Users(object):
+    def GET(self):
+        return WebUsers.get_user_list_page(global_config)
+    
+'''    
+class UsersUpdate(object):
+    def GET(self):
+            
+    def POST(self):
+'''
+   
 if __name__ == "__main__":
 
     # command line options handling
@@ -187,6 +200,9 @@ if __name__ == "__main__":
     parser.add_option(
         "-t","--test",action="store_true",dest="test",default=False,
         help="Processed test toggle")
+    parser.add_option(    
+        "-u","--users",dest="users_file",default='',
+        help="List of Users to use for issue tracking")
    
     # Parse the command line arguments
     (options,args) = parser.parse_args()
@@ -199,12 +215,22 @@ if __name__ == "__main__":
     my_db = create_engine(db_connect)
     if not os.path.exists('./' + db_name):    
         IssueTrackerDataModel.create_db_tables(my_db)
+        IssueTrackerDataModel.create_admin_user(db_name, 'squirrel!')
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
 
+    if options.users_file != '':
+        users_file = './config/' + options.users_file
+        logger.debug('Loading Users from file: %s' % users_file)
+        IssueTrackerDataModel.add_users_from_file(db_name, users_file)
+
+    print 'Sys Args: %s' % sys.argv
+    sys.argv[1:] = args
+    
+    
     WebGenExtJsStoreFiles.gen_js_store_files(attr_definitions)
     
     webserver_app.run()

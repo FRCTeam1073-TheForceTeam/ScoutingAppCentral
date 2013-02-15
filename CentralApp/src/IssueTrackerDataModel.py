@@ -14,7 +14,7 @@ from optparse import OptionParser
 
 import time
 
-
+import UserDefinitions
 
 class Base(object):
     '''
@@ -110,6 +110,8 @@ class User(Base):
     display_name    = Column(String(64))
     role            = Column(String(32))
     contact_mode    = Column(String(32))
+    altname         = Column(String(32))
+    access_level    = Column(Integer)
     
 class TaskgroupMember(Base):
     __tablename__ = "taskgroups"
@@ -297,7 +299,8 @@ def addIssueFromAttributes(session, issue_attributes):
 '''
     
 def addOrUpdateUser(session, username, email_address, cellphone, carrier, 
-                    subgroup, password, display_name, role, contact_mode):
+                    subgroup, password, display_name, role, contact_mode, 
+                    altname, access_level):
 
     userList = session.query(User).filter(User.username==username)
     
@@ -314,10 +317,13 @@ def addOrUpdateUser(session, username, email_address, cellphone, carrier,
         user.subgroup = subgroup
         user.role = role
         user.carrier = carrier
+        user.altname = altname
+        user.access_level = access_level
     else:
         user = User(username=username, email_address=email_address, cellphone=cellphone,
                     password=password, display_name=display_name, contact_mode=contact_mode,
-                    subgroup=subgroup,role=role,carrier=carrier)
+                    subgroup=subgroup,role=role,carrier=carrier, altname=altname,
+                    access_level=access_level)
         session.add(user)
     print user.json()
 
@@ -341,12 +347,15 @@ def addUserFromAttributes(session, user_attributes):
         subgroup = user_attributes['Subgroup']
         role = user_attributes['Role']
         carrier = user_attributes['Carrier']
+        altname = user_attributes['Alt_Name']
+        access_level = 5
         
     except KeyError:
         raise Exception( 'Incomplete User Record' )
     
     addOrUpdateUser(session, username, email_address, cellphone, carrier, 
-                    subgroup, password, display_name, role, contact_mode)
+                    subgroup, password, display_name, role, contact_mode, altname,
+                    access_level)
     
     taskgroups = user_attributes['Taskgroups'].split(',')
     for group in taskgroups:
@@ -376,13 +385,19 @@ def getTaskgroupMembers(session, taskgroup):
     return members
             
 def getUserList(session):
+    users = session.query(User).all()
+    users.sort()
+    return users
+
+def getUsernameList(session):
     users = []
     results = session.query(User.username).all()
     
     for result in results:
         users.append(str(result[0]))
         
-    return users.sort()
+    users.sort()
+    return users
     
 def getDisplayNameList(session):
     users = []
@@ -391,7 +406,8 @@ def getDisplayNameList(session):
     for result in results:
         users.append(str(result[0]))
         
-    return users.sort()
+    users.sort()
+    return users
     
 def getIssueId(session, issue_type):
 
@@ -450,7 +466,35 @@ def dump_db_tables(my_db):
     meta.reflect()
     meta.drop_all()
 
+def add_users_from_file( db_name, input_path):
+    user_definitions = UserDefinitions.UserDefinitions()
+    user_definitions.parse(input_path)
+        
+    db_connect='sqlite:///%s'%(db_name)
+    my_db = create_engine(db_connect)
+    Session = sessionmaker(bind=my_db)
+    session = Session()
 
+    users = user_definitions.get_definitions()
+    for user, definition in users.iteritems():
+        print 'Adding/Updating User %s' % user
+        addUserFromAttributes(session, definition)
+    
+    session.commit()
+    
+def create_admin_user( db_name, pw):
+    db_connect='sqlite:///%s'%(db_name)
+    my_db = create_engine(db_connect)
+    Session = sessionmaker(bind=my_db)
+    session = Session()
+
+    addOrUpdateUser(session, 'admin', 'none', 'none', 'none', 
+                    'none', pw, 'Administrator', 'Admin', 'none', 
+                    'none', 0)
+    session.commit()
+    
+    
+    
 if __name__ == '__main__':
 
     parser = OptionParser()
