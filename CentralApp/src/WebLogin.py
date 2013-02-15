@@ -9,8 +9,8 @@ import base64
 import web
 
 allowed = (
-    ('jon','pass1'),
-    ('tom','pass2')
+    ('user','dean'),
+    ('user2','woodie')
 )
 
     
