@@ -41,8 +41,27 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	}
     protected Integer doInBackground(String... paths) {
     	
+    	connectionEstablished = false;
+   	
+    	Integer retries = 0;
+
     	// establish a connection to an available bluetooth server
-    	if ( (connectionEstablished = connectToBluetoothServer()) == true ) {
+    	while (connectionEstablished != true && retries < 10 ){
+    		connectionEstablished = connectToBluetoothServer();
+    		if ( connectionEstablished != true ) {
+	    		retries++;
+                publishProgress( "Retrying Connection" );
+	    		try {
+	    			Thread.sleep(1000);
+	    		}
+	    		catch ( InterruptedException e ) {
+	                publishProgress( "Sync Retry Delay Interrupted" );
+	    		}
+    		}
+    	}
+
+//    	connectionEstablished = connectToBluetoothServer();
+    	if ( connectionEstablished == true ) {
     		
     		// loop through the paths that have been passed in and sync the
     		// directory with the server over a bluetooth connection
