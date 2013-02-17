@@ -89,6 +89,7 @@ class RadioButtonUiGenControl( UiGenControl ):
             java_str += '        NAMERadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {\n\n'
             java_str += '            @Override\n'
             java_str += '            public void onCheckedChanged(RadioGroup group, int checkedId) {\n'
+            java_str += "                unsavedChanges = true;\n"
             java_str += '                if ( checkedId == R.id.NAMEClearRadioButton ) {\n'
             java_str += '                    group.clearCheck();\n'
             java_str += '                }\n'

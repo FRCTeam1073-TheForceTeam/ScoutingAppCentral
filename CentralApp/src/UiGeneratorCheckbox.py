@@ -33,6 +33,7 @@ class CheckboxUiGenControl( UiGenControl ):
             xml_str += "            android:layout_height=\"wrap_content\"\n"
             xml_str += "            android:layout_toRightOf=\"@+id/" + field_to_left + "\"\n"
             xml_str += "            android:layout_alignTop=\"@+id/"  + field_to_left + "\"\n"
+            xml_str += "            android:onClick=\"onCheckboxClicked\"\n"
             xml_str += "            android:text=\"BUTTON\" />\n"
             xml_str += "\n"
             name, token_val = token.split('=')
