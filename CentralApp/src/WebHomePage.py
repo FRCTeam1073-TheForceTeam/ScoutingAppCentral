@@ -46,13 +46,14 @@ def get_page(global_config):
     page += '<ul>'
     
     team_list_str = global_config['team_list']
-    if team_list_str.count(',') > 0:
-        team_list = team_list_str.split(',')
-        #team_list.sort()
-        for team in team_list:
-            page += '<li><a href="/teamdata/' + team + '">' + 'Team ' + team + '</a></li>'
-    elif team_list_str != None:
-        page += '<li><a href="/teamdata/' + team_list_str + '">' + 'Team ' + team_list_str + '</a></li>'
+    if team_list_str != None:
+        if team_list_str.count(',') > 0:
+            team_list = team_list_str.split(',')
+            #team_list.sort()
+            for team in team_list:
+                page += '<li><a href="/teamdata/' + team + '">' + 'Team ' + team + '</a></li>'
+        else:
+            page += '<li><a href="/teamdata/' + team_list_str + '">' + 'Team ' + team_list_str + '</a></li>'
     else:
         team_list = DataModel.getTeamsInNumericOrder(session, comp)
         for entry in team_list:

@@ -389,6 +389,10 @@ def getUserList(session):
     users.sort()
     return users
 
+def getUser(session, username):
+    userList = session.query(User).filter(User.username==username)
+    return userList.first()
+
 def getUsernameList(session):
     users = []
     results = session.query(User.username).all()

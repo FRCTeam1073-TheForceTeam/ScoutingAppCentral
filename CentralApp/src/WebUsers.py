@@ -5,183 +5,94 @@ Created on Feb 14, 2013
 '''
 
 from web import form
-import time
 
 import DbSession
 import IssueTrackerDataModel
 
-'''
-# Form definition and callback class for the issue get and post operations
-issue_platforms = ['', 'Robot', 'Tablet']
-issue_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business', 'Unassigned']
-issue_components = ['','Drivetrain', 'Shooter', 'Collector', 'Climber', 'Strategy', 'Business', 'Unassigned']
-issue_statuses = ['','Open', 'Closed', 'Working', 'Resolved']
-issue_priorities = ['Low', 'High', 'Critical', 'Blocking']
-issue_owners = ['','Michael Ross', 'Aaron Pepin', 'Sarah Drazin', 'Unassigned']
+user_roles = [ 'Mentor', 'Student', 'Guest' ]
+user_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business']
+user_contact_modes = ['Text', 'Email']
+user_carriers = ['AT&T', 'Verizon', 'USCellular', 'Sprint', 'Other', 'None']
 
-issue_id_label = 'Id:'
-issue_summary_label ='Summary:'
-issue_platform_label ='Platform:'
-issue_status_label ='Status:'
-issue_priority_label = 'Priority:'
-issue_subgroup_label = 'Subgroup:'
-issue_component_label = 'Component:'
-issue_owner_label = 'Owner:'
-issue_submitter_label = 'Submitter:'
-issue_description_label = 'Description:'
-issue_comment_label = 'Comment:'
+user_username_label ='Username:'
+user_emailaddress_label ='Email_Address:'
+user_display_name_label ='Display_Name:'
+user_nickname_label ='Nickname:'
+user_role_label = 'Role:'
+user_subgroup_label = 'Subgroup:'
+user_contact_mode_label = 'Contact_Mode:'
+user_cellphone_label = 'Cellphone:'
+user_carrier_label = 'Carrier:'
+user_password_label = 'Password:'
+user_password_confirm_label = 'Confirm:'
 
-issueform = form.Form( 
-    form.Textbox(issue_id_label, size=20),
-    form.Dropdown(issue_platform_label, issue_platforms),
-    form.Textbox(issue_summary_label, size=60),
-    form.Dropdown(issue_status_label, issue_statuses),
-    form.Dropdown(issue_priority_label, issue_priorities),
-    form.Dropdown(issue_subgroup_label, issue_subgroups),
-    form.Dropdown(issue_component_label, issue_components),
-    form.Dropdown(issue_owner_label, issue_owners),
-    form.Dropdown(issue_submitter_label, issue_owners),
-    form.Textarea(issue_description_label, size=1024),
-    form.Textarea(issue_comment_label, size=256))
+userform = form.Form( 
+    form.Textbox(user_username_label, size=30),
+    form.Password(user_password_label, size=30),
+    form.Password(user_password_confirm_label, size=30),
+    form.Textbox(user_emailaddress_label, size=30),
+    form.Textbox(user_display_name_label, size=30),
+    form.Textbox(user_nickname_label, size=30),
+    form.Dropdown(user_role_label, user_roles),
+    form.Dropdown(user_subgroup_label, user_subgroups),
+    form.Dropdown(user_contact_mode_label, user_contact_modes),
+    form.Textbox(user_cellphone_label, size=30),
+    form.Dropdown(user_carrier_label, user_carriers))
 
-new_issueform = form.Form(                        
-    form.Dropdown(issue_platform_label, issue_platforms),
-    form.Textbox(issue_summary_label, size=60),
-    form.Dropdown(issue_status_label, issue_statuses),
-    form.Dropdown(issue_priority_label, issue_priorities),
-    form.Dropdown(issue_subgroup_label, issue_subgroups),
-    form.Dropdown(issue_component_label, issue_components),
-    form.Dropdown(issue_owner_label, issue_owners),
-    form.Dropdown(issue_submitter_label, issue_owners),
-    form.Textarea(issue_description_label, size=1024),
-    form.Textarea(issue_comment_label, size=256))
-
-def get_new_issue_form(global_config):
-    global_config['logger'].debug( 'GET New Issue Form' )
-        
-    form = new_issueform()
-    return form
-
-def process_new_issue_form(global_config, form):
-    global_config['logger'].debug( 'Process New Issue Form' )
-    
-    session = DbSession.open_db_session(global_config['issues_db_name'])
-                    
-    # TODO: need to come up with a way to generate the next available issue number
-    platform = form[issue_platform_label].value
-    issue_id = IssueTrackerDataModel.getIssueId(session, platform)
-    
-    summary = form[issue_summary_label].value
-    status = form[issue_status_label].value
-    priority = form[issue_priority_label].value
-    subgroup = form[issue_subgroup_label].value
-    owner = form[issue_owner_label].value
-    submitter = form[issue_submitter_label].value
-    component = form[issue_component_label].value
-    description = form[issue_description_label].value
-    comment = form[issue_comment_label].value
-    timestamp = str(int(time.time()))
-    
-    issue_string =  'Id:' + issue_id + '\n'
-    issue_string += 'Timestamp:%s\n' % timestamp 
-    issue_string += issue_platform_label + platform + '\n'
-    issue_string += issue_summary_label + summary + '\n'
-    issue_string += issue_status_label + status + '\n'
-    issue_string += issue_priority_label + priority + '\n'
-    issue_string += issue_subgroup_label + subgroup + '\n'
-    issue_string += issue_component_label + component + '\n'
-    issue_string += issue_owner_label + owner + '\n'
-    issue_string += issue_submitter_label + submitter + '\n'
-    issue_string += issue_description_label + description + '\n'
-    issue_string += issue_comment_label + comment + '\n'
-    
-    filename = './static/Issues/Web_%s.txt' % issue_id
-    fd = open(filename, 'w')
-    fd.write(issue_string)
-    fd.close()
-    
-    #TODO: Add component to the data model
-    IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, 
-                                           status, priority, subgroup, 
-                                           component, submitter, owner, 
-                                           description)
-    IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
-                                                  submitter, timestamp,
-                                                  comment)
-    session.commit()
-    
-    return issue_string            
-
-def get_issue_form(global_config, issue_id):
-    global_config['logger'].debug( 'GET Issue Form, Issue: %s', issue_id )
+def get_user_form(global_config, username):
+    global_config['logger'].debug( 'GET User Form For: %s', username )
         
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
-    issue_id = issue_id
-    platform = issue_id.split('-')[0]
-    issue = IssueTrackerDataModel.getIssue(session, issue_id)
+    user = IssueTrackerDataModel.getUser(session, username)
     
-    form = issueform()
-    form[issue_id_label].value = issue_id
-    form[issue_platform_label].value = platform
-    form[issue_summary_label].value = issue.summary
-    form[issue_status_label].value = issue.status
-    form[issue_priority_label].value = issue.priority
-    form[issue_subgroup_label].value = issue.subgroup
-    form[issue_owner_label].value = issue.owner
-    form[issue_submitter_label].value = issue.submitter
-    form[issue_component_label].value = issue.component
-    form[issue_description_label].value = issue.description
+    form = userform()
+    form[user_username_label].value = user.username
+    form[user_emailaddress_label].value = user.email_address
+    form[user_cellphone_label].value = user.cellphone
+    form[user_carrier_label].value = user.carrier
+    form[user_subgroup_label].value = user.subgroup
+    form[user_password_label].value = user.password
+    form[user_display_name_label].value = user.display_name
+    form[user_role_label].value = user.role
+    form[user_contact_mode_label].value = user.contact_mode
+    form[user_nickname_label].value = user.altname
 
     return form
 
-def process_issue_form(global_config, form, issue_id):
-    global_config['logger'].debug( 'Process Issue Form Issue: %s', issue_id )
+def process_user_form(global_config, form, username):
+    global_config['logger'].debug( 'Process User Profile For: %s', username )
     
     session = DbSession.open_db_session(global_config['issues_db_name'])
                     
-    platform = issue_id.split('-')[0]
-    summary = form[issue_summary_label].value
-    status = form[issue_status_label].value
-    priority = form[issue_priority_label].value
-    subgroup = form[issue_subgroup_label].value
-    owner = form[issue_owner_label].value
-    submitter = form[issue_submitter_label].value
-    component = form[issue_component_label].value
-    description = form[issue_description_label].value
-    comment = form[issue_comment_label].value
-    timestamp = str(int(time.time()))
+    email_address = form[user_emailaddress_label].value
+    cellphone = form[user_cellphone_label].value
+    carrier = form[user_carrier_label].value
+    subgroup = form[user_subgroup_label].value
+    if form[user_password_label].value != form[user_password_confirm_label].value:
+        raise Exception('Passwords Do NOT Match')
+
+    password = form[user_password_label].value
+    display_name = form[user_display_name_label].value
+    role = form[user_role_label].value
+    contact_mode = form[user_contact_mode_label].value
+    nickname = form[user_nickname_label].value
+    if role == 'Mentor':
+        access_level = 3
+    elif role == 'Student':
+        access_level = 5
+    elif role == 'Guest':
+        access_level = 10
+                
+    IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
+                                          cellphone, carrier, subgroup, password, 
+                                          display_name, role, contact_mode, nickname,
+                                          access_level)
     
-    issue_string =  'Id:' + issue_id + '\n'
-    issue_string += 'Timestamp:%s\n' % timestamp 
-    issue_string += issue_platform_label + platform + '\n'
-    issue_string += issue_summary_label + summary + '\n'
-    issue_string += issue_status_label + status + '\n'
-    issue_string += issue_priority_label + priority + '\n'
-    issue_string += issue_subgroup_label + subgroup + '\n'
-    issue_string += issue_component_label + component + '\n'
-    issue_string += issue_owner_label + owner + '\n'
-    issue_string += issue_submitter_label + submitter + '\n'
-    issue_string += issue_description_label + description + '\n'
-    issue_string += issue_comment_label + comment + '\n'
-    
-    filename = './static/Issues/Web_%s.txt' % issue_id
-    fd = open(filename, 'w')
-    fd.write(issue_string)
-    fd.close()
-    
-    #TODO: Add platform to the data model
-    IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, 
-                                           status, priority, subgroup, 
-                                           component, submitter, owner, 
-                                           description)
-    IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
-                                                  submitter, timestamp,
-                                                  comment)
     session.commit()
     
-    return issue_string            
-'''
+    return 'User Profile Updated Successfully For: %s' % username            
+
 
 def insert_users_table(user_list):
         

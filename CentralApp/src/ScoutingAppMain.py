@@ -237,6 +237,8 @@ def process_files(session, db_name, attr_definitions, input_dir, recursive, test
             if competition == None:
                 raise Exception( 'Competition Not Specified!')
     
+        DataModel.addTeamToEvent(session, team, competition)
+        
         # Loop through the attributes from the data file and post them to the
         # database
         for attribute, value in file_attributes.iteritems():

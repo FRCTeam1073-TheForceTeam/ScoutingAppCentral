@@ -45,6 +45,7 @@ urls = (
     '/newissue',            'NewIssue',
     '/issue/(.*)',          'Issue',
     '/issues',              'IssuesHomePage',
+    '/user/(.*)',           'User',
     '/users',               'Users'
 )
 
@@ -187,6 +188,22 @@ class Users(object):
     def GET(self):
         return WebUsers.get_user_list_page(global_config)
     
+class User(object):
+    
+    def GET(self, username):
+        form = WebUsers.get_user_form(global_config, username)
+        return render.user_form(form)
+
+    def POST(self, username):
+        form = WebUsers.get_user_form(global_config, username)
+        if not form.validates(): 
+            return render.user_form_done(form)
+        else:
+            try:
+                return WebUsers.process_user_form(global_config, form, username)
+            except Exception, e:
+                return str(e)
+
 '''    
 class UsersUpdate(object):
     def GET(self):
@@ -236,7 +253,7 @@ if __name__ == "__main__":
     WebGenExtJsStoreFiles.gen_js_store_files(attr_definitions)
     
     try:
-    	webserver_app.run()
+        webserver_app.run()
 
     except Exception, e:
         global_config['logger'].debug('Exception Caught Processing Request: %s' % str(e) )

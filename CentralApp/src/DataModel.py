@@ -12,6 +12,9 @@ from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
+import urllib2
+import json
+
 import AttributeDefinitions
 
 
@@ -93,6 +96,23 @@ class TeamAttribute(Base):
     avg_value        = Column(Float)
     all_values       = Column(String(512))
     
+class TeamInfo(Base):
+    __tablename__ = 'info'
+    
+    team            = Column(Integer)
+    nickname        = Column(String(64))
+    fullname        = Column(String(256))
+    rookie_season   = Column(Integer)
+    website         = Column(String(64))
+    motto           = Column(String(128))
+    location        = Column(String(64))
+
+class EventTeamList(Base):
+    __tablename__ = 'eventteams'
+    
+    event           = Column(String(32))
+    team            = Column(Integer)
+                             
 class ProcessedFiles(Base):
     __tablename__ = "processed_files"
 
@@ -266,7 +286,87 @@ def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
                                  avg_value=attr_value, all_values=value)
             session.add(attr)
             print attr.json()
+
+def addOrUpdateTeamInfo(session, team, nickname, fullname, rookie_season, 
+                        motto, location, website):
+    
+    team_list = session.query(TeamInfo).filter(TeamInfo.team==team)
+    
+    # should only be one team in the list
+    team = team_list.first()
+    if team:
+        # team exists, so update it
+        team.nickname = nickname
+        team.fullname = fullname
+        team.rookie_season = rookie_season
+        team.motto = motto
+        team.location = location
+        team.website = website
+    else:
+        team = TeamInfo(team=team, nickname=nickname, fullname=fullname,
+                        rookie_season=rookie_season, motto=motto,
+                        location=location, website=website)
+        session.add(team)
+    session.commit()
+    return team
         
+def getTeamInfo(session, team):
+    team_list = session.query(TeamInfo).filter(TeamInfo.team==team)
+    
+    # should only be one team in the list
+    team_info = team_list.first()
+    if not team_info:
+        url_str = 'http://thefirstalliance.org/api/api.json.php?action=team-details&team-number=%s' % team
+        team_data = urllib2.urlopen(url_str).read()
+        team_data_dict = json.loads(team_data)
+        team_data = team_data_dict['data']['data']
+
+        if team_data.has_key('Team Nickname'):
+            nickname=team_data['Team Nickname']
+        else:
+            nickname='None'
+        if team_data.has_key('Team Name'):
+            fullname=team_data['Team Name']
+        else:
+            fullname='None'
+        if team_data.has_key('Rookie Season'):
+            rookie_season=int(team_data['Rookie Season'])
+        else:
+            rookie_season=2013
+        if team_data.has_key('Team Location'):
+            location=team_data['Team Location']
+        else:
+            location='Unknown'
+        if team_data.has_key('Team Motto'):
+            motto=team_data['Team Motto']
+        else:
+            motto='None'
+        if team_data.has_key('Team Website'):
+            website=team_data['Team Website']
+        else:
+            website='None'
+            
+        team_info = addOrUpdateTeamInfo(session, team, 
+                            nickname, fullname, rookie_season,
+                            motto, location, website)
+    return team_info
+
+def addTeamToEvent(session, event, team, commit=False):
+    entry_list = session.query(EventTeamList).filter(EventTeamList.event==event).\
+                                              filter(EventTeamList.team==team)
+    team_entry = entry_list.first()
+    if not team_entry:
+        entry = EventTeamList(event=event, team=team)
+        session.add(entry)
+        if commit == True:
+            session.commit()
+    return entry
+        
+def getTeamList(session, event):
+    team_list = session.query(EventTeamList).filter(EventTeamList.event==event).all()
+    team_list.sort()
+    return team_list
+            
 def convertValues(attr_type, value, attribute_def):
     if attr_type == 'Float':
         attr_value = float(value)

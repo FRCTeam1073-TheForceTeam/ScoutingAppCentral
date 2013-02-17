@@ -47,7 +47,6 @@ def get_datafiles(input_dir, pattern, recursive,logger):
 def get_team_datafiles_page(global_config, name):
     
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
-    
     session = DbSession.open_db_session(global_config['db_name'])
     
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
@@ -57,6 +56,15 @@ def get_team_datafiles_page(global_config, name):
     page += '<li><a href="/home">Home</a></li>'
     page += '<h2> Scouting Data File listing for Team ' + name + '</h2>'
     
+    team_info = DataModel.getTeamInfo(session, int(name))
+    if team_info:
+        page += '<li>Team Nickname: ' + team_info.nickname + '</li>'
+        page += '<li>Motto: ' + team_info.motto + '</li>'
+        page += '<li>Affiliation: ' + team_info.fullname + '</li>'
+        page += '<li>Location: ' + team_info.location + '</li>'
+        page += '<li>Rookie Season: ' + str(team_info.rookie_season) + '</li>'
+        page += '<li>Website: <a href="' + team_info.website + '">' + team_info.website + '</a></li>'
+            
     competitions = []
     this_comp = global_config['this_competition']
     competitions.append(this_comp)
