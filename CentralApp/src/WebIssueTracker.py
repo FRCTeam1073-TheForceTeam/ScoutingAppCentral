@@ -237,3 +237,4 @@ def get_issues_home_page(global_config):
     result += '</body>'
     result += '</html>'
     return result
+

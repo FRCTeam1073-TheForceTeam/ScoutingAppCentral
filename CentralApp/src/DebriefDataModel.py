@@ -5,14 +5,11 @@ Created on Feb 03, 2013
 @author: ksthilaire
 '''
 
-import datetime
 from sqlalchemy import create_engine
 from sqlalchemy import schema
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
-
-import time
 
 
 
@@ -83,10 +80,8 @@ class DebriefIssue(Base):
     
     match_id         = Column(Integer)
     competition      = Column(String(32))
-    issue_index      = Column(Integer)
+    issue_id         = Column(String(32))
     priority         = Column(String(32))
-    taskgroup        = Column(String(32))
-    component        = Column(String(32))
        
 class DebriefComment(Base):
     __tablename__ = "debrief_comments"
@@ -157,6 +152,26 @@ def addOrUpdateDebrief(session, match_id, competition, summary, description):
                           summary=summary, description=description)
         session.add(debrief)
     print debrief.json()
+
+def addOrUpdateDebriefIssue(session, match_id, competition, issue_id, priority): 
+
+    issueList = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).\
+                                            filter(DebriefIssue.competition==competition).\
+                                            filter(DebriefIssue.priority==priority)
+    issue = issueList.first()
+    if issue:
+        # debrief exists, so update it
+        issue.match_id = match_id
+        issue.competition = competition
+        issue.issue_id = issue_id
+        issue.priority = priority
+    else:
+        issue = DebriefIssue(match_id=match_id, competition=competition, priority=priority,
+                             issue_id=issue_id)
+        session.add(issue)
+        
+    print issue.json()
+
 
 '''
 def addDebriefComment(session, match_id, competition, tag, data):

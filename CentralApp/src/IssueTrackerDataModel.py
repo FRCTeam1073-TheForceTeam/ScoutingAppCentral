@@ -15,6 +15,7 @@ from optparse import OptionParser
 import time
 
 import UserDefinitions
+import DbSession
 
 class Base(object):
     '''
@@ -289,14 +290,8 @@ def addIssueFromAttributes(session, issue_attributes):
     
     session.commit()
 
-'''    
-        if carrier == 'Verizon':
-            user.textmsg_address = cellphone + '@vtext.com'
-        elif carrier == 'ATT':
-            user.textmsg_address = cellphone + '@txt.att.net'
-        elif carrier == 'USCell':
-            user.textmsg_address = cellphone + '@email.uscc.net'
-'''
+
+
     
 def addOrUpdateUser(session, username, email_address, cellphone, carrier, 
                     subgroup, password, display_name, role, contact_mode, 
@@ -368,14 +363,16 @@ def getTaskgroupList(session):
     results = session.query(TaskgroupMember.taskgroup).distinct().all()
     for result in results:
         taskgroups.append(str(result[0]))
-    return taskgroups.sort()
+    taskgroups.sort()
+    return taskgroups
 
 def getSubgroupList(session):
     subgroups = []
     results = session.query(User.subgroup).distinct().all()
     for result in results:
         subgroups.append(str(result[0]))
-    return subgroups.sort()
+    subgroups.sort()
+    return subgroups
 
 def getTaskgroupMembers(session, taskgroup):
     members = []
@@ -383,7 +380,52 @@ def getTaskgroupMembers(session, taskgroup):
     for result in results:
         members.append(str(result.username))
     return members
+
+def getEmailAddrFromCarrier(cellphone, carrier):
+    email_addr = cellphone
+    
+    if carrier == 'Verizon':
+        email_addr += '@vtext.com'
+    elif carrier == 'ATT':
+        email_addr += '@txt.att.net'
+    elif carrier == 'USCell':
+        email_addr += '@email.uscc.net'
+    else:
+        email_addr = None
+    
+    return email_addr
+
+def getTaskgroupEmailList(session, taskgroup):
+    email_list_str = '%s_email_list=' % taskgroup
+    results = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).all()
+    for result in results:
+        user = getUser(session, result.username)
+        if user:
+            if user.contact_mode == 'Email':
+                contact = user.email_address
+            elif user.contact_mode == 'Text':
+                contact = getEmailAddrFromCarrier(user.cellphone, user.carrier)
+            else:
+                contact = None
+        if contact != None:
+            email_list_str += '%s;' % contact
             
+    email_list_str = email_list_str.rstrip(';')    
+    return email_list_str
+            
+def getTaskgroupEmailLists(global_config, name):
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+    email_list_str = ''
+    
+    if name == 'all':
+        taskgroups = getTaskgroupList(session)
+        for taskgroup in taskgroups:
+            email_list_str += getTaskgroupEmailList(session, taskgroup) + '\n'
+    else:
+        email_list_str += getTaskgroupEmailList(session, name) + '\n'
+        
+    return email_list_str
+
 def getUserList(session):
     users = session.query(User).all()
     users.sort()

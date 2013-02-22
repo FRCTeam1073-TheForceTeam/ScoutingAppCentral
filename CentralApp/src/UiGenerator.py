@@ -10,6 +10,8 @@ from UiGeneratorCheckbox import CheckboxUiGenControl
 from UiGeneratorRadioButton import RadioButtonUiGenControl
 from UiGeneratorTextfield import TextFieldUiGenControl
 from UiGeneratorScoringMatrix import ScoringMatrixUiGenControl 
+from UiGeneratorSeparator import LineSeparatorUiGenControl 
+from UiGeneratorButton import ButtonUiGenControl 
 
 def gen_java_reload_handlers_termstr():
     java_str = "                }\n"
@@ -68,6 +70,10 @@ def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
                 ctrl_gen = CheckboxUiGenControl(item)
             elif item['Control'] == 'Scoring_Matrix':
                 ctrl_gen = ScoringMatrixUiGenControl(item)
+            elif item['Control'] == 'Line_Separator':
+                ctrl_gen = LineSeparatorUiGenControl(item)
+            elif item['Control'] == 'Button':
+                ctrl_gen = ButtonUiGenControl(item)
 
             xml_string += ctrl_gen.gen_xml_string(above_name)
             xml_string = xml_string.replace('ABOVELabel', above_name)

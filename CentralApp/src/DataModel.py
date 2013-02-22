@@ -191,14 +191,15 @@ def calculateTeamScore(session, teamId, comp, attr_defs):
     total = 0.0
     for item in attributes:
         item_def = attr_defs.get_definition(item.attr_name)
-        weight = item_def['Weight']
-        if not weight:
-            weight = '0.0'
-        # only include attributes with statistics types other than 'None'
-        if item_def['Statistic_Type'] == 'Average':
-            total += float(weight)*item.avg_value
-        elif item_def['Statistic_Type'] == 'Total':
-            total += float(weight)*item.cumulative_value
+        if item_def:
+            weight = item_def['Weight']
+            if not weight:
+                weight = '0.0'
+            # only include attributes with statistics types other than 'None'
+            if item_def['Statistic_Type'] == 'Average':
+                total += float(weight)*item.avg_value
+            elif item_def['Statistic_Type'] == 'Total':
+                total += float(weight)*item.cumulative_value
 
     return total
     
@@ -317,38 +318,42 @@ def getTeamInfo(session, team):
     team_info = team_list.first()
     if not team_info:
         url_str = 'http://thefirstalliance.org/api/api.json.php?action=team-details&team-number=%s' % team
-        team_data = urllib2.urlopen(url_str).read()
-        team_data_dict = json.loads(team_data)
-        team_data = team_data_dict['data']['data']
-
-        if team_data.has_key('Team Nickname'):
-            nickname=team_data['Team Nickname']
-        else:
-            nickname='None'
-        if team_data.has_key('Team Name'):
-            fullname=team_data['Team Name']
-        else:
-            fullname='None'
-        if team_data.has_key('Rookie Season'):
-            rookie_season=int(team_data['Rookie Season'])
-        else:
-            rookie_season=2013
-        if team_data.has_key('Team Location'):
-            location=team_data['Team Location']
-        else:
-            location='Unknown'
-        if team_data.has_key('Team Motto'):
-            motto=team_data['Team Motto']
-        else:
-            motto='None'
-        if team_data.has_key('Team Website'):
-            website=team_data['Team Website']
-        else:
-            website='None'
+        try:
+            team_data = urllib2.urlopen(url_str).read()
+            team_data_dict = json.loads(team_data)
+            team_data = team_data_dict['data']['data']
+    
+            if team_data.has_key('Team Nickname'):
+                nickname=team_data['Team Nickname']
+            else:
+                nickname='None'
+            if team_data.has_key('Team Name'):
+                fullname=team_data['Team Name']
+            else:
+                fullname='None'
+            if team_data.has_key('Rookie Season'):
+                rookie_season=int(team_data['Rookie Season'])
+            else:
+                rookie_season=2013
+            if team_data.has_key('Team Location'):
+                location=team_data['Team Location']
+            else:
+                location='Unknown'
+            if team_data.has_key('Team Motto'):
+                motto=team_data['Team Motto']
+            else:
+                motto='None'
+            if team_data.has_key('Team Website'):
+                website=team_data['Team Website']
+            else:
+                website='None'
+                
+            team_info = addOrUpdateTeamInfo(session, team, 
+                                nickname, fullname, rookie_season,
+                                motto, location, website)
+        except:
+            team_info = None
             
-        team_info = addOrUpdateTeamInfo(session, team, 
-                            nickname, fullname, rookie_season,
-                            motto, location, website)
     return team_info
 
 def addTeamToEvent(session, event, team, commit=False):

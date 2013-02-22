@@ -46,7 +46,8 @@ urls = (
     '/issue/(.*)',          'Issue',
     '/issues',              'IssuesHomePage',
     '/user/(.*)',           'User',
-    '/users',               'Users'
+    '/users',               'Users',
+    '/taskgroup_email/(.*)','TaskGroupEmail'
 )
 
 
@@ -204,6 +205,10 @@ class User(object):
             except Exception, e:
                 return str(e)
 
+class TaskGroupEmail(object):
+    def GET(self, name):
+        return IssueTrackerDataModel.getTaskgroupEmailLists(global_config, name)
+    
 '''    
 class UsersUpdate(object):
     def GET(self):

@@ -5,6 +5,8 @@ Created on Feb 4, 2012
 '''
 import os
 import re
+import traceback
+
 import DataModel
 import IssueTrackerDataModel
 import DebriefDataModel
@@ -24,6 +26,7 @@ global_config = { 'this_competition'   : None,
                   'other_competitions' : None, 
                   'db_name'            : 'scouting2013', 
                   'issues_db_name'     : 'issues2013',
+                  'debriefs_db_name'   : 'debriefs2013',
                   'attr_definitions'   : None,
                   'team_list'          : None}
 
@@ -104,6 +107,9 @@ def isFileProcessed(session, db_name, filepath):
         is_processed = DataModel.isFileProcessed(session, filepath)
     elif db_name == global_config['issues_db_name']:
         is_processed = IssueTrackerDataModel.isFileProcessed(session, filepath)
+    elif db_name == global_config['debriefs_db_name']:
+        is_processed = DebriefDataModel.isFileProcessed(session, filepath)
+        
     return is_processed
                                                  
 def get_files(session, db_name, input_dir, pattern, recursive, test_mode):    
@@ -246,15 +252,17 @@ def process_files(session, db_name, attr_definitions, input_dir, recursive, test
                 value = ''
             try:
                 attr_definition = attr_definitions.get_definition(attribute)
-                if attr_definition['Database_Store']=='Yes':
+                if attr_definition == None:
+                    err_str = 'ERROR: No Attribute Defined For Attribute: %s' % attribute
+                    print err_str
+                elif attr_definition['Database_Store']=='Yes':
                     try:
                         DataModel.createOrUpdateAttribute(session, team, competition, attribute, value, attr_definition)
                     except Exception, exception:
                         print str(exception)
-            except KeyError:
-                err_str = 'ERROR: No Attribute Defined For Attribute: %s' % attribute
+            except Exception:
+                err_str = 'ERROR: Attribute Could Not Be Processed: %s' % attribute
                 print err_str
-                # TODO: raise an exception to catch unknown attributes during testing
                 
         score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
         DataModel.setTeamScore(session, team, competition, score)
@@ -309,7 +317,7 @@ def process_debrief_files(db_name, input_dir, recursive, test):
         DebriefDataModel.create_db_tables(my_db)
 
     # The following regular expression will select all files that conform to 
-    # the file naming format Issue*.txt. Build a list of all datafiles that match
+    # the file naming format Debrief*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Debrief[a-zA-Z0-9_-]+.txt')
@@ -319,20 +327,75 @@ def process_debrief_files(db_name, input_dir, recursive, test):
     for data_filename in files:
         print 'processing %s'%data_filename
         
-        # Initialize the file_attributes dictionary in preparation for the
+        # Initialize the debrief_attributes dictionary in preparation for the
         # parsing of the data file
-        issue_attributes = {}
+        debrief_attributes = {}
         
-        # Parse the data file, storing all the information in the file_attributes
+        # Parse the data file, storing all the information in the attributes
         # dictionary
-        FileParser.FileParser(data_filename).parse(issue_attributes)
+        FileParser.FileParser(data_filename).parse(debrief_attributes)
         DebriefDataModel.addProcessedFile(session, data_filename)
+        DebriefDataModel.addDebriefFromAttributes(session, debrief_attributes)
+        
+        # Also, extract the competition name, too, if it has been included in
+        # the data file
+        if debrief_attributes.has_key('Competition'):
+            competition = debrief_attributes['Competition']
+        else:
+            competition = global_config['this_competition']
+            if competition == None:
+                raise Exception( 'Competition Not Specified!')
 
-        DebriefDataModel.addIssueFromAttributes(session, issue_attributes)
+        # TODO: Create the necessary issues that need to be tracked as a result
+        # of the debrief
+        if debrief_attributes.has_key('Pri1_Issue_Summary'):
+            match_id = debrief_attributes['Match_Id']
+            submitter = debrief_attributes['Scouter']
+            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
+            subgroup = ''
+            status = 'Open'
+            owner = 'Unassigned'
+            summary = debrief_attributes['Pri1_Issue_Summary']
+            priority = debrief_attributes['Pri1_Issue_Priority']
+            component = debrief_attributes['Pri1_Issue_Taskgroup']
+            description = debrief_attributes['Pri1_Issue_Description']
+            
+            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description)
+            
+            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_1')
+            
+        if debrief_attributes.has_key('Pri2_Issue_Summary'):
+            submitter = debrief_attributes['Scouter']
+            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
+            subgroup = ''
+            status = 'Open'
+            owner = 'Unassigned'
+            summary = debrief_attributes['Pri2_Issue_Summary']
+            priority = debrief_attributes['Pri2_Issue_Priority']
+            component = debrief_attributes['Pri2_Issue_Taskgroup']
+            description = debrief_attributes['Pri2_Issue_Description']
+            
+            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description)
 
-
-
-
+            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_2')
+            
+        if debrief_attributes.has_key('Pri3_Issue_Summary'):
+            submitter = debrief_attributes['Scouter']
+            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
+            subgroup = ''
+            status = 'Open'
+            owner = 'Unassigned'
+            summary = debrief_attributes['Pri3_Issue_Summary']
+            priority = debrief_attributes['Pri3_Issue_Priority']
+            component = debrief_attributes['Pri3_Issue_Taskgroup']
+            description = debrief_attributes['Pri3_Issue_Description']
+            
+            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description)
+            
+            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_3')
   
 if __name__ == '__main__':
         
@@ -382,10 +445,10 @@ if __name__ == '__main__':
     # read in the configuration file containing data related to this competition
     read_config(options.cfg_filename)
     input_dir = './static/' + global_config['this_competition'] + '/ScoutingData/'
+    
     db_name = global_config['db_name']
-
     issues_db_name = global_config['issues_db_name']
-    issues_input_dir = './static/Issues/'
+    debriefs_db_name = global_config['debriefs_db_name']
     
     # Determine which database type to initialize based on the passed in command
     # arguments    
@@ -396,7 +459,6 @@ if __name__ == '__main__':
     else:
         raise Exception("No Database Type Defined!")
 
-    
     # Initialize the database session connection
     my_db = create_engine(db_connect)
     Session = sessionmaker(bind=my_db)
@@ -406,6 +468,14 @@ if __name__ == '__main__':
     if not os.path.exists('./' + db_name):    
         DataModel.create_db_tables(my_db)
 
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + issues_db_name):    
+        IssueTrackerDataModel.create_db_tables(my_db)
+
+    # Create the database if it doesn't already exist
+    if not os.path.exists('./' + debriefs_db_name):    
+        DebriefDataModel.create_db_tables(my_db)
+    
     # Build the attribute definition dictionary from the definitions csv file
     #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
     attrdef_filename = './config/' + global_config['attr_definitions']    
@@ -414,12 +484,24 @@ if __name__ == '__main__':
 
     if options.processfiles:
         competition = global_config['this_competition']
-        process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
-        dump_database_as_csv_file(session, attr_definitions, competition)
+        try:
+            process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
+            dump_database_as_csv_file(session, attr_definitions, competition)
+        except Exception, e:
+            global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+            traceback.print_exc(file=sys.stdout)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+            for line in exception_info:
+                line = line.replace('\n','')
+                global_config['logger'].debug(line)
+    
+            print 'Program terminated, press <CTRL-C> to exit'
+            data = sys.stdin.readlines()          
         
     if options.processissues:
         # process any accumulated issues files
-        process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
+        process_issue_files(issues_db_name, input_dir, options.recursive, options.test)
         
     # recalculate the team scores 
     if options.recalculate:
@@ -516,10 +598,22 @@ if __name__ == '__main__':
             # if we received files from the client, then go ahead and process them to keep
             # the database up to date in real time
             if files_received > 0:
-                process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
-                dump_database_as_csv_file(session, attr_definitions)
-
-                process_issue_files(issues_db_name, issues_input_dir, options.recursive, options.test)
+                try:
+                    process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
+                    process_issue_files(issues_db_name, input_dir, options.recursive, options.test)
+                    process_debrief_files(debriefs_db_name, input_dir, options.recursive, options.test)
+                    dump_database_as_csv_file(session, attr_definitions)
+                except Exception, e:
+                    global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+                    traceback.print_exc(file=sys.stdout)
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+                    for line in exception_info:
+                        line = line.replace('\n','')
+                        global_config['logger'].debug(line)
+            
+                    print 'Program terminated, press <CTRL-C> to exit'
+                    data = sys.stdin.readlines()
 
 
         server_sock.close()

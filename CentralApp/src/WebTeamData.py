@@ -226,7 +226,7 @@ def get_team_attributes_page(global_config):
         team_attributes = DataModel.getTeamAttributesInOrder(session, team_entry.team, comp)
         for attribute in team_attributes:
             attr_def = attr_definitions.get_definition( attribute.attr_name )
-            if ( attr_def['Include_In_Report'] == 'Yes'):
+            if ( attr_def and attr_def['Include_In_Report'] == 'Yes'):
                 result.append( ", '" + attribute.attr_name + "': ")
                 if ( attr_def['Statistic_Type'] == 'Total'):
                     #result.append( str(attribute.cumulative_value) )

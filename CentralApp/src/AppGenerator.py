@@ -186,6 +186,11 @@ def update_generated_java_code(base_projectname, dest_project_path, dest_activit
     dest_activity = dest_activity_prefix + base_activity
     dest_packagename = base_packagename + dest_activity_prefix.lower() + 'scouting'
 
+    if gen_fragments.has_key('UIGEN:HANDLERS'):
+        handler_str = gen_fragments['UIGEN:HANDLERS']
+        handler_str = handler_str.replace(base_activity, dest_activity)
+        gen_fragments['UIGEN:HANDLERS'] = handler_str
+            
     package_elem = dest_packagename.split('.')
     src_path = os.path.join(dest_project_path, 'src', package_elem[0], package_elem[1], package_elem[2])
     java_infile = open(os.path.join(src_path, (dest_activity + '.java')),'r')
@@ -197,7 +202,7 @@ def update_generated_java_code(base_projectname, dest_project_path, dest_activit
         marker_token = get_uigen_token(line)
         if marker_token != None and marker_token[1] == 'END':
             discard_line = False
-            
+
         # write the line to the output file if not in discard mode
         if discard_line == False:
             java_outfile.write(line)

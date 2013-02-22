@@ -40,6 +40,8 @@ class TextFieldUiGenControl( UiGenControl ):
             xml_str += "        android:layout_height=\"200dp\"\n"
         elif self.attr_def['Options'].find('3_Lines') != -1:
             xml_str += "        android:layout_height=\"120dp\"\n"
+        elif self.attr_def['Options'].find('2_Lines') != -1:
+            xml_str += "        android:layout_height=\"80dp\"\n"
         else:
             xml_str += "        android:layout_height=\"40dp\"\n"
                 

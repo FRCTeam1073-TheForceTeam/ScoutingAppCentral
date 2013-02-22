@@ -15,7 +15,10 @@ class AttrDefinitions:
         self._attrdefinitions = {}
         
     def get_definition(self, attr_name):
-        return self._attrdefinitions[attr_name]
+        if self._attrdefinitions.has_key(attr_name):
+            return self._attrdefinitions[attr_name]
+        else:
+            return None
 
     def get_definitions(self):
         return self._attrdefinitions
