@@ -357,6 +357,7 @@ def getTeamInfo(session, team):
     return team_info
 
 def addTeamToEvent(session, event, team, commit=False):
+    entry = None
     entry_list = session.query(EventTeamList).filter(EventTeamList.event==event).\
                                               filter(EventTeamList.team==team)
     team_entry = entry_list.first()

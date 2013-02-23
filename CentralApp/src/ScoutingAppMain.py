@@ -21,6 +21,10 @@ import csv
 
 import socket
 from bluetooth import *
+import logging.config
+
+logging.config.fileConfig('config/logging.conf')
+logger = logging.getLogger('scouting.webapp')
 
 global_config = { 'this_competition'   : None, 
                   'other_competitions' : None, 
@@ -28,7 +32,8 @@ global_config = { 'this_competition'   : None,
                   'issues_db_name'     : 'issues2013',
                   'debriefs_db_name'   : 'debriefs2013',
                   'attr_definitions'   : None,
-                  'team_list'          : None}
+                  'team_list'          : None,
+                  'logger':logger }
 
 def read_config(config_filename):
     cfg_file = open(config_filename, 'r')
@@ -134,18 +139,23 @@ def get_files(session, db_name, input_dir, pattern, recursive, test_mode):
     return file_list
 
 def put_file( path, file_data):
-    fullpath = './static/' + path
-    fd = open(fullpath, 'w+')
+    fd = open(path, 'w+')
     fd.write(file_data)
     fd.close()
     return '200 OK'
     
 def get_file_list( path ):
-    fullpath = './static/' + path
-
-    file_list = os.listdir(fullpath)
+    file_list = os.listdir(path)
     return file_list
 
+def get_file(path):
+    file_data = ''
+    fd = open(path, 'r')
+    for line in fd:
+        file_data += line
+    fd.close()
+    return file_data
+    
 def dump_database_as_csv_file(session, attr_definitions, competition=None):
     
     if competition == None:
@@ -348,49 +358,49 @@ def process_debrief_files(db_name, input_dir, recursive, test):
 
         # TODO: Create the necessary issues that need to be tracked as a result
         # of the debrief
-        if debrief_attributes.has_key('Pri1_Issue_Summary'):
+        if debrief_attributes.has_key('Issue1_Summary'):
             match_id = debrief_attributes['Match_Id']
             submitter = debrief_attributes['Scouter']
             issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
             subgroup = ''
             status = 'Open'
             owner = 'Unassigned'
-            summary = debrief_attributes['Pri1_Issue_Summary']
-            priority = debrief_attributes['Pri1_Issue_Priority']
-            component = debrief_attributes['Pri1_Issue_Taskgroup']
-            description = debrief_attributes['Pri1_Issue_Description']
+            summary = debrief_attributes['Issue1_Summary']
+            priority = debrief_attributes['Issue1_Priority']
+            component = debrief_attributes['Issue1_Taskgroup']
+            description = debrief_attributes['Issue1_Description']
             
             IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
                      subgroup, component, submitter, owner, description)
             
             DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_1')
             
-        if debrief_attributes.has_key('Pri2_Issue_Summary'):
+        if debrief_attributes.has_key('Issue2_Summary'):
             submitter = debrief_attributes['Scouter']
             issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
             subgroup = ''
             status = 'Open'
             owner = 'Unassigned'
-            summary = debrief_attributes['Pri2_Issue_Summary']
-            priority = debrief_attributes['Pri2_Issue_Priority']
-            component = debrief_attributes['Pri2_Issue_Taskgroup']
-            description = debrief_attributes['Pri2_Issue_Description']
+            summary = debrief_attributes['Issue2_Summary']
+            priority = debrief_attributes['Issue2_Priority']
+            component = debrief_attributes['Issue2_Taskgroup']
+            description = debrief_attributes['Issue2_Description']
             
             IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
                      subgroup, component, submitter, owner, description)
 
             DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_2')
             
-        if debrief_attributes.has_key('Pri3_Issue_Summary'):
+        if debrief_attributes.has_key('Issue3_Summary'):
             submitter = debrief_attributes['Scouter']
             issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
             subgroup = ''
             status = 'Open'
             owner = 'Unassigned'
-            summary = debrief_attributes['Pri3_Issue_Summary']
-            priority = debrief_attributes['Pri3_Issue_Priority']
-            component = debrief_attributes['Pri3_Issue_Taskgroup']
-            description = debrief_attributes['Pri3_Issue_Description']
+            summary = debrief_attributes['Issue3_Summary']
+            priority = debrief_attributes['Issue3_Priority']
+            component = debrief_attributes['Issue3_Taskgroup']
+            description = debrief_attributes['Issue3_Description']
             
             IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
                      subgroup, component, submitter, owner, description)
@@ -574,17 +584,27 @@ if __name__ == '__main__':
                     print "Request Path: %s" % request_path
                     
                     if request_type == "PUT":
-                        response_code = put_file(request_path, msg_body)
+                        fullpath = './static/' + request_path
+                        response_code = put_file(fullpath, msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\n')
                         files_received += 1
                     elif request_type == "GET":
-                        file_list = get_file_list(request_path)
-                        response_body = ''
-                        for file_name in file_list:
-                            response_body += file_name + '\n'
-                        client_sock.send('HTTP/1.1 ' + '200 OK' + '\n\n')
-                        client_sock.send(response_body + '\n')
-        
+                        fullpath = './static/' + request_path
+                        if os.path.isdir(fullpath):
+                            file_list = get_file_list(fullpath)
+                            response_body = ''
+                            for file_name in file_list:
+                                response_body += file_name + '\n'
+                            client_sock.send('HTTP/1.1 ' + '200 OK' + '\n\n')
+                            client_sock.send(response_body + '\n')
+                        else:
+                            response_body = get_file(fullpath)
+                            if response_body != '':
+                                client_sock.send('HTTP/1.1 ' + '200 OK' + '\n\n')
+                                client_sock.send(response_body + '\n\n')
+                            else:
+                                client_sock.send('HTTP/1.1 ' + '404 Not Found' + '\n\n')
+                                    
                     print "Request Complete\n"
         
                     

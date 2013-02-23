@@ -1,10 +1,12 @@
 package org.team1073.scouting;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,6 +29,7 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	Activity activity;
 	String clientName;
 	Integer numFilesTransferred=0;
+	Integer numFilesSent, numFilesRetrieved;
 	BluetoothAdapter bluetoothAdapter;
 	BluetoothSocket socket = null;
 	Boolean connectionEstablished;
@@ -42,7 +45,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
     protected Integer doInBackground(String... paths) {
     	
     	connectionEstablished = false;
-   	
+
+/*
     	Integer retries = 0;
 
     	// establish a connection to an available bluetooth server
@@ -59,8 +63,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	    		}
     		}
     	}
-
-//    	connectionEstablished = connectToBluetoothServer();
+*/
+    	connectionEstablished = connectToBluetoothServer();
     	if ( connectionEstablished == true ) {
     		
     		// loop through the paths that have been passed in and sync the
@@ -70,13 +74,17 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
     		int count = paths.length;
             for (int i = 0; i < count; i++) {
         		HashSet<String> filesOnServer = new HashSet<String>();
-        		List<String> filesToTransfer = new ArrayList<String>();
+        		HashSet<String> fileSetToRetrieve = new HashSet<String>();
+        		List<String> filesToSend = new ArrayList<String>();
         		
             	getFilesOnServer(paths[i], filesOnServer);
-            	getFilesToTransfer(paths[i], filesOnServer, filesToTransfer);
-            	numFilesTransferred += transferFilesToServer( paths[i], filesToTransfer);
+            	getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
+            	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);            	
+            	numFilesSent = sendFilesToServer( paths[i], filesToSend);
+            	numFilesRetrieved = retrieveFilesFromServer( paths[i], filesToRetrieve);
             }
             
+            numFilesTransferred = numFilesSent + numFilesRetrieved;
             disconnectFromBluetoothServer();
         }
     	
@@ -172,7 +180,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 
     
     private void getFilesToTransfer( String path, HashSet<String> filesOnServer,
-    								 List<String> filesToTransfer) {
+    								 List<String> filesToTransfer,
+    								 HashSet<String> fileSetToRetrieve) {
     	
 		// Get the list of files in the directory on this device and iterate
 		// through the list, adding any file that is not already on the server to
@@ -180,6 +189,7 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		File myDir = new File(directory + "/" + path);
 		File[] listOfFiles = myDir.listFiles(); 
 		String fileOnDevice;
+		fileSetToRetrieve.addAll(filesOnServer);
  
 		boolean error = false;
 		if ( listOfFiles != null ) {
@@ -200,15 +210,17 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 					//      to verify to detect changed files, too, and transfer them.
 					if (!filesOnServer.contains(fileOnDevice))
 						filesToTransfer.add(fileOnDevice);
+					else
+						fileSetToRetrieve.remove(fileOnDevice);
 				}
 			}
 		}
     }
-
-	private Integer transferFilesToServer( String path, List<String> filesToTransfer) {
+    
+	private Integer sendFilesToServer( String path, List<String> filesToSend) {
 		File myDir = new File(directory + "/" + path);
 		boolean error = false;
-		Iterator<String> iterator = filesToTransfer.iterator();
+		Iterator<String> iterator = filesToSend.iterator();
 		String fileOnDevice;
 		Integer filesTransferred = 0;
 		
@@ -261,4 +273,63 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		}
 		return filesTransferred;
 	}
+	
+	private Integer retrieveFilesFromServer( String path, List<String> filesToRetrieve) {
+		File myDir = new File(directory + "/" + path);
+		boolean error = false;
+		Iterator<String> iterator = filesToRetrieve.iterator();
+		String fileOnServer;
+		Integer filesTransferred = 0;
+		
+		// Transfer the specified list of files to the transfer on the opened socket
+		// connection
+		while ( iterator.hasNext() && !error) {
+			fileOnServer = iterator.next();
+
+			//TODO: This code will only work for a text file. Need to add the ability
+			//      to transfer binary (image) files to the server based on file 
+			//      extension.
+			
+			// Retrieve the file from the server using an HTTP formatted
+			// request
+			try {
+				String cmdString = "GET " + path + fileOnServer + "\n";
+				cmdString += "From: " + clientName + "\n";
+				cmdString += "\n";
+				outStream = new DataOutputStream(socket.getOutputStream());
+				outStream.writeBytes(cmdString + "\n" );
+				
+				String recvLine;
+				inStream = new DataInputStream(socket.getInputStream());
+				recvLine = inStream.readLine();
+				if ( recvLine.contains("200 OK")) {
+					// the next line is an empty line separating the response headers
+					// from the response body
+					recvLine = inStream.readLine();
+
+					File myFile = new File(myDir, fileOnServer);
+			        FileWriter myWriter = new FileWriter(myFile);
+					BufferedWriter writer = new BufferedWriter(myWriter);
+			        
+					
+					boolean done=false;
+					while ( !done && (recvLine = inStream.readLine()) != null ) {
+						if (recvLine.isEmpty()) {
+							done = true;
+						} else {
+							writer.write(recvLine + "\n");
+						}
+					}
+					writer.close();
+					filesTransferred++;
+				}
+			} catch(Exception e) { 
+				publishProgress( "Error Transferring File: " + fileOnServer );
+				error = true; 
+			}
+		}
+		return filesTransferred;
+	}
+	
 }
+
