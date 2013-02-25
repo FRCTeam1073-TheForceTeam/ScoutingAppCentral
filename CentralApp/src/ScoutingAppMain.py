@@ -6,12 +6,16 @@ Created on Feb 4, 2012
 import os
 import re
 import traceback
+import time
 
+import DbSession
 import DataModel
 import IssueTrackerDataModel
 import DebriefDataModel
 import FileParser
+import FileSync
 import AttributeDefinitions
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
@@ -122,40 +126,24 @@ def get_files(session, db_name, input_dir, pattern, recursive, test_mode):
     
     if recursive:
         for root, dirs, files in os.walk(input_dir):
-            print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
+            #print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
             for name in files:
                 if pattern.match(name):
                     if((test_mode == True) or (isFileProcessed(session, db_name, os.path.join(root, name))) == False):
                         file_list.append(os.path.join(root, name))
     else:
         files = os.listdir(input_dir)
-        print 'Files:', files
+        #print 'Files:', files
         for name in files:
             if pattern.match(name):
                 if((test_mode == True) or (isFileProcessed(session, db_name, os.path.join(root, name))) == False):
                     file_list.append(os.path.join(input_dir, name))
 
-    print 'FileList:', file_list
+    if len(file_list) > 0:
+        print 'FileList:', file_list
+        
     return file_list
 
-def put_file( path, file_data):
-    fd = open(path, 'w+')
-    fd.write(file_data)
-    fd.close()
-    return '200 OK'
-    
-def get_file_list( path ):
-    file_list = os.listdir(path)
-    return file_list
-
-def get_file(path):
-    file_data = ''
-    fd = open(path, 'r')
-    for line in fd:
-        file_data += line
-    fd.close()
-    return file_data
-    
 def dump_database_as_csv_file(session, attr_definitions, competition=None):
     
     if competition == None:
@@ -229,74 +217,73 @@ def process_files(session, db_name, attr_definitions, input_dir, recursive, test
     
     # Process data files
     for data_filename in files:
-        print 'processing %s'%data_filename
+        process_file( session, attr_definitions, data_filename)
         
-        # Initialize the file_attributes dictionary in preparation for the
-        # parsing of the data file
-        file_attributes = {}
-        
-        # Parse the data file, storing all the information in the file_attributes
-        # dictionary
-        FileParser.FileParser(data_filename).parse(file_attributes)
-        DataModel.addProcessedFile(session, data_filename)
-
-        # The team number can be retrieved from the Team attribute, one of the
-        # mandatory attributes within the data file
-        team = file_attributes['Team']
-        
-        # Also, extract the competition name, too, if it has been included in
-        # the data file
-        if file_attributes.has_key('Competition'):
-            competition = file_attributes['Competition']
-        else:
-            competition = global_config['this_competition']
-            if competition == None:
-                raise Exception( 'Competition Not Specified!')
+def process_file(session, attr_definitions, data_filename):
+    print 'processing %s'%data_filename
     
-        DataModel.addTeamToEvent(session, team, competition)
-        
-        # Loop through the attributes from the data file and post them to the
-        # database
-        for attribute, value in file_attributes.iteritems():
-            if value is None:
-                value = ''
-            try:
-                attr_definition = attr_definitions.get_definition(attribute)
-                if attr_definition == None:
-                    err_str = 'ERROR: No Attribute Defined For Attribute: %s' % attribute
-                    print err_str
-                elif attr_definition['Database_Store']=='Yes':
-                    try:
-                        DataModel.createOrUpdateAttribute(session, team, competition, attribute, value, attr_definition)
-                    except Exception, exception:
-                        print str(exception)
-            except Exception:
-                err_str = 'ERROR: Attribute Could Not Be Processed: %s' % attribute
-                print err_str
-                
-        score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
-        DataModel.setTeamScore(session, team, competition, score)
-        # Commit all updates to the database
-        session.commit()
+    # Initialize the file_attributes dictionary in preparation for the
+    # parsing of the data file
+    file_attributes = {}
+    
+    # Parse the data file, storing all the information in the file_attributes
+    # dictionary
+    FileParser.FileParser(data_filename).parse(file_attributes)
+    DataModel.addProcessedFile(session, data_filename)
 
-def process_issue_files(db_name, input_dir, recursive, test):
+    # The team number can be retrieved from the Team attribute, one of the
+    # mandatory attributes within the data file
+    team = file_attributes['Team']
+    
+    # Also, extract the competition name, too, if it has been included in
+    # the data file
+    if file_attributes.has_key('Competition'):
+        competition = file_attributes['Competition']
+    else:
+        competition = global_config['this_competition']
+        if competition == None:
+            raise Exception( 'Competition Not Specified!')
+
+    DataModel.addTeamToEvent(session, team, competition)
+    
+    # Loop through the attributes from the data file and post them to the
+    # database
+    for attribute, value in file_attributes.iteritems():
+        if value is None:
+            value = ''
+        try:
+            attr_definition = attr_definitions.get_definition(attribute)
+            if attr_definition == None:
+                err_str = 'ERROR: No Attribute Defined For Attribute: %s' % attribute
+                print err_str
+            elif attr_definition['Database_Store']=='Yes':
+                try:
+                    DataModel.createOrUpdateAttribute(session, team, competition, attribute, value, attr_definition)
+                except Exception, exception:
+                    print str(exception)
+        except Exception:
+            err_str = 'ERROR: Attribute Could Not Be Processed: %s' % attribute
+            print err_str
+            
+    score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
+    DataModel.setTeamScore(session, team, competition, score)
+    # Commit all updates to the database
+    session.commit()
+
+def process_issue_files(global_config, input_dir, recursive, test):
 
     # Initialize the database session connection
-    db_connect='sqlite:///%s'%(db_name)
-    my_db = create_engine(db_connect)
-    Session = sessionmaker(bind=my_db)
-    session = Session()
-    
-    # Create the database if it doesn't already exist
-    if not os.path.exists('./' + db_name):    
-        IssueTrackerDataModel.create_db_tables(my_db)
+    issues_db_name  = global_config['issues_db_name']
+    debrief_db_name = global_config['debriefs_db_name']
+    debrief_session = DbSession.open_db_session(debrief_db_name)
+    issues_session  = DbSession.open_db_session(issues_db_name)
 
     # The following regular expression will select all files that conform to 
     # the file naming format Issue*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Issue[a-zA-Z0-9_-]+.txt')
-    files = get_files(session, db_name, input_dir, file_regex, recursive, test)
+    files = get_files(issues_session, issues_db_name, input_dir, file_regex, recursive, test)
     
     # Process data files
     for data_filename in files:
@@ -309,29 +296,36 @@ def process_issue_files(db_name, input_dir, recursive, test):
         # Parse the data file, storing all the information in the file_attributes
         # dictionary
         FileParser.FileParser(data_filename).parse(issue_attributes)
-        IssueTrackerDataModel.addProcessedFile(session, data_filename)
+        IssueTrackerDataModel.addProcessedFile(issues_session, data_filename)
 
-        IssueTrackerDataModel.addIssueFromAttributes(session, issue_attributes)
+        issue = IssueTrackerDataModel.addIssueFromAttributes(issues_session, issue_attributes)
+        if issue.debrief_key != None:
+            match_str, issue_key = issue.debrief_key.split('_')
+            DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, int(match_str), 
+                                                     global_config['this_competition'],
+                                                     issue.issue_id, issue_key)
+            
+        
         
     
-def process_debrief_files(db_name, input_dir, recursive, test):
+def process_debrief_files(global_config, input_dir, recursive, test):
 
-    # Initialize the database session connection
-    db_connect='sqlite:///%s'%(db_name)
-    my_db = create_engine(db_connect)
-    Session = sessionmaker(bind=my_db)
-    session = Session()
+    # Initialize the database session connections
+    issues_db_name  = global_config['issues_db_name']
+    debrief_db_name = global_config['debriefs_db_name']
+    debrief_session = DbSession.open_db_session(debrief_db_name)
+    issues_session  = DbSession.open_db_session(issues_db_name)
     
     # Create the database if it doesn't already exist
-    if not os.path.exists('./' + db_name):    
-        DebriefDataModel.create_db_tables(my_db)
+    #if not os.path.exists('./' + db_name):    
+    #   DebriefDataModel.create_db_tables(my_db)
 
     # The following regular expression will select all files that conform to 
     # the file naming format Debrief*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Debrief[a-zA-Z0-9_-]+.txt')
-    files = get_files(session, db_name, input_dir, file_regex, recursive, test)
+    files = get_files(debrief_session, debrief_db_name, input_dir, file_regex, recursive, test)
     
     # Process data files
     for data_filename in files:
@@ -344,8 +338,8 @@ def process_debrief_files(db_name, input_dir, recursive, test):
         # Parse the data file, storing all the information in the attributes
         # dictionary
         FileParser.FileParser(data_filename).parse(debrief_attributes)
-        DebriefDataModel.addProcessedFile(session, data_filename)
-        DebriefDataModel.addDebriefFromAttributes(session, debrief_attributes)
+        DebriefDataModel.addProcessedFile(debrief_session, data_filename)
+        DebriefDataModel.addDebriefFromAttributes(debrief_session, debrief_attributes)
         
         # Also, extract the competition name, too, if it has been included in
         # the data file
@@ -358,55 +352,61 @@ def process_debrief_files(db_name, input_dir, recursive, test):
 
         # TODO: Create the necessary issues that need to be tracked as a result
         # of the debrief
+        match_id = debrief_attributes['Match']
+        submitter = debrief_attributes['Scouter']
+        timestamp = str(int(time.time()))
+        subgroup = 'Unassigned'
+        status = 'Open'
+        owner = 'Unassigned'
+        
         if debrief_attributes.has_key('Issue1_Summary'):
-            match_id = debrief_attributes['Match_Id']
-            submitter = debrief_attributes['Scouter']
-            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
-            subgroup = ''
-            status = 'Open'
-            owner = 'Unassigned'
+            issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
             summary = debrief_attributes['Issue1_Summary']
             priority = debrief_attributes['Issue1_Priority']
             component = debrief_attributes['Issue1_Taskgroup']
             description = debrief_attributes['Issue1_Description']
+            issue_key = 'Issue1'
+            debrief_key = str(match_id) + '_' + issue_key
             
-            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
-                     subgroup, component, submitter, owner, description)
-            
-            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_1')
+            issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description, timestamp, debrief_key)
+            if issue != None:
+                issue.create_file('./static/%s/ScoutingData' % competition)
+            DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
             
         if debrief_attributes.has_key('Issue2_Summary'):
-            submitter = debrief_attributes['Scouter']
-            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
-            subgroup = ''
-            status = 'Open'
-            owner = 'Unassigned'
+            issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
             summary = debrief_attributes['Issue2_Summary']
             priority = debrief_attributes['Issue2_Priority']
             component = debrief_attributes['Issue2_Taskgroup']
             description = debrief_attributes['Issue2_Description']
+            issue_key = 'Issue2'
+            debrief_key = str(match_id) + '_' + issue_key
             
-            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
-                     subgroup, component, submitter, owner, description)
-
-            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_2')
+            issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description, timestamp, debrief_key)
+            if issue != None:
+                issue.create_file('./static/%s/ScoutingData' % competition)
+            DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
             
         if debrief_attributes.has_key('Issue3_Summary'):
-            submitter = debrief_attributes['Scouter']
-            issue_id = IssueTrackerDataModel.getIssueId(session, 'Robot')
-            subgroup = ''
-            status = 'Open'
-            owner = 'Unassigned'
+            issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
             summary = debrief_attributes['Issue3_Summary']
             priority = debrief_attributes['Issue3_Priority']
             component = debrief_attributes['Issue3_Taskgroup']
             description = debrief_attributes['Issue3_Description']
+            issue_key = 'Issue3'
+            debrief_key = str(match_id) + '_' + issue_key
             
-            IssueTrackerDataModel.addOrUpdateIssue(session, issue_id, summary, status, priority, 
-                     subgroup, component, submitter, owner, description)
+            issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                     subgroup, component, submitter, owner, description, timestamp, debrief_key)
+            if issue != None:
+                issue.create_file('./static/%s/ScoutingData' % competition)
+            DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
             
-            DebriefDataModel.addOrUpdateDebriefIssue(session, match_id, competition, issue_id, 'Priority_3')
-  
+    issues_session.commit()
+    debrief_session.commit()
+        
 if __name__ == '__main__':
         
     # command line options handling
@@ -440,6 +440,9 @@ if __name__ == '__main__':
         "-p","--processfiles",action="store_true", dest="processfiles", default=False,
         help='Process Team Files')
     parser.add_option(
+        "-l","--processloop",action="store_true", dest="processloop", default=False,
+        help='Process Team Files')
+    parser.add_option(
         "-i","--processissues",action="store_true", dest="processissues", default=False,
         help='Process Issues Files')
     parser.add_option(
@@ -459,7 +462,7 @@ if __name__ == '__main__':
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
-    
+    '''    
     # Determine which database type to initialize based on the passed in command
     # arguments    
     if options.dbtype == 'sqlite':
@@ -485,7 +488,12 @@ if __name__ == '__main__':
     # Create the database if it doesn't already exist
     if not os.path.exists('./' + debriefs_db_name):    
         DebriefDataModel.create_db_tables(my_db)
-    
+    '''
+
+    session         = DbSession.open_db_session(db_name, DataModel)
+    issues_session  = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
+    debrief_session = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+        
     # Build the attribute definition dictionary from the definitions csv file
     #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
     attrdef_filename = './config/' + global_config['attr_definitions']    
@@ -511,7 +519,7 @@ if __name__ == '__main__':
         
     if options.processissues:
         # process any accumulated issues files
-        process_issue_files(issues_db_name, input_dir, options.recursive, options.test)
+        process_issue_files(global_config, input_dir, options.recursive, options.test)
         
     # recalculate the team scores 
     if options.recalculate:
@@ -585,20 +593,21 @@ if __name__ == '__main__':
                     
                     if request_type == "PUT":
                         fullpath = './static/' + request_path
-                        response_code = put_file(fullpath, msg_body)
+                        response_code = FileSync.put_file(fullpath, msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\n')
                         files_received += 1
                     elif request_type == "GET":
+                        
                         fullpath = './static/' + request_path
                         if os.path.isdir(fullpath):
-                            file_list = get_file_list(fullpath)
+                            file_list = FileSync.get_file_list(fullpath)
                             response_body = ''
                             for file_name in file_list:
                                 response_body += file_name + '\n'
                             client_sock.send('HTTP/1.1 ' + '200 OK' + '\n\n')
                             client_sock.send(response_body + '\n')
                         else:
-                            response_body = get_file(fullpath)
+                            response_body = FileSync.get_file(fullpath)
                             if response_body != '':
                                 client_sock.send('HTTP/1.1 ' + '200 OK' + '\n\n')
                                 client_sock.send(response_body + '\n\n')
@@ -620,8 +629,8 @@ if __name__ == '__main__':
             if files_received > 0:
                 try:
                     process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
-                    process_issue_files(issues_db_name, input_dir, options.recursive, options.test)
-                    process_debrief_files(debriefs_db_name, input_dir, options.recursive, options.test)
+                    process_issue_files(global_config, input_dir, options.recursive, options.test)
+                    process_debrief_files(global_config, input_dir, options.recursive, options.test)
                     dump_database_as_csv_file(session, attr_definitions)
                 except Exception, e:
                     global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
@@ -713,7 +722,32 @@ if __name__ == '__main__':
             
         bt_server_sock.close()
         print "all done"
+    
+    if options.processloop:
+        terminate = False
+        while not terminate:
+            try:
+                print 'Scanning for new files to process'
+                process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
+                process_issue_files(global_config, input_dir, options.recursive, options.test)
+                process_debrief_files(global_config, input_dir, options.recursive, options.test)
+                dump_database_as_csv_file(session, attr_definitions)
+                print 'Scan complete'
+            except Exception, e:
+                global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+                traceback.print_exc(file=sys.stdout)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+                for line in exception_info:
+                    line = line.replace('\n','')
+                    global_config['logger'].debug(line)
         
+                print 'Program terminated, press <CTRL-C> to exit'
+                data = sys.stdin.readlines()
+                
+            time.sleep(30)
+
+            
         
         
 
