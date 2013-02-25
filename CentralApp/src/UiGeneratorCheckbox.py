@@ -26,6 +26,8 @@ class CheckboxUiGenControl( UiGenControl ):
         xml_str += "        android:layout_width=\"120dp\"\n"
         if self.config['Lines'] == '2':
             xml_str += "        android:layout_height=\"80dp\"\n"
+        if self.config['Lines'] == '3':
+            xml_str += "        android:layout_height=\"120dp\"\n"
         else:
             xml_str += "        android:layout_height=\"40dp\"\n"            
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
@@ -36,6 +38,7 @@ class CheckboxUiGenControl( UiGenControl ):
         tokens = map_values.split(':')
         field_to_left = 'NAMELabel'
         item_count=0
+        line_count=0
         margin_top='0dp'
         for token in tokens:
             xml_str += "        <CheckBox\n"
@@ -52,8 +55,9 @@ class CheckboxUiGenControl( UiGenControl ):
             xml_str = xml_str.replace('BUTTON',name)
             item_count += 1
             if item_count % int(self.config['Items_Per_Line']) == 0:
+                line_count += 1
                 field_to_left = 'NAMELabel'
-                margin_top = '40dp'
+                margin_top = str(40*line_count) + 'dp'
             else:
                 field_to_left = 'NAME' + name + 'CheckBox' 
     

@@ -56,7 +56,7 @@ class ButtonUiGenControl( UiGenControl ):
         java_str += '        // Processes the button click for the NAME button\n'
         java_str += '        NAMEButton.setOnClickListener(new OnClickListener(){\n'
         java_str += '            public void onClick(View v){\n'
-        java_str += '                Toast.makeText(ScoutingAppActivity.this, "NAME Button Pressed", Toast.LENGTH_LONG).show();\n'
+        java_str += '                NAMEButtonHandler();\n'
         java_str += '            }\n'
         java_str += '        });\n'
         return java_str
