@@ -28,8 +28,10 @@ import android.widget.Toast;
 public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	Activity activity;
 	String clientName;
+	String syncControl;
 	Integer numFilesTransferred=0;
-	Integer numFilesSent, numFilesRetrieved;
+	Integer numFilesSent=0;
+	Integer numFilesRetrieved=0;
 	BluetoothAdapter bluetoothAdapter;
 	BluetoothSocket socket = null;
 	Boolean connectionEstablished;
@@ -37,9 +39,10 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	DataInputStream inStream = null;
 	File directory = Environment.getExternalStorageDirectory();
 
-	public BluetoothSyncTask(Activity activity, String clientName) {
+	public BluetoothSyncTask(Activity activity, String clientName, String syncControl) {
 		this.activity = activity;
 		this.clientName = clientName;
+		this.syncControl = syncControl;
 		this.bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 	}
     protected Integer doInBackground(String... paths) {
@@ -81,7 +84,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
             	getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
             	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);            	
             	numFilesSent = sendFilesToServer( paths[i], filesToSend);
-            	numFilesRetrieved = retrieveFilesFromServer( paths[i], filesToRetrieve);
+            	if ( syncControl.equalsIgnoreCase("Upload_Download"))
+            		numFilesRetrieved = retrieveFilesFromServer( paths[i], filesToRetrieve);
             }
             
             numFilesTransferred = numFilesSent + numFilesRetrieved;
@@ -223,6 +227,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		Iterator<String> iterator = filesToSend.iterator();
 		String fileOnDevice;
 		Integer filesTransferred = 0;
+
+        publishProgress( "Sending Files To Server" );
 		
 		// Transfer the specified list of files to the transfer on the opened socket
 		// connection
@@ -281,6 +287,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		String fileOnServer;
 		Integer filesTransferred = 0;
 		
+        publishProgress( "Receiving Files From Server" );
+        
 		// Transfer the specified list of files to the transfer on the opened socket
 		// connection
 		while ( iterator.hasNext() && !error) {

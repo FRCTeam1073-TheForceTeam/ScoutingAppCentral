@@ -53,6 +53,10 @@ public class ScoutingAppActivity extends Activity {
 	private String device_name="unknown";
 	private String device_id="un";
 	private String competition_directory="Test2013";
+	private String host_addr = "";
+	private String sync_method = "Bluetooth";
+	private String sync_control = "Upload_Only";
+	
 	private Boolean unsavedChanges = false;
     final String tmpFile = "ScoutingData.tmp";
 	
@@ -79,7 +83,13 @@ public class ScoutingAppActivity extends Activity {
                     device_id = tokenizer.nextToken();
                 } else if ( token.equalsIgnoreCase("Competition")) {
                 	competition_directory = tokenizer.nextToken();
-                }
+	            } else if ( token.equalsIgnoreCase("HostAddr")) {
+	            	host_addr = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("SyncMethod")) {
+	            	sync_method = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("SyncControl")) {
+	            	sync_control = tokenizer.nextToken();
+	            }
 			}
     	} catch (Exception e) {
     		showDialog = true;
@@ -97,10 +107,26 @@ public class ScoutingAppActivity extends Activity {
 	        final EditText DeviceNameEntry = (EditText) dialog.findViewById(R.id.DeviceNameEntry);
 	        final EditText DeviceIdEntry = (EditText) dialog.findViewById(R.id.DeviceIdEntry);     
 	        final EditText CompetitionNameEntry = (EditText) dialog.findViewById(R.id.CompetitionNameEntry);     
+	        final EditText HostAddrEntry = (EditText) dialog.findViewById(R.id.HostAddrEntry);     
+	        final RadioGroup SyncMethodRadioGroup = (RadioGroup) dialog.findViewById(R.id.SyncMethodRadioGroup);
+	        final RadioButton SyncMethod_Bluetooth_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncMethod_Bluetooth_RadioButton);
+	        final RadioButton SyncMethod_Wifi_3g_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncMethod_Wifi_3g_RadioButton);
+	        final RadioGroup SyncControlRadioGroup = (RadioGroup) dialog.findViewById(R.id.SyncControlRadioGroup);
+	        final RadioButton SyncControl_Upload_Only_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncControl_Upload_Only_RadioButton);
+	        final RadioButton SyncControl_Upload_Download_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncControl_Upload_Download_RadioButton);
 
 	        DeviceNameEntry.setText(device_name);
 	        DeviceIdEntry.setText(device_id);
 	        CompetitionNameEntry.setText(competition_directory);
+	        HostAddrEntry.setText(host_addr);
+	        if (sync_method.equalsIgnoreCase("Bluetooth"))
+	        	SyncMethodRadioGroup.check(R.id.SyncMethod_Bluetooth_RadioButton);
+            else if (sync_method.equalsIgnoreCase("Wifi_3G"))
+	        	SyncMethodRadioGroup.check(R.id.SyncMethod_Wifi_3g_RadioButton);
+	        if (sync_control.equalsIgnoreCase("Upload_Only"))
+	        	SyncControlRadioGroup.check(R.id.SyncControl_Upload_Only_RadioButton);
+            else if (sync_control.equalsIgnoreCase("Upload_Download"))
+	        	SyncControlRadioGroup.check(R.id.SyncControl_Upload_Download_RadioButton);
 	        
 	        button.setOnClickListener(new OnClickListener() {
 	        @Override
@@ -123,6 +149,16 @@ public class ScoutingAppActivity extends Activity {
 	                        buffer.append("DeviceId=" + DeviceIdEntry.getText().toString() + eol);
 	                    if ( !CompetitionNameEntry.getText().toString().isEmpty() )
 	                        buffer.append("Competition=" + CompetitionNameEntry.getText().toString() + eol);
+	                    if ( !HostAddrEntry.getText().toString().isEmpty() )
+	                        buffer.append("HostAddr=" + HostAddrEntry.getText().toString() + eol);
+	                    if (SyncMethod_Bluetooth_RadioButton.isChecked())
+	                        buffer.append("SyncMethod=" + SyncMethod_Bluetooth_RadioButton.getText().toString() + eol);
+	                    else if (SyncMethod_Wifi_3g_RadioButton.isChecked())
+	                        buffer.append("SyncMethod=" + SyncMethod_Wifi_3g_RadioButton.getText().toString() + eol);
+	                    if (SyncControl_Upload_Only_RadioButton.isChecked())
+	                        buffer.append("SyncControl=" + SyncControl_Upload_Only_RadioButton.getText().toString() + eol);
+	                    else if (SyncControl_Upload_Download_RadioButton.isChecked())
+	                        buffer.append("SyncControl=" + SyncControl_Upload_Download_RadioButton.getText().toString() + eol);
 	                    
 						// write the formatted buffer to the file
 						writer.write(buffer.toString());
@@ -564,12 +600,18 @@ public class ScoutingAppActivity extends Activity {
 
         // Processes the click event for the Sync button
         syncButton.setOnClickListener(new OnClickListener(){
-        	public void onClick(View v){ 
+        	public void onClick(View v){
+        		
         		// create an asynchronous task to transfer the scouting data and media files
-        		// to the server
-        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name).execute(
-        				competition_directory + "/ScoutingData/");
-
+        		// to the server. If no host IP address has been specified, use bluetooth,
+        		// otherwise use http.
+        		if (sync_method.equalsIgnoreCase("Bluetooth")) {
+	        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute(
+	        				competition_directory + "/ScoutingData/");
+        		} else {
+	        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(
+	        				competition_directory + "/ScoutingData/");
+        		}
         	} 
         });
 
