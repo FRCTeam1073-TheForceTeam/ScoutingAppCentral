@@ -116,7 +116,8 @@ def getDebriefComments(session, match_id):
     return comments
         
 def getDebriefIssues(session, match_id):
-    issues = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).all()
+    issues = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).\
+                           order_by(DebriefIssue.priority).all()
     print str(issues)
     return issues
         
@@ -173,13 +174,6 @@ def addOrUpdateDebriefIssue(session, match_id, competition, issue_id, priority):
     print issue.json()
 
 
-'''
-def addDebriefComment(session, match_id, competition, tag, data):
-    comment = DebriefComment(match_id=match_id, competition=competition,
-                             tag=tag, data=data)
-    session.add(comment)
-'''
-    
 def addOrUpdateDebriefComment(session, match_id, competition, submitter, tag, data): 
 
     commentList = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).\
@@ -205,13 +199,15 @@ def addDebriefFromAttributes(session, debrief_attributes):
         match_id = debrief_attributes['Match']
         competition = debrief_attributes['Competition']
             
-        if debrief_attributes.has_key('Summary'):
-            summary = debrief_attributes['Summary']
+        if debrief_attributes.has_key('Match_Summary'):
+            summary = debrief_attributes['Match_Summary']
         else:
             summary = ''
             
         if debrief_attributes.has_key('Description'):
             description = debrief_attributes['Description']
+        elif debrief_attributes.has_key('Notes'):
+            description = debrief_attributes['Notes']
         else:
             description = ''
         

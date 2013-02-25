@@ -48,22 +48,34 @@ def get_team_datafiles_page(global_config, name):
     
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
     session = DbSession.open_db_session(global_config['db_name'])
-    
+
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
     page += '<head>'
     page += '<body>'
-    page += '<li><a href="/home">Home</a></li>'
     page += '<h2> Scouting Data File listing for Team ' + name + '</h2>'
-    
+    page += '<hr>'
+    page += '<a href="/home"> Home</a></td>'
+    page += '<hr>'
+    page += '<br>'
+    page += '<a href="/issues"> IssueTracker</a></td>'
+    page += '<br>'
+    page += '<a href="/debriefs"> Match Debriefs</a></td>'
+    page += '<br>'
+    page += '<br>'
+    page += '<hr>'
+        
     team_info = DataModel.getTeamInfo(session, int(name))
     if team_info:
+        page += '<h3>Team Info</h3>'
         page += '<li>Team Nickname: ' + team_info.nickname + '</li>'
         page += '<li>Motto: ' + team_info.motto + '</li>'
         page += '<li>Affiliation: ' + team_info.fullname + '</li>'
         page += '<li>Location: ' + team_info.location + '</li>'
         page += '<li>Rookie Season: ' + str(team_info.rookie_season) + '</li>'
         page += '<li>Website: <a href="' + team_info.website + '">' + team_info.website + '</a></li>'
+        page += '<br>'
+
             
     competitions = []
     this_comp = global_config['this_competition']
@@ -92,10 +104,10 @@ def get_team_datafiles_page(global_config, name):
             if len(datafiles) == 0 and len(mediafiles) == 0:
                 continue
             
+            page += '<hr>'
             page += '<h3> ' + comp + '</h3>'
 
             if len(datafiles) > 0:         
-                page += '<hr>'
                 page += '<ul>'
                 page += '<h3>Pit and Match Data:</h3>'
                 page += '<ul>'
@@ -120,8 +132,8 @@ def get_team_datafiles_page(global_config, name):
                 page += '</ul>'
             page += '</ul>'
         
-    page += '<h3> Notes for Team ' + name + '</h3>'
     page += '<hr>'
+    page += '<h3> Notes for Team ' + name + '</h3>'
     page += '<ul>'
         
     comp = global_config['this_competition']        
@@ -252,15 +264,26 @@ def get_team_datafile_page(global_config, filename):
         
     filepath = './static/' + global_config['this_competition'] + '/ScoutingData/' + filename
     datafile = open( filepath, "r" )
+    
+    team = filename.split('_')[0].lstrip('Team')
+    
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
     page += '<head>'
     page += '<body>'
-    page += '<li><a href="/home">Home</a></li>'
-     
     page += '<h2>' + ' Scouting Data File: ' + filename + '</h2>'
     page += '<hr>'
-    page += '<ul>'
+    page += '<a href="/home">Home</a></td>'
+    page += '<br>'
+    page += '<a href="/teamdata/' + team + '">Back</a></td>'
+    page += '<hr>'
+    page += '<br>'
+    page += '<a href="/issues">IssueTracker</a></td>'
+    page += '<br>'
+    page += '<a href="/debriefs">Match Debriefs</a></td>'
+    page += '<br>'
+    page += '<br>'
+    page += '<hr>'
     
     page += '<table border="1" cellspacing="5">'
     

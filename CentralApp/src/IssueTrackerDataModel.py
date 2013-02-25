@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import schema
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_
 from optparse import OptionParser
 
 import time
@@ -90,7 +91,31 @@ class Issue(Base):
     owner            = Column(String(32))
     description      = Column(String(512))
     submitter        = Column(String(32))
-    
+    debrief_key      = Column(String(32))
+    timestamp        = Column(String(64))
+
+    def create_file(self, basepath):
+        filename = '%s/Issue_%s.txt' % (basepath, self.issue_id)
+        fd = open(filename, 'w')
+        
+        issue_str  = 'Id:%s\n' % self.issue_id
+        issue_str += 'Platform:%s\n' % self.issue_id.split('-')[0]
+        issue_str += 'Summary:%s\n' % self.summary
+        issue_str += 'Status:%s\n' % self.status
+        issue_str += 'Priority:%s\n' % self.priority
+        issue_str += 'Subgroup:%s\n' % self.subgroup
+        issue_str += 'Component:%s\n' % self.component
+        issue_str += 'Owner:%s\n' % self.owner
+        issue_str += 'Submitter:%s\n' % self.submitter
+        issue_str += 'Description:%s\n' % self.description
+        issue_str += 'Timestamp:%s\n' % self.timestamp
+        issue_str += 'Debrief_Key:%s\n' % self.debrief_key
+                    
+        fd.write(issue_str)
+        fd.close()
+ 
+        
+        
 class IssueComment(Base):
     __tablename__ = "issue_comments"
 
@@ -113,7 +138,19 @@ class User(Base):
     contact_mode    = Column(String(32))
     altname         = Column(String(32))
     access_level    = Column(Integer)
-    
+
+    def check_password(self, password):
+        if self.password == password:
+            return True
+        else:
+            return False
+        
+    def check_access_level(self, access_level):
+        if self.access_level <= access_level:
+            return True
+        else:
+            return False
+        
 class TaskgroupMember(Base):
     __tablename__ = "taskgroups"
     
@@ -141,7 +178,8 @@ def addProcessedFile(session, name):
 
 
 def getIssueComments(session, issue_id):
-    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).all()
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).\
+                             order_by(IssueComment.tag).all()
     print str(comments)
     return comments
         
@@ -165,18 +203,26 @@ def getIssuesByStatus(session, status):
     print str(issue_list)
     return issue_list
 
+def getIssuesByMultipleStatus(session, status1, status2, order_by_priority=False):
+    if order_by_priority:
+        issue_list = session.query(Issue).filter(or_(Issue.status==status1, Issue.status==status2)).\
+                order_by(Issue.priority).all()
+    else:
+        issue_list = session.query(Issue).filter(or_(Issue.status==status1, Issue.status==status2)).\
+                order_by(Issue.issue_id).all()
+                    
+    print str(issue_list)
+    return issue_list
+
 def getIssuesInNumericOrder(session, max_issues=100):
     issueList = session.query(Issue).\
             order_by(Issue.issue_id).\
             all()    
     return issueList
 
-def addIssueComment(session, issue_id, notes, notestag):
-    notes = IssueComment(issue_id=issue_id, data=notes, tag=notestag)
-    session.add(notes)
-    
 def addOrUpdateIssue(session, issue_id, summary, status, priority, 
-                     subgroup, component, submitter, owner, description):
+                     subgroup, component, submitter, owner, description, 
+                     timestamp, debrief_key=None):
 
     issueList = session.query(Issue).filter(Issue.issue_id==issue_id)
     
@@ -193,12 +239,17 @@ def addOrUpdateIssue(session, issue_id, summary, status, priority,
         issue.status = status
         issue.submitter = submitter
         issue.summary = summary
+        issue.timestamp = timestamp
+        if debrief_key != None:
+            issue.debrief_key = debrief_key
     else:
         issue = Issue(issue_id=issue_id, summary=summary, status=status, 
                       priority=priority, subgroup=subgroup, component=component,
-                      submitter=submitter, owner=owner, description=description)
+                      submitter=submitter, owner=owner, description=description,
+                      timestamp=timestamp, debrief_key=debrief_key)
         session.add(issue)
     print issue.json()
+    return issue
 
 def addOrUpdateIssueComment(session, issue_id, submitter, tag, data): 
 
@@ -247,12 +298,12 @@ def addIssueFromAttributes(session, issue_attributes):
         if issue_attributes.has_key('Subgroup'):
             subgroup = issue_attributes['Subgroup']
         else:
-            subgroup = ''
+            subgroup = 'Unassigned'
             
         if issue_attributes.has_key('Component'):
             component = issue_attributes['Component']
         else:
-            component = ''
+            component = 'Unknown'
         
         if issue_attributes.has_key('Submitter'):
             submitter = issue_attributes['Submitter']
@@ -274,6 +325,11 @@ def addIssueFromAttributes(session, issue_attributes):
         else:
             timestamp = str(int(time.time()))
         
+        if issue_attributes.has_key('Debrief_Key'):
+            debrief_key = issue_attributes['Debrief_Key']
+        else:
+            debrief_key = None
+            
         if issue_attributes.has_key('Comment'):
             comment = issue_attributes['Comment']
         else:
@@ -282,15 +338,16 @@ def addIssueFromAttributes(session, issue_attributes):
     except KeyError:
         raise Exception( 'Incomplete Issue Record' )
     
-    addOrUpdateIssue(session, issue_id, summary, status, priority, 
-                     subgroup, component, submitter, owner, description)
+    issue = addOrUpdateIssue(session, issue_id, summary, status, priority, 
+                             subgroup, component, submitter, owner, description, 
+                             timestamp, debrief_key)
     
     if comment != '':
         addOrUpdateIssueComment(session, issue_id, submitter, timestamp, comment)
     
     session.commit()
 
-
+    return issue
 
     
 def addOrUpdateUser(session, username, email_address, cellphone, carrier, 
@@ -343,7 +400,7 @@ def addUserFromAttributes(session, user_attributes):
         role = user_attributes['Role']
         carrier = user_attributes['Carrier']
         altname = user_attributes['Alt_Name']
-        access_level = 5
+        access_level = int(float(user_attributes['Access_Level']))
         
     except KeyError:
         raise Exception( 'Incomplete User Record' )
@@ -382,7 +439,7 @@ def getTaskgroupMembers(session, taskgroup):
     return members
 
 def getEmailAddrFromCarrier(cellphone, carrier):
-    email_addr = cellphone
+    email_addr = cellphone.replace('-','')
     
     if carrier == 'Verizon':
         email_addr += '@vtext.com'
@@ -433,7 +490,12 @@ def getUserList(session):
 
 def getUser(session, username):
     userList = session.query(User).filter(User.username==username)
-    return userList.first()
+    user = userList.first()
+    if user is None:
+        userList = session.query(User).filter(User.altname==username)
+        user = userList.first()
+        
+    return user
 
 def getUsernameList(session):
     users = []
