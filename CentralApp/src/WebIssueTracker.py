@@ -229,7 +229,7 @@ def process_issue_comment_form(global_config, form, issue_id, username):
         session.commit()
     return '/issue/%s' % issue_id            
 
-def get_issue_page(global_config, issue_id):
+def get_issue_page(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
@@ -307,8 +307,9 @@ def get_issue_page(global_config, issue_id):
         # result += '<br>'
         result += '<hr>'
         
-        result += '<a href="/issueupdate/' + issue_id + '"> Update This Issue</a></td>'
-        result += '<br>'
+        if global_config['issues_db_master'] == 'Yes' and allow_update == True:
+            result += '<a href="/issueupdate/' + issue_id + '"> Update This Issue</a></td>'
+            result += '<br>'
         result += '<a href="/issuecomment/' + issue_id + '"> Comment On This Issue</a></td>'
         result += '<br>'
         result += '<hr>'
@@ -366,7 +367,7 @@ def insert_issues_table(heading, issues):
         table_str += '</ul>'
         return table_str
 
-def get_issues_home_page(global_config):
+def get_issues_home_page(global_config, allow_create=False):
  
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
@@ -381,8 +382,9 @@ def get_issues_home_page(global_config):
     result += '<br>'
     result += '<a href="/debriefs"> MatchDebriefs</a></td>'
     result += '<br>'
-    result += '<a href="/newissue"> Create New Issue</a></td>'
-    result += '<br>'
+    if global_config['issues_db_master'] == 'Yes' and allow_create == True:
+        result += '<a href="/newissue"> Create New Issue</a></td>'
+        result += '<br>'
     result += '<br>'
     result += '<hr>'
     
