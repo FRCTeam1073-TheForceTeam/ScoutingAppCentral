@@ -22,6 +22,8 @@ def get_page(global_config):
         page += '<h2> Team 1073 Scouting Application Home Page' + '</h3>'
     page += '<hr>'
     page += '<a href="/logout">Logout</a></td>'
+    page += '<br>'
+    page += '<a href="/userprofile">User Settings</a></td>'
     page += '<hr>'
     page += '<br>'
     page += '<a href="/issues">IssueTracker</a></td>'
