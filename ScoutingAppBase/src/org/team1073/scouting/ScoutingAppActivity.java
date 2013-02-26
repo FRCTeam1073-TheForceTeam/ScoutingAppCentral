@@ -186,7 +186,12 @@ public class ScoutingAppActivity extends Activity {
         return filename;
 	}
 
-	private String buildIssueFilename(EditText entry, String type){
+    // helper function to process click actions for Checkbox fields
+    public void onCheckboxClicked(View view) {
+    	unsavedChanges = true;
+    }
+    
+    private String buildIssueFilename(EditText entry, String type){
 		String filename="";
 		if ( entry.getText().toString().isEmpty() ) {
 			Integer count=1;
@@ -466,8 +471,8 @@ public class ScoutingAppActivity extends Activity {
 		            //// UICUSTOM:RELOAD_BEGIN - insert custom code for reload handler here
 		            //// UICUSTOM:RELOAD_END
 	            		            	
-				} else
-					Toast.makeText(ScoutingAppActivity.this, "Unknown Token: " + token, Toast.LENGTH_LONG).show();
+				} else {
+				}
 			}
 		} catch (Exception e) {
             Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
