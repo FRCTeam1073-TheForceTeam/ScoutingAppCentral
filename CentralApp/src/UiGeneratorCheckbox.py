@@ -8,15 +8,16 @@ from UiGeneratorControl import UiGenControl
 
 class CheckboxUiGenControl( UiGenControl ):
     attr_def = None
-    config = { 'Lines':'1', 'Items_Per_Line':'4' }
+    config = { 'Lines':'1', 'Items':'4' }
 
     def __init__(self, attr_def):
         self.attr_def = attr_def
         option_str = attr_def['Options']
-        options = option_str.split(':')
-        for option in options:
-            option_name, option_value = option.split('=')
-            self.config[option_name] = option_value
+        if option_str != '':
+            options = option_str.split(':')
+            for option in options:
+                option_name, option_value = option.split('=')
+                self.config[option_name] = option_value
 
     def gen_xml_string(self, above_name):
     
@@ -26,7 +27,7 @@ class CheckboxUiGenControl( UiGenControl ):
         xml_str += "        android:layout_width=\"120dp\"\n"
         if self.config['Lines'] == '2':
             xml_str += "        android:layout_height=\"80dp\"\n"
-        if self.config['Lines'] == '3':
+        elif self.config['Lines'] == '3':
             xml_str += "        android:layout_height=\"120dp\"\n"
         else:
             xml_str += "        android:layout_height=\"40dp\"\n"            
@@ -54,7 +55,7 @@ class CheckboxUiGenControl( UiGenControl ):
             name, token_val = token.split('=')
             xml_str = xml_str.replace('BUTTON',name)
             item_count += 1
-            if item_count % int(self.config['Items_Per_Line']) == 0:
+            if item_count % int(self.config['Items']) == 0:
                 line_count += 1
                 field_to_left = 'NAMELabel'
                 margin_top = str(40*line_count) + 'dp'
