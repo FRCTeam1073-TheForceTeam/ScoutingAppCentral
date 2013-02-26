@@ -5,6 +5,7 @@ Created on Jan 04, 2013
 @author: ksthilaire
 '''
 
+import os
 import datetime
 from sqlalchemy import create_engine
 from sqlalchemy import schema
@@ -95,7 +96,14 @@ class Issue(Base):
     timestamp        = Column(String(64))
 
     def create_file(self, basepath):
-        filename = '%s/Issue_%s.txt' % (basepath, self.issue_id)
+        basename = 'Issue_%s' % self.issue_id
+        filename = '%s/%s.txt' % (basepath, basename)
+        i = 1
+        while os.path.isfile(filename):
+            basename = 'Issue_%s_%03d' % (self.issue_id,i)
+            filename = '%s/%s.txt' % (basepath, basename)
+            i+=1
+            
         fd = open(filename, 'w')
         
         issue_str  = 'Id:%s\n' % self.issue_id
@@ -109,12 +117,13 @@ class Issue(Base):
         issue_str += 'Submitter:%s\n' % self.submitter
         issue_str += 'Description:%s\n' % self.description
         issue_str += 'Timestamp:%s\n' % self.timestamp
-        issue_str += 'Debrief_Key:%s\n' % self.debrief_key
-                    
+        if self.debrief_key != None:
+            issue_str += 'Debrief_Key:%s\n' % self.debrief_key
+        
+        issue_str = issue_str.rstrip('\n')    
         fd.write(issue_str)
         fd.close()
- 
-        
+
         
 class IssueComment(Base):
     __tablename__ = "issue_comments"
@@ -484,8 +493,7 @@ def getTaskgroupEmailLists(global_config, name):
     return email_list_str
 
 def getUserList(session):
-    users = session.query(User).all()
-    users.sort()
+    users = session.query(User).order_by(User.username).all()
     return users
 
 def getUser(session, username):
