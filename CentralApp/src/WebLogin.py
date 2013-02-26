@@ -79,7 +79,7 @@ def check_access(global_config, access_level):
         user = IssueTrackerDataModel.getUser(session, username)
         if user:
             if user.check_access_level(access_level) == True:
-                return username
+                return (username,user.access_level)
             
         raise web.seeother('/accessdenied')
         
