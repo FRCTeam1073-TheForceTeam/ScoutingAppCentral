@@ -13,6 +13,7 @@ user_roles = [ 'Mentor', 'Student', 'Guest' ]
 user_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business']
 user_contact_modes = ['Text', 'Email']
 user_carriers = ['AT&T', 'Verizon', 'USCellular', 'Sprint', 'Other', 'None']
+user_access_levels = [0,1,2,3,4,5,6,7,8,9,10]
 
 user_username_label ='Username:'
 user_emailaddress_label ='Email_Address:'
@@ -25,6 +26,7 @@ user_cellphone_label = 'Cellphone:'
 user_carrier_label = 'Carrier:'
 user_password_label = 'Password:'
 user_password_confirm_label = 'Confirm:'
+user_access_level_label = 'Access_Level:'
 
 userform = form.Form( 
     form.Textbox(user_username_label, size=30),
@@ -33,11 +35,28 @@ userform = form.Form(
     form.Textbox(user_emailaddress_label, size=30),
     form.Textbox(user_display_name_label, size=30),
     form.Textbox(user_nickname_label, size=30),
+    form.Dropdown(user_access_level_label, user_access_levels),
     form.Dropdown(user_role_label, user_roles),
     form.Dropdown(user_subgroup_label, user_subgroups),
     form.Dropdown(user_contact_mode_label, user_contact_modes),
     form.Textbox(user_cellphone_label, size=30),
     form.Dropdown(user_carrier_label, user_carriers))
+
+userprofileform = form.Form( 
+    form.Textbox(user_username_label, size=30),
+    form.Password(user_password_label, size=30),
+    form.Password(user_password_confirm_label, size=30),
+    form.Textbox(user_emailaddress_label, size=30),
+    form.Textbox(user_display_name_label, size=30),
+    form.Textbox(user_nickname_label, size=30),
+    form.Dropdown(user_subgroup_label, user_subgroups),
+    form.Dropdown(user_contact_mode_label, user_contact_modes),
+    form.Textbox(user_cellphone_label, size=30),
+    form.Dropdown(user_carrier_label, user_carriers))
+
+user_file_label = 'Users Spreadsheet Filename:'
+load_users_form = form.Form(
+    form.Textbox(user_file_label, size=30))
 
 def get_user_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
@@ -57,6 +76,7 @@ def get_user_form(global_config, username):
     form[user_role_label].value = user.role
     form[user_contact_mode_label].value = user.contact_mode
     form[user_nickname_label].value = user.altname
+    form[user_access_level_label].value = user.access_level
 
     return form
 
@@ -64,25 +84,35 @@ def process_user_form(global_config, form, username):
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
     session = DbSession.open_db_session(global_config['issues_db_name'])
-                    
+                                
     email_address = form[user_emailaddress_label].value
     cellphone = form[user_cellphone_label].value
     carrier = form[user_carrier_label].value
     subgroup = form[user_subgroup_label].value
-    if form[user_password_label].value != form[user_password_confirm_label].value:
-        raise Exception('Passwords Do NOT Match')
+    
+    user = IssueTrackerDataModel.getUser(session, username)
+    if user:
+        # validate the password confirmation only if the user actually changed his
+        # password
+        if form[user_password_label].value != user.password:
+            if form[user_password_label].value != form[user_password_confirm_label].value:
+                raise Exception('Passwords Do NOT Match')
 
     password = form[user_password_label].value
     display_name = form[user_display_name_label].value
     role = form[user_role_label].value
     contact_mode = form[user_contact_mode_label].value
     nickname = form[user_nickname_label].value
+    access_level = form[user_access_level_label].value
+    
+    '''
     if role == 'Mentor':
         access_level = 3
     elif role == 'Student':
         access_level = 5
     elif role == 'Guest':
         access_level = 10
+    '''
                 
     IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
                                           cellphone, carrier, subgroup, password, 
@@ -90,9 +120,81 @@ def process_user_form(global_config, form, username):
                                           access_level)
     
     session.commit()
-    
-    return 'User Profile Updated Successfully For: %s' % username            
+    return '/users'
 
+def get_userprofile_form(global_config, username):
+    global_config['logger'].debug( 'GET User Form For: %s', username )
+        
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+
+    user = IssueTrackerDataModel.getUser(session, username)
+    
+    form = userprofileform()
+    form[user_username_label].value = user.username
+    form[user_emailaddress_label].value = user.email_address
+    form[user_cellphone_label].value = user.cellphone
+    form[user_carrier_label].value = user.carrier
+    form[user_subgroup_label].value = user.subgroup
+    form[user_password_label].value = user.password
+    form[user_display_name_label].value = user.display_name
+    form[user_contact_mode_label].value = user.contact_mode
+    form[user_nickname_label].value = user.altname
+
+    return form
+
+def process_userprofile_form(global_config, form, username):
+    global_config['logger'].debug( 'Process User Profile For: %s', username )
+    
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+                                
+    email_address = form[user_emailaddress_label].value
+    cellphone = form[user_cellphone_label].value
+    carrier = form[user_carrier_label].value
+    subgroup = form[user_subgroup_label].value
+    
+    # set default access level and rols, and override if the user is already in the system
+    access_level = 5
+    role = 'Guest'
+    user = IssueTrackerDataModel.getUser(session, username)
+    if user:
+        # validate the password confirmation only if the user actually changed his
+        # password
+        if form[user_password_label].value != user.password:
+            if form[user_password_label].value != form[user_password_confirm_label].value:
+                raise Exception('Passwords Do NOT Match')
+
+        access_level = user.access_level
+        role = user.role
+        
+    password = form[user_password_label].value
+    display_name = form[user_display_name_label].value
+    contact_mode = form[user_contact_mode_label].value
+    nickname = form[user_nickname_label].value
+                    
+    IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
+                                          cellphone, carrier, subgroup, password, 
+                                          display_name, role, contact_mode, nickname,
+                                          access_level)
+    session.commit()
+    return '/home'
+
+user_file_label = 'Users Spreadsheet Filename:'
+load_users_form = form.Form(
+    form.Textbox(user_file_label, size=30))
+
+def get_load_user_form(global_config):
+    global_config['logger'].debug('GET Load Users Form' )
+    form = load_users_form()
+    return form
+
+def process_load_user_form(global_config, form):
+    global_config['logger'].debug('Process Load Users Form')
+                                    
+    users_file = './config/' + form[user_file_label].value
+    global_config['logger'].debug('Loading Users from file: %s' % users_file)
+    IssueTrackerDataModel.add_users_from_file(global_config['issues_db_name'], users_file)
+    
+    return '/users'
 
 def insert_users_table(user_list):
         
@@ -103,6 +205,7 @@ def insert_users_table(user_list):
         table_str += '<th>Email_Address</th>'
         table_str += '<th>Display_Name</th>'
         table_str += '<th>Nickname</th>'
+        table_str += '<th>Access_Level</th>'
         table_str += '<th>Role</th>'
         table_str += '<th>Subgroup</th>'
         table_str += '<th>Contact_Mode</th>'
@@ -116,6 +219,7 @@ def insert_users_table(user_list):
             table_str += '<td>' + user.email_address + '</td>'
             table_str += '<td>' + user.display_name + '</td>'
             table_str += '<td>' + user.altname + '</td>'
+            table_str += '<td>' + str(user.access_level) + '</td>'
             table_str += '<td>' + user.role + '</td>'
             table_str += '<td>' + user.subgroup + '</td>'
             table_str += '<td>' + user.contact_mode + '</td>'
@@ -141,6 +245,8 @@ def get_user_list_page(global_config):
     result += '<br>'
     result += '<a href="/newuser"> Create New User</a></td>'
     result += '<br>'
+    result += '<a href="/loadusers"> Load Users From File</a></td>'
+    result += '<br>'
     result += '<br>'
     result += '<hr>'
     
@@ -150,3 +256,4 @@ def get_user_list_page(global_config):
     result += '</body>'
     result += '</html>'
     return result
+
