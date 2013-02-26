@@ -56,7 +56,9 @@ urls = (
     '/debrief/(.*)',        'DebriefPage',
     '/debriefs',            'DebriefsHomePage',
     '/user/(.*)',           'User',
+    '/userprofile',         'UserProfile',
     '/users',               'Users',
+    '/loadusers',           'LoadUsers',
     '/taskgroup_email/(.*)','TaskGroupEmail',
     '/sync/(.*)',           'Sync'
 )
@@ -65,14 +67,16 @@ urls = (
 logging.config.fileConfig('config/logging.conf')
 logger = logging.getLogger('scouting.webapp')
 
-global_config = {'my_team': '1074',
-                 'this_competition':None, 
-                 'other_competitions':None, 
-                 'db_name': 'scouting2013',
-                 'team_list':None,
-                 'issues_db_name': 'issues2013',
-                 'debriefs_db_name': 'debriefs2013',
-                 'logger': logger }
+global_config = { 'my_team'            : '1073',
+                  'this_competition'   : None, 
+                  'other_competitions' : None, 
+                  'db_name'            : 'scouting2013', 
+                  'issues_db_name'     : 'issues2013',
+                  'issues_db_master'   : 'No',
+                  'debriefs_db_name'   : 'debriefs2013',
+                  'attr_definitions'   : None,
+                  'team_list'          : None,
+                  'logger':logger }
 
 def read_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'r')
@@ -205,7 +209,7 @@ class IssueComment(object):
         return render.issue_comment_form(form)
            
     def POST(self, issue_id):
-        username = WebLogin.check_access(global_config,5)
+        username, access_level = WebLogin.check_access(global_config,5)
         form = WebIssueTracker.get_issue_comment_form(global_config, issue_id)
         if not form.validates(): 
             return render.issue_comment_form_done(form)
@@ -222,32 +226,57 @@ class IssueUpdate(object):
         return render.issue_form(form)
 
     def POST(self, issue_id):
-        username = WebLogin.check_access(global_config,1)
+        username, access_level = WebLogin.check_access(global_config,1)
         form = WebIssueTracker.get_issue_form(global_config, issue_id)
         if not form.validates(): 
             return render.issue_form_done(form)
         else:
             result = WebIssueTracker.process_issue_form(global_config, form, issue_id, username)
             raise web.seeother(result)
-
         
 class Issue(object):
     
     def GET(self, issue_id):
-        WebLogin.check_access(global_config,5)
-        return WebIssueTracker.get_issue_page(global_config, issue_id)
+        username, access_level = WebLogin.check_access(global_config,5)
+        if access_level <=1:
+            return WebIssueTracker.get_issue_page(global_config, issue_id, allow_update=True)
+        else:
+            return WebIssueTracker.get_issue_page(global_config, issue_id)
         
 class IssuesHomePage(object):
 
     def GET(self):
-        WebLogin.check_access(global_config,5)
-        return WebIssueTracker.get_issues_home_page(global_config)
+        username, access_level = WebLogin.check_access(global_config,5)
+        if access_level <= 1:
+            return WebIssueTracker.get_issues_home_page(global_config,allow_create=True)
+        else:
+            return WebIssueTracker.get_issues_home_page(global_config)
 
 class Users(object):
     def GET(self):
         WebLogin.check_access(global_config,0)
         return WebUsers.get_user_list_page(global_config)
     
+class LoadUsers(object):
+    
+    def GET(self):
+        WebLogin.check_access(global_config,0)
+        form = WebUsers.get_load_user_form(global_config)
+        return render.user_form(form)
+
+    def POST(self):
+        WebLogin.check_access(global_config,0)
+        form = WebUsers.get_load_user_form(global_config)
+        if not form.validates(): 
+            return render.user_form_done(form)
+        else:
+            try:
+                result = WebUsers.process_load_user_form(global_config, form)
+                raise web.seeother(result)
+
+            except Exception, e:
+                return str(e)
+
 class User(object):
     
     def GET(self, username):
@@ -262,7 +291,29 @@ class User(object):
             return render.user_form_done(form)
         else:
             try:
-                return WebUsers.process_user_form(global_config, form, username)
+                result = WebUsers.process_user_form(global_config, form, username)
+                raise web.seeother(result)
+
+            except Exception, e:
+                return str(e)
+
+class UserProfile(object):
+    
+    def GET(self):
+        username,access_level = WebLogin.check_access(global_config,10)
+        form = WebUsers.get_userprofile_form(global_config, username)
+        return render.user_form(form)
+
+    def POST(self):
+        username, access_level = WebLogin.check_access(global_config,10)
+        form = WebUsers.get_userprofile_form(global_config, username)
+        if not form.validates(): 
+            return render.user_form_done(form)
+        else:
+            try:
+                result = WebUsers.process_userprofile_form(global_config, form, username)
+                raise web.seeother(result)
+
             except Exception, e:
                 return str(e)
 
@@ -285,7 +336,7 @@ class DebriefComment(object):
         return render.issue_comment_form(form)
            
     def POST(self, match):
-        username = WebLogin.check_access(global_config,5)
+        username,access_level = WebLogin.check_access(global_config,5)
         form = WebDebrief.get_match_comment_form(global_config, match)
         if not form.validates(): 
             return render.issue_comment_form_done(form)
