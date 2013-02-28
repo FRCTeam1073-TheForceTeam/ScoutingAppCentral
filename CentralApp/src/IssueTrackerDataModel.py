@@ -513,6 +513,9 @@ def getUserList(session):
     return users
 
 def getUser(session, username):
+    if username == '':
+        return None
+    
     userList = session.query(User).filter(User.username==username)
     user = userList.first()
     if user is None:
