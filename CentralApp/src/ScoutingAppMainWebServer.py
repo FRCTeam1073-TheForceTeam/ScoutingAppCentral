@@ -38,6 +38,7 @@ urls = (
     '/login',               'Login',
     '/logout',              'Logout',
     '/accessdenied',        'AccessDenied',
+    '/accountdisabled',     'AccountDisabled',
     '/home',                'HomePage',
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
@@ -60,6 +61,7 @@ urls = (
     '/debriefs',            'DebriefsHomePage',
     '/user/(.*)',           'User',
     '/userprofile',         'UserProfile',
+    '/newuser',             'NewUser',
     '/deleteuser',          'DeleteUser',
     '/users',               'Users',
     '/loadusers',           'LoadUsers',
@@ -115,6 +117,10 @@ class AccessDenied(object):
     def GET(self):
         return 'Sorry, you are not authorized to access this page'
     
+class AccountDisabled(object):
+    def GET(self):
+        return WebLogin.do_account_disabled(global_config)
+
 class HomePage(object):
 
     def GET(self):
@@ -344,15 +350,35 @@ class DeleteUser(object):
             except Exception, e:
                 return str(e)
 
+class NewUser(object):
+    
+    def GET(self):
+        WebLogin.check_access(global_config,1)
+        form = WebUsers.get_user_form(global_config, '')
+        return render.user_form(form)
+
+    def POST(self):
+        my_username, my_access_level = WebLogin.check_access(global_config,1)
+        form = WebUsers.get_user_form(global_config, '')
+        if not form.validates(): 
+            return render.user_form_done(form)
+        else:
+            try:
+                result = WebUsers.process_user_form(global_config, form, '', my_access_level, new_user=True)
+                raise web.seeother(result)
+
+            except Exception, e:
+                return str(e)
+
 class UserProfile(object):
     
     def GET(self):
-        username,access_level = WebLogin.check_access(global_config,10)
+        username,access_level = WebLogin.check_access(global_config,9)
         form = WebUsers.get_userprofile_form(global_config, username)
         return render.user_form(form)
 
     def POST(self):
-        username, access_level = WebLogin.check_access(global_config,10)
+        username, access_level = WebLogin.check_access(global_config,9)
         form = WebUsers.get_userprofile_form(global_config, username)
         if not form.validates(): 
             return render.user_form_done(form)
@@ -398,7 +424,9 @@ class DebriefComment(object):
 class TaskGroupEmail(object):
     def GET(self, name):
         email_lists = IssueTrackerDataModel.getTaskgroupEmailLists(global_config, name)
-        
+        fd = open('./config/TaskGroupEmailLists.txt', 'w+')
+        fd.write( email_lists )
+        fd.close()
         return email_lists
 
 class Sync(object):
