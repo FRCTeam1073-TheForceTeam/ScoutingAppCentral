@@ -236,6 +236,22 @@ def deleteAllDebriefComments(session):
         session.delete(item)
     session.flush()
     
+def deleteDebriefCommentsByTag(session, match_id, tag):
+    comments = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).\
+                                           filter(DebriefComment.tag==tag).\
+                                           all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+
+def deleteDebriefCommentsByData(session, match_id, data):
+    comments = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).\
+                                           filter(DebriefComment.data==data).\
+                                           all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+        
 def create_db_tables(my_db):
     Base.metadata.create_all(my_db)
 

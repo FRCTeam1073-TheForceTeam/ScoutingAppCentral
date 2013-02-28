@@ -7,7 +7,7 @@ Created on Feb 7, 2013
 import DbSession
 import DataModel
 
-def get_page(global_config):
+def get_page(global_config, access_level):
     global_config['logger'].debug( 'GET Home Page' )
     
     session = DbSession.open_db_session(global_config['db_name'])
@@ -30,6 +30,9 @@ def get_page(global_config):
     page += '<br>'
     page += '<a href="/debriefs">MatchDebriefs</a></td>'
     page += '<br>'
+    if access_level <= 1:
+        page += '<a href="/admin">System Administration</a></td>'
+        page += '<br>'
     page += '<br>'
     page += '<hr>'
     page += '<h3> Team Scoring Summary' + '</h3>'

@@ -307,10 +307,10 @@ def get_issue_page(global_config, issue_id, allow_update=False):
         # result += '<br>'
         result += '<hr>'
         
-        if global_config['issues_db_master'] == 'Yes' and allow_update == True:
-            result += '<a href="/issueupdate/' + issue_id + '"> Update This Issue</a></td>'
+        if allow_update == True:
+            result += '<a href="/issueupdate/' + issue_id + '"> Update This Issue</a>'
             result += '<br>'
-        result += '<a href="/issuecomment/' + issue_id + '"> Comment On This Issue</a></td>'
+        result += '<a href="/issuecomment/' + issue_id + '"> Comment On This Issue</a>'
         result += '<br>'
         result += '<hr>'
         result += '<h3>Comments</h3>'
@@ -323,12 +323,17 @@ def get_issue_page(global_config, issue_id, allow_update=False):
             table_str += '<th>Timestamp</th>'
             table_str += '<th>Commented By</th>'
             table_str += '<th>Comment</th>'
+            if allow_update == True:
+                table_str += '<th>Delete</th>'
             table_str += '</tr>'
             for comment in comments:      
                 table_str += '<tr>'
                 table_str += '<td>' + time.strftime('%b %d, %Y %I:%M:%S %p', time.localtime(float(comment.tag))) + '</td>'
                 table_str += '<td>' + comment.submitter + '</td>'
                 table_str += '<td>' + comment.data + '</td>'
+                if global_config['issues_db_master'] == 'Yes' and allow_update == True:
+                    table_str += '<td><a href="/deletecomment/issue/' + issue_id + '/' + comment.tag + '">Delete</a></td>'
+
                 table_str += '</tr>'
             table_str += '</table>'
             table_str += '</ul>'
@@ -352,6 +357,8 @@ def insert_issues_table(heading, issues):
         table_str += '<th>Priority</th>'
         table_str += '<th>Owner</th>'
         table_str += '<th>Status</th>'
+        table_str += '<th>' + 'Reported In' + '</th>'
+        table_str += '<th>Task Group</th>'
         table_str += '<th>Summary</th>'
         table_str += '</tr>'
         
@@ -361,6 +368,12 @@ def insert_issues_table(heading, issues):
             table_str += '<td>' + issue.priority + '</td>'
             table_str += '<td>' + issue.owner + '</td>'
             table_str += '<td>' + issue.status + '</td>'
+            if issue.debrief_key != None:
+                match_str = issue.debrief_key.split('_')[0]           
+                table_str += '<td><a href="/debrief/' + match_str + '">' + 'Match ' + match_str + '</a></td>'
+            else:
+                table_str += '<td></td>'
+            table_str += '<td>' + issue.component + '</td>'
             table_str += '<td>' + issue.summary + '</td>'
             table_str += '</tr>'
         table_str += '</table>'
@@ -401,3 +414,10 @@ def get_issues_home_page(global_config, allow_create=False):
     result += '</html>'
     return result
 
+def delete_comment(global_config, issue_id, tag):
+ 
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+    
+    IssueTrackerDataModel.deleteIssueCommentsByTag(session, issue_id, tag)
+    session.commit()
+    return '/issue/%s' % issue_id

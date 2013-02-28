@@ -147,6 +147,7 @@ class User(Base):
     contact_mode    = Column(String(32))
     altname         = Column(String(32))
     access_level    = Column(Integer)
+    state           = Column(String(32))
 
     def check_password(self, password):
         if self.password == password:
@@ -361,7 +362,7 @@ def addIssueFromAttributes(session, issue_attributes):
     
 def addOrUpdateUser(session, username, email_address, cellphone, carrier, 
                     subgroup, password, display_name, role, contact_mode, 
-                    altname, access_level):
+                    altname, access_level, state='Enabled'):
 
     userList = session.query(User).filter(User.username==username)
     
@@ -380,11 +381,12 @@ def addOrUpdateUser(session, username, email_address, cellphone, carrier,
         user.carrier = carrier
         user.altname = altname
         user.access_level = access_level
+        user.state = state
     else:
         user = User(username=username, email_address=email_address, cellphone=cellphone,
                     password=password, display_name=display_name, contact_mode=contact_mode,
                     subgroup=subgroup,role=role,carrier=carrier, altname=altname,
-                    access_level=access_level)
+                    access_level=access_level, state=state)
         session.add(user)
     print user.json()
 
@@ -410,13 +412,17 @@ def addUserFromAttributes(session, user_attributes):
         carrier = user_attributes['Carrier']
         altname = user_attributes['Alt_Name']
         access_level = int(float(user_attributes['Access_Level']))
+        if user_attributes.has_key('State'):
+            state = user_attributes['State']
+        else:
+            state = 'Enabled'
         
     except KeyError:
         raise Exception( 'Incomplete User Record' )
     
     addOrUpdateUser(session, username, email_address, cellphone, carrier, 
                     subgroup, password, display_name, role, contact_mode, altname,
-                    access_level)
+                    access_level, state)
     
     taskgroups = user_attributes['Taskgroups'].split(',')
     for group in taskgroups:
@@ -428,7 +434,8 @@ def getTaskgroupList(session):
     taskgroups = []
     results = session.query(TaskgroupMember.taskgroup).distinct().all()
     for result in results:
-        taskgroups.append(str(result[0]))
+        if result[0] != '':
+            taskgroups.append(str(result[0]))
     taskgroups.sort()
     return taskgroups
 
@@ -491,6 +498,15 @@ def getTaskgroupEmailLists(global_config, name):
         email_list_str += getTaskgroupEmailList(session, name) + '\n'
         
     return email_list_str
+
+def getUserTaskgroups(session, username):
+    taskgroup_str=''
+    results = session.query(TaskgroupMember).filter(TaskgroupMember.username==username).all()
+    for result in results:
+        taskgroup_str += '%s,' % result.taskgroup            
+    taskgroup_str = taskgroup_str.rstrip(',')    
+    return taskgroup_str
+
 
 def getUserList(session):
     users = session.query(User).order_by(User.username).all()
@@ -562,18 +578,86 @@ def deleteAllUsers(session):
         session.delete(item)
     session.flush()
 
+def deleteUser(session, username):
+    a_list = session.query(User).filter(User.username==username).all()
+    for item in a_list:
+        session.delete(item)
+        
+    deleteUserFromAllTaskgroups(session, username)
+    session.flush()
+
 def deleteAllTaskgroupMembers(session):
     a_list = session.query(TaskgroupMember).all()
     for item in a_list:
         session.delete(item)
     session.flush()
 
+def deleteUsersFromTaskgroup(session, taskgroup):
+    a_list = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).\
+                                            all()
+    for item in a_list:
+        session.delete(item)
+    session.flush()
+
+def deleteUserFromAllTaskgroups(session, username):
+    a_list = session.query(TaskgroupMember).filter(TaskgroupMember.username==username).\
+                                            all()
+    for item in a_list:
+        session.delete(item)
+    session.flush()
+
+def deleteUserFromTaskgroup(session, taskgroup, username):
+    userList = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).\
+                                              filter(TaskgroupMember.username==username)
+    user = userList.first()
+    if user:
+        session.delete(user)
+    
+
 def deleteAllIssueComments(session):
     n_list = session.query(IssueComment).all()
     for item in n_list:
         session.delete(item)
     session.flush()
-    
+
+def deleteIssueComments(session, issue_id):
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).\
+                             all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+
+def deleteIssueCommentsByUser(session, issue_id, username):
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).\
+                                           filter(IssueComment.submitter==username).\
+                                           all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+
+def deleteIssueCommentsByTag(session, issue_id, tag):
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).\
+                                           filter(IssueComment.tag==tag).\
+                                           all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+
+def deleteIssueCommentsByData(session, issue_id, data):
+    comments = session.query(IssueComment).filter(IssueComment.issue_id==issue_id).\
+                                           filter(IssueComment.data==data).\
+                                           all()
+    for item in comments:
+        session.delete(item)
+    session.flush()
+        
+def updateUserTaskgroups(session, username, taskgroups_str):
+    deleteUserFromAllTaskgroups(session, username)
+    taskgroups = taskgroups_str.split(',')
+    for group in taskgroups:
+        addUserToTaskgroup(session, group, username)
+       
+        
 def create_db_tables(my_db):
     Base.metadata.create_all(my_db)
 
@@ -606,7 +690,7 @@ def create_admin_user( db_name, pw):
 
     addOrUpdateUser(session, 'admin', 'none', 'none', 'none', 
                     'none', pw, 'Administrator', 'Admin', 'none', 
-                    'none', 0)
+                    'none', 0, 'Enabled')
     session.commit()
     
     

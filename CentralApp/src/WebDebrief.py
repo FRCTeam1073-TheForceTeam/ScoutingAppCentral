@@ -39,7 +39,7 @@ def process_match_comment_form(global_config, form, match_str, username):
     return '/debrief/%s' % match_str            
 
 
-def get_debrief_page(global_config, match_str):
+def get_debrief_page(global_config, match_str, allow_update=False):
     
     session = DbSession.open_db_session(global_config['debriefs_db_name'])
     debrief = DebriefDataModel.getDebrief(session, int(match_str))
@@ -111,12 +111,16 @@ def get_debrief_page(global_config, match_str):
             table_str += '<th>Timestamp</th>'
             table_str += '<th>Commented By</th>'
             table_str += '<th>Comment</th>'
+            if allow_update == True:
+                table_str += '<th>Delete</th>'
             table_str += '</tr>'
             for comment in comments:      
                 table_str += '<tr>'
                 table_str += '<td>' + time.strftime('%b %d, %Y %I:%M:%S %p', time.localtime(float(comment.tag))) + '</td>'
                 table_str += '<td>' + comment.submitter + '</td>'
                 table_str += '<td>' + comment.data + '</td>'
+                if allow_update == True:
+                    table_str += '<td><a href="/deletecomment/debrief/' + match_str + '/' + comment.tag + '">Delete</a></td>'
                 table_str += '</tr>'
             table_str += '</table>'
             table_str += '</ul>'
@@ -176,3 +180,10 @@ def get_debriefs_home_page(global_config):
     result += '</html>'
     return result
 
+def delete_comment(global_config, match_str, tag):
+ 
+    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+    
+    DebriefDataModel.deleteDebriefCommentsByTag(session, match_str, tag)
+    session.commit()
+    return '/debrief/%s' % match_str

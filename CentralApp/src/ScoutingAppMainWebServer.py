@@ -22,6 +22,7 @@ from optparse import OptionParser
 import FileSync
 
 import WebHomePage
+import WebAdminPage
 import WebTeamData
 import WebGenExtJsStoreFiles
 import WebUiGen
@@ -37,7 +38,8 @@ urls = (
     '/login',               'Login',
     '/logout',              'Logout',
     '/accessdenied',        'AccessDenied',
-    '/home',                'HomePage',    
+    '/home',                'HomePage',
+    '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
     '/rankings',            'TeamRankings',
@@ -52,14 +54,18 @@ urls = (
     '/issueupdate/(.*)',    'IssueUpdate',
     '/issuecomment/(.*)',   'IssueComment',
     '/debriefcomment/(.*)', 'DebriefComment',
+    '/deletecomment/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
     '/debrief/(.*)',        'DebriefPage',
     '/debriefs',            'DebriefsHomePage',
     '/user/(.*)',           'User',
     '/userprofile',         'UserProfile',
+    '/deleteuser',          'DeleteUser',
     '/users',               'Users',
     '/loadusers',           'LoadUsers',
     '/taskgroup_email/(.*)','TaskGroupEmail',
+    '/taskgroup/(.*)',      'TaskGroup',
+    '/taskgroups',          'TaskGroups',
     '/sync/(.*)',           'Sync'
 )
 
@@ -112,8 +118,14 @@ class AccessDenied(object):
 class HomePage(object):
 
     def GET(self):
-        WebLogin.check_access(global_config,10)
-        return WebHomePage.get_page(global_config)
+        username, access_level = WebLogin.check_access(global_config,10)
+        return WebHomePage.get_page(global_config, access_level)
+    
+class AdminPage(object):
+
+    def GET(self):
+        username, access_level = WebLogin.check_access(global_config,1)
+        return WebAdminPage.get_page(global_config, access_level)
     
 class TeamDataFiles(object):
 
@@ -189,12 +201,12 @@ class SetConfig(object):
 
 class NewIssue(object):
     def GET(self):
-        WebLogin.check_access(global_config,1)
+        WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_new_issue_form(global_config)
         return render.new_issue_form(form)
            
     def POST(self):
-        WebLogin.check_access(global_config,1)
+        WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_new_issue_form(global_config)
         if not form.validates(): 
             return render.new_issue_form_done(form)
@@ -221,12 +233,12 @@ class IssueComment(object):
 class IssueUpdate(object):
     
     def GET(self, issue_id):
-        WebLogin.check_access(global_config,1)
+        WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_issue_form(global_config, issue_id)
         return render.issue_form(form)
 
     def POST(self, issue_id):
-        username, access_level = WebLogin.check_access(global_config,1)
+        username, access_level = WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_issue_form(global_config, issue_id)
         if not form.validates(): 
             return render.issue_form_done(form)
@@ -243,6 +255,21 @@ class Issue(object):
         else:
             return WebIssueTracker.get_issue_page(global_config, issue_id)
         
+class DeleteComment(object):
+    
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,1)
+        params = param_str.split('/')
+        if params[0] == 'issue':
+            result = WebIssueTracker.delete_comment(global_config,params[1], params[2])
+        elif params[0] == 'debrief':
+            result = WebDebrief.delete_comment(global_config,params[1], params[2])
+        else:
+            return "404 Not Found"
+
+        raise web.seeother(result)
+ 
+        
 class IssuesHomePage(object):
 
     def GET(self):
@@ -254,18 +281,18 @@ class IssuesHomePage(object):
 
 class Users(object):
     def GET(self):
-        WebLogin.check_access(global_config,0)
+        WebLogin.check_access(global_config,1)
         return WebUsers.get_user_list_page(global_config)
     
 class LoadUsers(object):
     
     def GET(self):
-        WebLogin.check_access(global_config,0)
+        WebLogin.check_access(global_config,1)
         form = WebUsers.get_load_user_form(global_config)
         return render.user_form(form)
 
     def POST(self):
-        WebLogin.check_access(global_config,0)
+        WebLogin.check_access(global_config,1)
         form = WebUsers.get_load_user_form(global_config)
         if not form.validates(): 
             return render.user_form_done(form)
@@ -280,18 +307,38 @@ class LoadUsers(object):
 class User(object):
     
     def GET(self, username):
-        WebLogin.check_access(global_config,0)
+        WebLogin.check_access(global_config,1)
         form = WebUsers.get_user_form(global_config, username)
         return render.user_form(form)
 
     def POST(self, username):
-        WebLogin.check_access(global_config,0)
+        my_username, my_access_level = WebLogin.check_access(global_config,1)
         form = WebUsers.get_user_form(global_config, username)
         if not form.validates(): 
             return render.user_form_done(form)
         else:
             try:
-                result = WebUsers.process_user_form(global_config, form, username)
+                result = WebUsers.process_user_form(global_config, form, username, my_access_level)
+                raise web.seeother(result)
+
+            except Exception, e:
+                return str(e)
+
+class DeleteUser(object):
+    
+    def GET(self):
+        WebLogin.check_access(global_config,1)
+        form = WebUsers.get_delete_user_form(global_config)
+        return render.user_form(form)
+
+    def POST(self):
+        WebLogin.check_access(global_config,1)
+        form = WebUsers.get_delete_user_form(global_config)
+        if not form.validates(): 
+            return render.user_form_done(form)
+        else:
+            try:
+                result = WebUsers.process_delete_user_form(global_config, form)
                 raise web.seeother(result)
 
             except Exception, e:
@@ -326,8 +373,12 @@ class DebriefsHomePage(object):
 class DebriefPage(object):
 
     def GET(self, match):
+        username, access_level = WebLogin.check_access(global_config,5)
+        if access_level <=1:
+            return WebDebrief.get_debrief_page(global_config, match, allow_update=True)
+        else:
+            return WebDebrief.get_debrief_page(global_config, match)
         WebLogin.check_access(global_config,5)
-        return WebDebrief.get_debrief_page(global_config, match)
 
 class DebriefComment(object):
     def GET(self, match):
@@ -346,7 +397,9 @@ class DebriefComment(object):
         
 class TaskGroupEmail(object):
     def GET(self, name):
-        return IssueTrackerDataModel.getTaskgroupEmailLists(global_config, name)
+        email_lists = IssueTrackerDataModel.getTaskgroupEmailLists(global_config, name)
+        
+        return email_lists
 
 class Sync(object):
     def GET(self, request_path):

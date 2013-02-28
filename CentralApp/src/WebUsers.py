@@ -14,6 +14,7 @@ user_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Str
 user_contact_modes = ['Text', 'Email']
 user_carriers = ['AT&T', 'Verizon', 'USCellular', 'Sprint', 'Other', 'None']
 user_access_levels = [0,1,2,3,4,5,6,7,8,9,10]
+user_states = ['Enabled', 'Disabled']
 
 user_username_label ='Username:'
 user_emailaddress_label ='Email_Address:'
@@ -27,6 +28,10 @@ user_carrier_label = 'Carrier:'
 user_password_label = 'Password:'
 user_password_confirm_label = 'Confirm:'
 user_access_level_label = 'Access_Level:'
+user_taskgroups_label = 'Taskgroups:'
+user_state_label = 'State:'
+
+users_list = []
 
 userform = form.Form( 
     form.Textbox(user_username_label, size=30),
@@ -40,7 +45,9 @@ userform = form.Form(
     form.Dropdown(user_subgroup_label, user_subgroups),
     form.Dropdown(user_contact_mode_label, user_contact_modes),
     form.Textbox(user_cellphone_label, size=30),
-    form.Dropdown(user_carrier_label, user_carriers))
+    form.Textbox(user_taskgroups_label, size=80),
+    form.Dropdown(user_carrier_label, user_carriers),
+    form.Dropdown(user_state_label, user_states))
 
 userprofileform = form.Form( 
     form.Textbox(user_username_label, size=30),
@@ -54,6 +61,9 @@ userprofileform = form.Form(
     form.Textbox(user_cellphone_label, size=30),
     form.Dropdown(user_carrier_label, user_carriers))
 
+deleteuserform = form.Form(
+    form.Dropdown(user_username_label, users_list))
+                           
 user_file_label = 'Users Spreadsheet Filename:'
 load_users_form = form.Form(
     form.Textbox(user_file_label, size=30))
@@ -64,23 +74,27 @@ def get_user_form(global_config, username):
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
     user = IssueTrackerDataModel.getUser(session, username)
-    
-    form = userform()
-    form[user_username_label].value = user.username
-    form[user_emailaddress_label].value = user.email_address
-    form[user_cellphone_label].value = user.cellphone
-    form[user_carrier_label].value = user.carrier
-    form[user_subgroup_label].value = user.subgroup
-    form[user_password_label].value = user.password
-    form[user_display_name_label].value = user.display_name
-    form[user_role_label].value = user.role
-    form[user_contact_mode_label].value = user.contact_mode
-    form[user_nickname_label].value = user.altname
-    form[user_access_level_label].value = user.access_level
+    if user:
+        form = userform()
+        form[user_username_label].value = user.username
+        form[user_emailaddress_label].value = user.email_address
+        form[user_cellphone_label].value = user.cellphone
+        form[user_carrier_label].value = user.carrier
+        form[user_subgroup_label].value = user.subgroup
+        form[user_password_label].value = user.password
+        form[user_display_name_label].value = user.display_name
+        form[user_role_label].value = user.role
+        form[user_contact_mode_label].value = user.contact_mode
+        form[user_nickname_label].value = user.altname
+        form[user_access_level_label].value = user.access_level
+        form[user_state_label].value = user.state
+        form[user_taskgroups_label].value = IssueTrackerDataModel.getUserTaskgroups(session, user.username)
+    else:
+        raise Exception('User Not Found!')
 
     return form
 
-def process_user_form(global_config, form, username):
+def process_user_form(global_config, form, username, my_access_level):
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
     session = DbSession.open_db_session(global_config['issues_db_name'])
@@ -97,28 +111,52 @@ def process_user_form(global_config, form, username):
         if form[user_password_label].value != user.password:
             if form[user_password_label].value != form[user_password_confirm_label].value:
                 raise Exception('Passwords Do NOT Match')
-
+        # also make sure to pull username from the database, in case the user
+        # provided the nickname
+        username = user.username
     password = form[user_password_label].value
     display_name = form[user_display_name_label].value
     role = form[user_role_label].value
     contact_mode = form[user_contact_mode_label].value
     nickname = form[user_nickname_label].value
-    access_level = form[user_access_level_label].value
+    access_level = int(form[user_access_level_label].value)
+    if access_level == 0:
+        if my_access_level >0: 
+            raise Exception('Only Supreme Admins (aka NOT you) can set access level to 0')
+    taskgroups = form[user_taskgroups_label].value
+    state = form[user_state_label].value
     
-    '''
-    if role == 'Mentor':
-        access_level = 3
-    elif role == 'Student':
-        access_level = 5
-    elif role == 'Guest':
-        access_level = 10
-    '''
-                
     IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
                                           cellphone, carrier, subgroup, password, 
                                           display_name, role, contact_mode, nickname,
-                                          access_level)
+                                          access_level, state)
+
+    IssueTrackerDataModel.updateUserTaskgroups(session, username, taskgroups)
+        
+    session.commit()
+    return '/users'
+
+def get_delete_user_form(global_config):
+    global_config['logger'].debug( 'GET Delete User Form' )
+        
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+
+    form = deleteuserform()
+
+    # apply the valid list of user names to the dropdown 
+    # for the username field
+    username_list = IssueTrackerDataModel.getUsernameList(session)
+    form[user_username_label].args = username_list
+    form[user_username_label].args = username_list
+
+    return form
+
+def process_delete_user_form(global_config, form):
+    global_config['logger'].debug( 'Process Delete User' )
     
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+    username = form[user_username_label].value
+    IssueTrackerDataModel.deleteUser(session, username)
     session.commit()
     return '/users'
 
@@ -165,6 +203,7 @@ def process_userprofile_form(global_config, form, username):
 
         access_level = user.access_level
         role = user.role
+        state = user.state
         
     password = form[user_password_label].value
     display_name = form[user_display_name_label].value
@@ -174,7 +213,7 @@ def process_userprofile_form(global_config, form, username):
     IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
                                           cellphone, carrier, subgroup, password, 
                                           display_name, role, contact_mode, nickname,
-                                          access_level)
+                                          access_level, state)
     session.commit()
     return '/home'
 
@@ -211,6 +250,7 @@ def insert_users_table(user_list):
         table_str += '<th>Contact_Mode</th>'
         table_str += '<th>Cellphone</th>'
         table_str += '<th>Carrier</th>'
+        table_str += '<th>State</th>'
         table_str += '</tr>'
         
         for user in user_list:
@@ -225,6 +265,7 @@ def insert_users_table(user_list):
             table_str += '<td>' + user.contact_mode + '</td>'
             table_str += '<td>' + user.cellphone + '</td>'
             table_str += '<td>' + user.carrier + '</td>'
+            table_str += '<td>' + user.state + '</td>'
             table_str += '</tr>'
         table_str += '</table>'
         table_str += '</ul>'
@@ -244,6 +285,8 @@ def get_user_list_page(global_config):
     result += '<a href="/home"> Home</a></td>'
     result += '<br>'
     result += '<a href="/newuser"> Create New User</a></td>'
+    result += '<br>'
+    result += '<a href="/deleteuser"> Delete User</a></td>'
     result += '<br>'
     result += '<a href="/loadusers"> Load Users From File</a></td>'
     result += '<br>'
