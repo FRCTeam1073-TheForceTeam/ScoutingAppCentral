@@ -74,8 +74,8 @@ def get_user_form(global_config, username):
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
     user = IssueTrackerDataModel.getUser(session, username)
+    form = userform()
     if user:
-        form = userform()
         form[user_username_label].value = user.username
         form[user_emailaddress_label].value = user.email_address
         form[user_cellphone_label].value = user.cellphone
@@ -90,11 +90,15 @@ def get_user_form(global_config, username):
         form[user_state_label].value = user.state
         form[user_taskgroups_label].value = IssueTrackerDataModel.getUserTaskgroups(session, user.username)
     else:
-        raise Exception('User Not Found!')
+        form[user_access_level_label].value = 10
+        form[user_role_label].value = 'Guest'
 
     return form
 
-def process_user_form(global_config, form, username, my_access_level):
+def process_user_form(global_config, form, username, my_access_level, new_user=False):
+    if new_user == True:
+        username = form[user_username_label].value
+        
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
     session = DbSession.open_db_session(global_config['issues_db_name'])
@@ -106,6 +110,9 @@ def process_user_form(global_config, form, username, my_access_level):
     
     user = IssueTrackerDataModel.getUser(session, username)
     if user:
+        if new_user == True:
+            raise Exception('User Already Exists!')
+            
         # validate the password confirmation only if the user actually changed his
         # password
         if form[user_password_label].value != user.password:
