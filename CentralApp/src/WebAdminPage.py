@@ -30,6 +30,8 @@ def get_page(global_config, access_level):
     page += '<br>'
     page += '<a href="/taskgroups">Task Group Admin</a></td>'
     page += '<br>'
+    page += '<a href="/taskgroup_email/all">Create Task Group Email/Text List File</a></td>'
+    page += '<br>'
     if access_level == 0:
         page += '<a href="/genui">Tablet User Interface Generation</a></td>'
         page += '<br>'
