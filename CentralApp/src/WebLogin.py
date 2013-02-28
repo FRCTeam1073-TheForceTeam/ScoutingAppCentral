@@ -34,6 +34,8 @@ def auth_user(global_config):
             session = DbSession.open_db_session(global_config['issues_db_name'])
             user = IssueTrackerDataModel.getUser(session, username)
             if user:
+                if user.state == 'Disabled':
+                    raise web.seeother('/accountdisabled')
                 #if (username,password) in allowed:
                 if user.check_password(password) == True:
                     raise web.seeother('/home')
@@ -83,3 +85,24 @@ def check_access(global_config, access_level):
             
         raise web.seeother('/accessdenied')
         
+def do_account_disabled(global_config):
+    auth = web.ctx.env.get('HTTP_AUTHORIZATION')
+    if auth is None:
+        raise web.seeother('/login')
+    else:
+        auth = re.sub('^Basic ','',auth)
+        username,password = base64.decodestring(auth).split(':')
+        logged_out_users[username] = True
+        web.header('Cache-Control','no-cache')
+        web.header('Pragma','no-cache')
+        
+        result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
+        result += '<html>'
+        result += '<head>'
+        result += '<body>'
+        result += username + ' account is disabled, click <a href="/login">Here</a> once account is re-enabled'
+        result += '</body>'
+        result += '</head>'
+        result += '</html>'
+        return result
+
