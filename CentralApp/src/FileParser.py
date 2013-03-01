@@ -41,7 +41,7 @@ class FileParser(object):
         for token in row:
             # print 'Token data:', token
             # Split out the attribute name and value
-            attribute, value = token.split(':')
+            attribute, value = token.split(':', 1)
             file_attributes[attribute] = value
   
 
