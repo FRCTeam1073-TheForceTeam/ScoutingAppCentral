@@ -121,6 +121,13 @@ def getDebriefIssues(session, match_id):
     print str(issues)
     return issues
         
+def getDebriefIssue(session, match_id, priority):
+    issues = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).\
+                                         filter(DebriefIssue.priority==priority).all()
+    if len(issues) > 0:
+        issue = issues[0]
+    return issue
+        
 def getDebrief(session, match_id):
     debrief_list = session.query(Debrief).filter(Debrief.match_id==match_id).all()
     print str(debrief_list)
