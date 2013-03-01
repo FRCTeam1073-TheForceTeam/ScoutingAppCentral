@@ -12,7 +12,7 @@ import IssueTrackerDataModel
 user_roles = [ 'Mentor', 'Student', 'Guest' ]
 user_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business']
 user_contact_modes = ['Text', 'Email']
-user_carriers = ['AT&T', 'Verizon', 'USCellular', 'Sprint', 'Other', 'None']
+user_carriers = ['AT&T', 'Verizon', 'USCellular', 'Sprint', 'TMobile', 'Other', 'None']
 user_access_levels = [0,1,2,3,4,5,6,7,8,9,10]
 user_states = ['Enabled', 'Disabled']
 
