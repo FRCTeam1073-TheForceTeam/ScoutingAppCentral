@@ -16,7 +16,7 @@ issue_subgroups  = ['Unassigned','Mechanical', 'Software', 'Electrical', 'Integr
 issue_components = ['Unassigned','Drive_Train', 'Shooter', 'Feeder', 'Climber', 'Comms', 
                     'Autonomous','Vision', 'Dashboard', 'Inspection', 'Drive_Team', 'Strategy', 'Business']
 issue_statuses   = ['Open', 'Closed', 'Working', 'Resolved']
-issue_priorities = ['Priority_1', 'Priority_2', 'Priority_3']
+issue_priorities = ['Priority_1', 'Priority_2', 'Priority_3', 'Priority_4', 'Priority_5', 'Priority_6']
 issue_username_list = []
 
 issue_id_label = 'Id:'
