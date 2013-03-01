@@ -272,6 +272,16 @@ def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
     
     if attribute_def['Name'] == 'Notes':
         addNotesEntry(session, team, comp, value, date)
+    elif attribute_def['Type'] == 'String':
+        if attr:
+            attr.all_values += ':' + value
+        else:
+            attr = TeamAttribute(team=team, competition=comp, attr_name=name, 
+                                 attr_type=attr_type, num_occurs=1,
+                                 attr_value=0.0, cumulative_value=0.0, 
+                                 avg_value=0.0, all_values=value)
+            session.add(attr)
+            
     else:
         attr_value = convertValues(attr_type, value, attribute_def)
     
@@ -382,6 +392,8 @@ def convertValues(attr_type, value, attribute_def):
         attr_value = float(value)
     elif attr_type == 'Map_Integer':
         attr_value = float(mapValueFromString(value, attribute_def['Map_Values']))
+    else:
+        attr_value = value
     return attr_value
 
 def deleteAllProcessedFiles(session):
