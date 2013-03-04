@@ -54,6 +54,15 @@ def read_config(config_filename):
             pass   
     cfg_file.close()
 
+def log_exception(e):
+    global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+    traceback.print_exc(file=sys.stdout)
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+    for line in exception_info:
+        line = line.replace('\n','')
+        global_config['logger'].debug(line)
+
 class HTTPMessageError(Exception): pass
 class HTTPMessageReader(object):
     def __init__(self,sock):
@@ -218,7 +227,18 @@ def process_files(session, db_name, attr_definitions, input_dir, recursive, test
     
     # Process data files
     for data_filename in files:
-        process_file( session, attr_definitions, data_filename)
+        try:
+            process_file( session, attr_definitions, data_filename)
+        except Exception, e:
+            # log the exception but continue processing other files
+            log_exception(e)
+
+        # add the file to the set of processed files so that we don't process it again. Do it outside the
+        # try/except block so that we don't try to process a bogus file over and over again.       
+        DataModel.addProcessedFile(session, data_filename)
+        
+    # Commit all updates to the database
+    session.commit()
         
 def process_file(session, attr_definitions, data_filename):
     print 'processing %s'%data_filename
@@ -230,7 +250,6 @@ def process_file(session, attr_definitions, data_filename):
     # Parse the data file, storing all the information in the file_attributes
     # dictionary
     FileParser.FileParser(data_filename).parse(file_attributes)
-    DataModel.addProcessedFile(session, data_filename)
 
     # The team number can be retrieved from the Team attribute, one of the
     # mandatory attributes within the data file
@@ -279,8 +298,6 @@ def process_file(session, attr_definitions, data_filename):
             
     score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
     DataModel.setTeamScore(session, team, competition, score)
-    # Commit all updates to the database
-    session.commit()
 
 def process_issue_files(global_config, input_dir, recursive, test):
 
@@ -302,22 +319,28 @@ def process_issue_files(global_config, input_dir, recursive, test):
     # Process data files
     for data_filename in files:
         print 'processing %s'%data_filename
-        
-        # Initialize the file_attributes dictionary in preparation for the
-        # parsing of the data file
-        issue_attributes = {}
-        
-        # Parse the data file, storing all the information in the file_attributes
-        # dictionary
-        FileParser.FileParser(data_filename).parse(issue_attributes)
-        IssueTrackerDataModel.addProcessedFile(issues_session, data_filename)
+        try:
+            # Initialize the file_attributes dictionary in preparation for the
+            # parsing of the data file
+            issue_attributes = {}
+            
+            # Parse the data file, storing all the information in the file_attributes
+            # dictionary
+            FileParser.FileParser(data_filename).parse(issue_attributes)
+    
+            issue = IssueTrackerDataModel.addIssueFromAttributes(issues_session, issue_attributes)
+            if issue.debrief_key != None:
+                match_str, issue_key = issue.debrief_key.split('_')
+                DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, int(match_str), 
+                                                         global_config['this_competition'],
+                                                         issue.issue_id, issue_key)
+        except Exception, e:
+            # log the exception but continue processing other files
+            log_exception(e)
 
-        issue = IssueTrackerDataModel.addIssueFromAttributes(issues_session, issue_attributes)
-        if issue.debrief_key != None:
-            match_str, issue_key = issue.debrief_key.split('_')
-            DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, int(match_str), 
-                                                     global_config['this_competition'],
-                                                     issue.issue_id, issue_key)
+        # add the file to the set of processed files so that we don't process it again. Do it outside the
+        # try/except block so that we don't try to process a bogus file over and over again.       
+        IssueTrackerDataModel.addProcessedFile(issues_session, data_filename)
             
     debrief_session.commit()
     issues_session.commit()
@@ -345,115 +368,121 @@ def process_debrief_files(global_config, input_dir, recursive, test):
     # Process data files
     for data_filename in files:
         print 'processing %s'%data_filename
-        
-        # Initialize the debrief_attributes dictionary in preparation for the
-        # parsing of the data file
-        debrief_attributes = {}
-        
-        # Parse the data file, storing all the information in the attributes
-        # dictionary
-        FileParser.FileParser(data_filename).parse(debrief_attributes)
-        DebriefDataModel.addDebriefFromAttributes(debrief_session, debrief_attributes)
-        DebriefDataModel.addProcessedFile(debrief_session, data_filename)
-        
-        # Also, extract the competition name, too, if it has been included in
-        # the data file
-        if debrief_attributes.has_key('Competition'):
-            competition = debrief_attributes['Competition']
-        else:
-            competition = global_config['this_competition']
-            if competition == None:
-                raise Exception( 'Competition Not Specified!')
-
-        # At competition, we will likely have multiple laptops manging the data, but we want
-        # only one machine to be responsible for the issues database. In all likelihood,
-        # that machine will be the one in the pits, or possibly the application running
-        # in the cloud.
-        if global_config['issues_db_master'] == 'Yes':
-            match_id = debrief_attributes['Match']
-            submitter = debrief_attributes['Scouter']
-            timestamp = str(int(time.time()))
-            subgroup = 'Unassigned'
-            status = 'Open'
-            owner = 'Unassigned'
+        try:
+            # Initialize the debrief_attributes dictionary in preparation for the
+            # parsing of the data file
+            debrief_attributes = {}
             
-            if debrief_attributes.has_key('Issue1_Summary'):
-                # look to see if there is already a debrief issue, and if so, do not attempt to create/update
-                # an issue, as there are already other issue files that would then conflict with this one
-                issue_key = 'Issue1'
-                if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                    summary = debrief_attributes['Issue1_Summary']
-                    if debrief_attributes.has_key('Issue1_Priority'):
-                        priority = debrief_attributes['Issue1_Priority']
-                    else:
-                        priority = 'Priority_3'
-                    if debrief_attributes.has_key('Issue1_Taskgroup'):
-                        component = debrief_attributes['Issue1_Taskgroup']
-                    else:
-                        component = ''
-                    if debrief_attributes.has_key('Issue1_Description'):
-                        description = debrief_attributes['Issue1_Description']
-                    else:
-                        description = ''
-                    debrief_key = str(match_id) + '_' + issue_key
+            # Parse the data file, storing all the information in the attributes
+            # dictionary
+            FileParser.FileParser(data_filename).parse(debrief_attributes)
+            DebriefDataModel.addDebriefFromAttributes(debrief_session, debrief_attributes)
+            
+            # Also, extract the competition name, too, if it has been included in
+            # the data file
+            if debrief_attributes.has_key('Competition'):
+                competition = debrief_attributes['Competition']
+            else:
+                competition = global_config['this_competition']
+                if competition == None:
+                    raise Exception( 'Competition Not Specified!')
+    
+            # At competition, we will likely have multiple laptops manging the data, but we want
+            # only one machine to be responsible for the issues database. In all likelihood,
+            # that machine will be the one in the pits, or possibly the application running
+            # in the cloud.
+            if global_config['issues_db_master'] == 'Yes':
+                match_id = debrief_attributes['Match']
+                submitter = debrief_attributes['Scouter']
+                timestamp = str(int(time.time()))
+                subgroup = 'Unassigned'
+                status = 'Open'
+                owner = 'Unassigned'
                 
-                    issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
-                    issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
-                             subgroup, component, submitter, owner, description, timestamp, debrief_key)
-                    if issue != None:
-                        issue.create_file('./static/%s/ScoutingData' % competition)
-                    DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
-                
-            if debrief_attributes.has_key('Issue2_Summary'):
-                issue_key = 'Issue2'
-                if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                    summary = debrief_attributes['Issue2_Summary']
-                    if debrief_attributes.has_key('Issue2_Priority'):
-                        priority = debrief_attributes['Issue2_Priority']
-                    else:
-                        priority = 'Priority_3'
-                    if debrief_attributes.has_key('Issue2_Taskgroup'):
-                        component = debrief_attributes['Issue2_Taskgroup']
-                    else:
-                        component = ''
-                    if debrief_attributes.has_key('Issue3_Description'):
-                        description = debrief_attributes['Issue3_Description']
-                    else:
-                        description = ''
-                    debrief_key = str(match_id) + '_' + issue_key
+                if debrief_attributes.has_key('Issue1_Summary'):
+                    # look to see if there is already a debrief issue, and if so, do not attempt to create/update
+                    # an issue, as there are already other issue files that would then conflict with this one
+                    issue_key = 'Issue1'
+                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
+                        summary = debrief_attributes['Issue1_Summary']
+                        if debrief_attributes.has_key('Issue1_Priority'):
+                            priority = debrief_attributes['Issue1_Priority']
+                        else:
+                            priority = 'Priority_3'
+                        if debrief_attributes.has_key('Issue1_Taskgroup'):
+                            component = debrief_attributes['Issue1_Taskgroup']
+                        else:
+                            component = ''
+                        if debrief_attributes.has_key('Issue1_Description'):
+                            description = debrief_attributes['Issue1_Description']
+                        else:
+                            description = ''
+                        debrief_key = str(match_id) + '_' + issue_key
                     
-                    issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
-                    issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
-                             subgroup, component, submitter, owner, description, timestamp, debrief_key)
-                    if issue != None:
-                        issue.create_file('./static/%s/ScoutingData' % competition)
-                    DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
-                
-            if debrief_attributes.has_key('Issue3_Summary'):
-                issue_key = 'Issue3'
-                if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                    summary = debrief_attributes['Issue3_Summary']
-                    if debrief_attributes.has_key('Issue3_Priority'):
-                        priority = debrief_attributes['Issue3_Priority']
-                    else:
-                        priority = 'Priority_3'
-                    if debrief_attributes.has_key('Issue3_Taskgroup'):
-                        component = debrief_attributes['Issue3_Taskgroup']
-                    else:
-                        component = ''
-                    if debrief_attributes.has_key('Issue3_Description'):
-                        description = debrief_attributes['Issue3_Description']
-                    else:
-                        description = ''
-                    debrief_key = str(match_id) + '_' + issue_key
-                
-                    issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
-                    issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
-                             subgroup, component, submitter, owner, description, timestamp, debrief_key)
-                    if issue != None:
-                        issue.create_file('./static/%s/ScoutingData' % competition)
-                    DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
-            
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                                 subgroup, component, submitter, owner, description, timestamp, debrief_key)
+                        if issue != None:
+                            issue.create_file('./static/%s/ScoutingData' % competition)
+                        DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
+                    
+                if debrief_attributes.has_key('Issue2_Summary'):
+                    issue_key = 'Issue2'
+                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
+                        summary = debrief_attributes['Issue2_Summary']
+                        if debrief_attributes.has_key('Issue2_Priority'):
+                            priority = debrief_attributes['Issue2_Priority']
+                        else:
+                            priority = 'Priority_3'
+                        if debrief_attributes.has_key('Issue2_Taskgroup'):
+                            component = debrief_attributes['Issue2_Taskgroup']
+                        else:
+                            component = ''
+                        if debrief_attributes.has_key('Issue3_Description'):
+                            description = debrief_attributes['Issue3_Description']
+                        else:
+                            description = ''
+                        debrief_key = str(match_id) + '_' + issue_key
+                        
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                                 subgroup, component, submitter, owner, description, timestamp, debrief_key)
+                        if issue != None:
+                            issue.create_file('./static/%s/ScoutingData' % competition)
+                        DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
+                    
+                if debrief_attributes.has_key('Issue3_Summary'):
+                    issue_key = 'Issue3'
+                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
+                        summary = debrief_attributes['Issue3_Summary']
+                        if debrief_attributes.has_key('Issue3_Priority'):
+                            priority = debrief_attributes['Issue3_Priority']
+                        else:
+                            priority = 'Priority_3'
+                        if debrief_attributes.has_key('Issue3_Taskgroup'):
+                            component = debrief_attributes['Issue3_Taskgroup']
+                        else:
+                            component = ''
+                        if debrief_attributes.has_key('Issue3_Description'):
+                            description = debrief_attributes['Issue3_Description']
+                        else:
+                            description = ''
+                        debrief_key = str(match_id) + '_' + issue_key
+                    
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
+                                 subgroup, component, submitter, owner, description, timestamp, debrief_key)
+                        if issue != None:
+                            issue.create_file('./static/%s/ScoutingData' % competition)
+                        DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
+        except Exception, e:
+            # log the exception but continue processing other files
+            log_exception(e)
+
+        # add the file to the set of processed files so that we don't process it again. Do it outside the
+        # try/except block so that we don't try to process a bogus file over and over again.       
+        DebriefDataModel.addProcessedFile(debrief_session, data_filename)
+    
     issues_session.commit()
     debrief_session.commit()
         
