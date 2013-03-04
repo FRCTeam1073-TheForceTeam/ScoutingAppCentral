@@ -31,6 +31,7 @@ import WebLogin
 import WebIssueTracker
 import WebDebrief
 import WebUsers
+import WebEventData
 
 render = web.template.render('templates/')
 
@@ -68,6 +69,10 @@ urls = (
     '/taskgroup_email/(.*)','TaskGroupEmail',
     '/taskgroup/(.*)',      'TaskGroup',
     '/taskgroups',          'TaskGroups',
+    '/events',              'Events',
+    '/eventstandings/(.*)', 'EventStandings',
+    '/eventresults/(.*)',   'EventResults',
+    
     '/sync/(.*)',           'Sync'
 )
 
@@ -174,6 +179,25 @@ class TeamDataFile(object):
     def GET(self, filename):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_datafile_page(global_config, filename)
+
+class Events(object):
+
+    def GET(self):
+        WebLogin.check_access(global_config,10)
+        return WebEventData.get_events_page(global_config)
+                           
+class EventStandings(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        return WebEventData.get_event_standings_page(global_config, name)
+                           
+class EventResults(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        return WebEventData.get_event_results_page(global_config, name)
+                           
     
 class GenUi(object):
     
