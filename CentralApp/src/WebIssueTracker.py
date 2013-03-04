@@ -307,7 +307,7 @@ def get_issue_page(global_config, issue_id, allow_update=False):
         # result += '<br>'
         result += '<hr>'
         
-        if allow_update == True:
+        if global_config['issues_db_master'] == 'Yes' and allow_update == True:
             result += '<a href="/issueupdate/' + issue_id + '"> Update This Issue</a>'
             result += '<br>'
         result += '<a href="/issuecomment/' + issue_id + '"> Comment On This Issue</a>'
@@ -390,7 +390,7 @@ def get_issues_home_page(global_config, allow_create=False):
     result += '<body>'
     result += '<h2> Team 1073 Issues Home Page' + '</h3>'
     result += '<hr>'
-    result += '<a href="/home">Home</a></td>'
+    result += '<a href="/home">Home</a>'
     result += '<hr>'
     result += '<br>'
     result += '<a href="/debriefs"> MatchDebriefs</a></td>'
