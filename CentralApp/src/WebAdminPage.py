@@ -21,10 +21,8 @@ def get_page(global_config, access_level):
     else:
         page += '<h2> Team 1073 Administration Page' + '</h3>'
     page += '<hr>'
-    page += '<a href="/logout">Logout</a></td>'
+    page += '<a href="/home">Home</a></td>'
     page += '<br>'
-    page += '<a href="/userprofile">User Settings</a></td>'
-    page += '<hr>'
     page += '<br>'
     page += '<a href="/users">User Management</a></td>'
     page += '<br>'
