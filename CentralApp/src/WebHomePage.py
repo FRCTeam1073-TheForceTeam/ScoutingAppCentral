@@ -36,12 +36,23 @@ def get_page(global_config, access_level):
         page += '<br>'
     page += '<br>'
     page += '<hr>'
+    
+    comp = global_config['this_competition']
+    
+    page += '<h3>FIRST FRC Competition Data' + '</h3>'
+    page += '<hr>'
+    page += '<ul>'
+    page += '<li><a href="/events">FRC Events List</a></li>'
+    if global_config.has_key('event_code'):
+        event_code = global_config['event_code']
+        page += '<li><a href="/eventstandings/%s">%s Info</a></li>' % (event_code,comp)
+    page += '</ul>'
+    page += '<hr>'
     page += '<h3> Team Scoring Summary' + '</h3>'
     page += '<hr>'
     page += '<ul>'
     page += '<li><a href="/static/test/designer.html"> Team Rankings</a></li>'
     
-    comp = global_config['this_competition']
     page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
     other_competitions = global_config['other_competitions'].split(',')
     for comp in other_competitions:
