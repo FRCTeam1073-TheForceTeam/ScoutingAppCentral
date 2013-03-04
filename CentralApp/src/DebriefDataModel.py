@@ -126,6 +126,8 @@ def getDebriefIssue(session, match_id, priority):
                                          filter(DebriefIssue.priority==priority).all()
     if len(issues) > 0:
         issue = issues[0]
+    else:
+        issue = None
     return issue
         
 def getDebrief(session, match_id):
@@ -218,12 +220,12 @@ def addDebriefFromAttributes(session, debrief_attributes):
         else:
             description = ''
         
+        addOrUpdateDebrief(session, match_id, competition, summary, description)
+        
+        session.commit()
     except KeyError:
         raise Exception( 'Incomplete Debrief Record' )
     
-    addOrUpdateDebrief(session, match_id, competition, summary, description)
-    
-    session.commit()
         
 def deleteAllProcessedFiles(session):
     p_list = session.query(ProcessedFiles).all()
