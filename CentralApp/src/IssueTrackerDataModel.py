@@ -460,7 +460,7 @@ def getEmailAddrFromCarrier(cellphone, carrier):
     if carrier == 'Verizon':
         email_addr += '@vtext.com'
     elif carrier == 'ATT':
-        email_addr += '@txt.att.net'
+        email_addr += '@mms.att.net'
     elif carrier == 'USCellular':
         email_addr += '@email.uscc.net'
     elif carrier == 'TMobile':    
