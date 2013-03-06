@@ -541,40 +541,15 @@ if __name__ == '__main__':
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
-    '''    
-    # Determine which database type to initialize based on the passed in command
-    # arguments    
-    if options.dbtype == 'sqlite':
-        db_connect='sqlite:///%s'%(db_name)
-    elif options.dbtype == 'mysql':
-        db_connect='mysql://%s:%s@localhost/%s'%(options.user, options.password, db_name)
-    else:
-        raise Exception("No Database Type Defined!")
-
-    # Initialize the database session connection
-    my_db = create_engine(db_connect)
-    Session = sessionmaker(bind=my_db)
-    session = Session()
-
-    # Create the database if it doesn't already exist
-    if not os.path.exists('./' + db_name):    
-        DataModel.create_db_tables(my_db)
-
-    # Create the database if it doesn't already exist
-    if not os.path.exists('./' + issues_db_name):    
-        IssueTrackerDataModel.create_db_tables(my_db)
-
-    # Create the database if it doesn't already exist
-    if not os.path.exists('./' + debriefs_db_name):    
-        DebriefDataModel.create_db_tables(my_db)
-    '''
-
     session         = DbSession.open_db_session(db_name, DataModel)
     issues_session  = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
     debrief_session = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
         
+    # make sure that there is a default admin user. If no admin user exists, then create one
+    if IssueTrackerDataModel.getUser( issues_session, 'admin' ) is None:
+        IssueTrackerDataModel.create_admin_user(issues_session, 'squirrel!')
+
     # Build the attribute definition dictionary from the definitions csv file
-    #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
     attrdef_filename = './config/' + global_config['attr_definitions']    
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)

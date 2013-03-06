@@ -13,6 +13,9 @@ import traceback
 import logging
 import logging.config
 
+import DbSession
+import DataModel
+import DebriefDataModel
 import IssueTrackerDataModel
 import AttributeDefinitions
 from sqlalchemy import create_engine
@@ -487,27 +490,30 @@ if __name__ == "__main__":
 
     logger.debug("Running the Scouting App Web Server")
 
-    # create the issues database if required
-    db_name = global_config['issues_db_name']
-    db_connect='sqlite:///%s'%(db_name)
-    my_db = create_engine(db_connect)
-    if not os.path.exists('./' + db_name):    
-        IssueTrackerDataModel.create_db_tables(my_db)
-        IssueTrackerDataModel.create_admin_user(db_name, 'squirrel!')
+    db_name = global_config['db_name']
+    issues_db_name = global_config['issues_db_name']
+    debriefs_db_name = global_config['debriefs_db_name']
+    session         = DbSession.open_db_session(db_name, DataModel)
+    issues_session  = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
+    debrief_session = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+ 
+    # load the users file if one is specified
+    if options.users_file != '':
+        users_file = './config/' + options.users_file
+        logger.debug('Loading Users from file: %s' % users_file)
+        IssueTrackerDataModel.add_users_from_file(issues_db_name, users_file)
+
+    # make sure that there is a default admin user. If no admin user exists, then create one
+    if IssueTrackerDataModel.getUser( issues_session, 'admin' ) is None:
+        IssueTrackerDataModel.create_admin_user(issues_session, 'squirrel!')
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
 
-    if options.users_file != '':
-        users_file = './config/' + options.users_file
-        logger.debug('Loading Users from file: %s' % users_file)
-        IssueTrackerDataModel.add_users_from_file(db_name, users_file)
-
     print 'Sys Args: %s' % sys.argv
     sys.argv[1:] = args
-    
     
     WebGenExtJsStoreFiles.gen_js_store_files(attr_definitions)
     

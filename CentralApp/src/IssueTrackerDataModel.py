@@ -689,11 +689,7 @@ def add_users_from_file( db_name, input_path):
     
     session.commit()
     
-def create_admin_user( db_name, pw):
-    db_connect='sqlite:///%s'%(db_name)
-    my_db = create_engine(db_connect)
-    Session = sessionmaker(bind=my_db)
-    session = Session()
+def create_admin_user( session, pw):
 
     addOrUpdateUser(session, 'admin', 'none', 'none', 'none', 
                     'none', pw, 'Administrator', 'Admin', 'none', 
