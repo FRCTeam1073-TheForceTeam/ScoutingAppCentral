@@ -85,35 +85,40 @@ def get_events_page(global_config):
         
         global_config['logger'].debug( 'GET Events Page' )
 
+        page = getWebPageHeader('FIRST Robotics Competition Events')
+
         url_str = 'http://thefirstalliance.org/api/api.json.php?action=list-events'
-        events_data = urllib2.urlopen(url_str).read()
-        events_data_dict = json.loads(events_data)
-        if events_data_dict['result'] == True:
-            event_list = events_data_dict['data']
-            
-            page = getWebPageHeader('FIRST Robotics Competition Events')
-            page += '<ul>'
-            page += '<table border="1" cellspacing="5">'
-            
-            page += '<tr>'
-            page += '<th>Event Code</th>'
-            page += '<th>Name</th>'
-            page += '<th>Start Date</th>'
-            page += '<th>End Date</th>'
-            page += '</tr>'
-            
-            for event in event_list:
-                page += '<tr>'
-                page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['api_name'],event['api_name'])
-                page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['api_name'],event['name'])
-                page += '<td>' + event['start_date'] + '</td>'
-                page += '<td>' + event['end_date'] + '</td>'
-                page += '</tr>'
+        try:
+            events_data = urllib2.urlopen(url_str).read()
+            events_data_dict = json.loads(events_data)
+            if events_data_dict['result'] == True:
+                event_list = events_data_dict['data']
                 
-            page += '</table>'
-            page += '</ul>'
-            page += '</body>'
-            page += '</html>'
+                page += '<ul>'
+                page += '<table border="1" cellspacing="5">'
+            
+                page += '<tr>'
+                page += '<th>Event Code</th>'
+                page += '<th>Name</th>'
+                page += '<th>Start Date</th>'
+                page += '<th>End Date</th>'
+                page += '</tr>'
+            
+                for event in event_list:
+                    page += '<tr>'
+                    page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['api_name'],event['api_name'])
+                    page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['api_name'],event['name'])
+                    page += '<td>' + event['start_date'] + '</td>'
+                    page += '<td>' + event['end_date'] + '</td>'
+                    page += '</tr>'
+                
+                page += '</table>'
+                page += '</ul>'
+        except:
+            pass
+
+        page += '</body>'
+        page += '</html>'
                 
         return page
 
@@ -121,58 +126,62 @@ def get_event_standings_page(global_config, event_code):
         
         global_config['logger'].debug( 'GET Event Standings Page' )
 
+        page = getWebPageHeader('FIRST Robotics Standings Details', event_code)
+            
         url_str = 'http://thefirstalliance.org/api/api.json.php?action=event-details&event-code=%s' % event_code
-        event_data = urllib2.urlopen(url_str).read()
-        event_data_dict = json.loads(event_data)
-        if event_data_dict['result'] == True:
-            event = event_data_dict['data']
-            rankings = event['rankings']
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+            event_data_dict = json.loads(event_data)
+            if event_data_dict['result'] == True:
+                event = event_data_dict['data']
+                rankings = event['rankings']
             
-            page = getWebPageHeader('FIRST Robotics Standings Details', event_code)
+                page += '<ul>'
+                page += '<li>Name: %s</li>' % event['name']
+                page += '<li>Code: %s</li>' % event['api_name']
+                page += '<li>Start Date: %s</li>' % event['start_date']
+                page += '<li>End Date: %s</li>' % event['end_date']
+                page += '</ul>'
             
-            page += '<ul>'
-            page += '<li>Name: %s</li>' % event['name']
-            page += '<li>Code: %s</li>' % event['api_name']
-            page += '<li>Start Date: %s</li>' % event['start_date']
-            page += '<li>End Date: %s</li>' % event['end_date']
-            page += '</ul>'
+                page += '<br>'
             
-            page += '<br>'
+                page += '<ul>'
+                page += '<table border="1" cellspacing="5">'
             
-            page += '<ul>'
-            page += '<table border="1" cellspacing="5">'
-            
-            page += '<tr>'
-            page += '<th>Team</th>'
-            page += '<th>Rank</th>'
-            page += '<th>Record (W-L-T)</th>'
-            page += '<th>Played</th>'
-            page += '<th>TP</th>'
-            page += '<th>CP</th>'
-            page += '<th>QS</th>'
-            page += '<th>BP</th>'
-            page += '<th>HP</th>'
-            page += '<th>DQ</th>'
-            page += '</tr>'
-            
-            for team in rankings:
                 page += '<tr>'
-                page += '<td><a href="/teamdata/%s">%s</a></td>' % (team['Team'],team['Team'])
-                page += '<td>' + team['Rank'] + '</td>'
-                page += '<td>' + team['Record (W-L-T)'] + '</td>'
-                page += '<td>' + team['Played'] + '</td>'
-                page += '<td>' + team['TP'] + '</td>'
-                page += '<td>' + team['CP'] + '</td>'
-                page += '<td>' + team['QS'] + '</td>'
-                page += '<td>' + team['BP'] + '</td>'
-                page += '<td>' + team['HP'] + '</td>'
-                page += '<td>' + team['DQ'] + '</td>'
+                page += '<th>Team</th>'
+                page += '<th>Rank</th>'
+                page += '<th>Record (W-L-T)</th>'
+                page += '<th>Played</th>'
+                page += '<th>TP</th>'
+                page += '<th>CP</th>'
+                page += '<th>QS</th>'
+                page += '<th>BP</th>'
+                page += '<th>HP</th>'
+                page += '<th>DQ</th>'
                 page += '</tr>'
+            
+                for team in rankings:
+                    page += '<tr>'
+                    page += '<td><a href="/teamdata/%s">%s</a></td>' % (team['Team'],team['Team'])
+                    page += '<td>' + team['Rank'] + '</td>'
+                    page += '<td>' + team['Record (W-L-T)'] + '</td>'
+                    page += '<td>' + team['Played'] + '</td>'
+                    page += '<td>' + team['TP'] + '</td>'
+                    page += '<td>' + team['CP'] + '</td>'
+                    page += '<td>' + team['QS'] + '</td>'
+                    page += '<td>' + team['BP'] + '</td>'
+                    page += '<td>' + team['HP'] + '</td>'
+                    page += '<td>' + team['DQ'] + '</td>'
+                    page += '</tr>'
                 
-            page += '</table>'
-            page += '</ul>'
-            page += '</body>'
-            page += '</html>'
+                page += '</table>'
+                page += '</ul>'
+        except:
+            pass
+
+        page += '</body>'
+        page += '</html>'
                 
         return page
 
@@ -236,21 +245,26 @@ def get_event_results_page(global_config, event_code):
         
         global_config['logger'].debug( 'GET Event Results Page' )
 
+        page = getWebPageHeader('FIRST Robotics Event Match Results', event_code)
+
         url_str = 'http://thefirstalliance.org/api/api.json.php?action=event-matches&event-code=%s' % event_code
-        event_data = urllib2.urlopen(url_str).read()
-        event_data_dict = json.loads(event_data)
-        if event_data_dict['result'] == True:
-            results = event_data_dict['data']
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+            event_data_dict = json.loads(event_data)
+            if event_data_dict['result'] == True:
+                results = event_data_dict['data']
             
-            page = getWebPageHeader('FIRST Robotics Event Match Results', event_code)
             
-            page += '<h3>Qualification Round Matches:</h3>'
-            page += getMatchResults( results, '1')
-            page += '<h3>Elimination Round Matches:</h3>'
-            page += getMatchResults( results, '2')
+                page += '<h3>Qualification Round Matches:</h3>'
+                page += getMatchResults( results, '1')
+                page += '<h3>Elimination Round Matches:</h3>'
+                page += getMatchResults( results, '2')
             
-            page += '</body>'
-            page += '</html>'
+        except:
+            pass
+
+        page += '</body>'
+        page += '</html>'
                 
         return page
 
