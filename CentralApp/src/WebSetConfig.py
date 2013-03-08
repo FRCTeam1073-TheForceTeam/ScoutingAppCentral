@@ -57,4 +57,13 @@ def process_form(global_config, form):
     global_config['issues_db_master'] = form[cfg_issues_db_master_label].value
     global_config['debriefs_db_name'] = form[cfg_debrief_db_name_label].value
     
+    write_config(global_config, './config/ScoutingAppConfig.txt')
     
+def write_config(config_dict, config_filename):
+    cfg_file = open(config_filename, 'w+')
+    for key, value in config_dict.iteritems():
+        if key != 'logger':
+            line = '%s=%s\n' % (key,value)
+            cfg_file.write(line)
+    cfg_file.close()
+
