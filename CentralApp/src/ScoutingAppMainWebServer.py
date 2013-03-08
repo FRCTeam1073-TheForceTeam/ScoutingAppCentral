@@ -108,6 +108,13 @@ def read_config(config_dict, config_filename):
             pass   
     cfg_file.close()
 
+def write_config(config_dict, config_filename):
+    cfg_file = open(config_filename, 'w+')
+    for key, value in config_dict.iteritems():
+        line = '%s=%s\n' % (key,value)
+        cfg_file.write(line)
+    cfg_file.close()
+
 read_config(global_config, './config/ScoutingAppConfig.txt')
 db_name = global_config['db_name']   
     
