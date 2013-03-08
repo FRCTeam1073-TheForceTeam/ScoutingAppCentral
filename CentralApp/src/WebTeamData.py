@@ -25,6 +25,13 @@ def get_datafiles(input_dir, pattern, recursive,logger):
         A list of files.
     '''
     
+    # make sure that the directory path exists
+    try: 
+        os.makedirs(input_dir)
+    except OSError:
+        if not os.path.isdir(input_dir):
+            raise
+
     file_list = []    
     
     if recursive:
@@ -94,7 +101,6 @@ def get_team_datafiles_page(global_config, name):
         if comp != '':
             input_dir = './static/' + comp + '/ScoutingData/'
             pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.txt'
-            #file_regex = re.compile(pattern)
             datafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
             
             input_dir = './static/' + comp + '/ScoutingPictures/'
@@ -120,7 +126,6 @@ def get_team_datafiles_page(global_config, name):
                     #page += '<li><a href="' + filename.lstrip('.') + '">' + basefile + '</a></li>'
                     page += '<li><a href="' + '/ScoutingData/' + basefile + '">' + basefile + '</a></li>'
                 page += '</ul>'
-                #page += '<hr>'
 
             if len(mediafiles) > 0:         
                 page += '<h3>Pictures and Videos:</h3>'
