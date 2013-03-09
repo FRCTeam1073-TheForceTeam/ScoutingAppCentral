@@ -3,9 +3,14 @@ Created on Feb 08, 2013
 
 @author: ksthilaire
 '''
+import AttributeDefinitions
 
-
-def gen_js_store_files(attr_definitions):
+def gen_js_store_files(global_config, attr_definitions = None):
+    if attr_definitions == None:
+        attrdef_filename = './config/' + global_config['attr_definitions']    
+        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions.parse(attrdef_filename)
+        
     js_store_fragment_start = "Ext.define('MyApp.store.MyJsonStore', {\n" + \
                               "    extend: 'Ext.data.Store',\n" +\
                               "\n" +\
@@ -109,7 +114,9 @@ def gen_js_store_files(attr_definitions):
     js_store_string = js_store_fragment_start
     js_panel_string = js_panel_fragment_start
     for attr_def in attr_order:
-        if ( attr_def['Include_In_Report'] == 'Yes'):
+        weight = int(float(attr_def['Weight']))
+        #if ( attr_def['Include_In_Report'] == 'Yes'):
+        if weight != 0:
             js_store_string += ",\n                {\n"
             js_store_string += "                    name: '" + attr_def['Name'] + "'\n"
             js_store_string += "                }"

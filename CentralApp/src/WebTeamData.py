@@ -239,21 +239,23 @@ def get_team_attributes_page(global_config):
     team_rankings = DataModel.getTeamsInRankOrder(session, comp)
     for team_entry in team_rankings:
         result.append("{ 'Team': " + str(team_entry.team))
-        result.append(", 'Score': " + str(team_entry.score))
+        result.append(", 'Score': " + '%.2f' % team_entry.score )
         team_attributes = DataModel.getTeamAttributesInOrder(session, team_entry.team, comp)
         for attribute in team_attributes:
             attr_def = attr_definitions.get_definition( attribute.attr_name )
-            if ( attr_def and attr_def['Include_In_Report'] == 'Yes'):
-                result.append( ", '" + attribute.attr_name + "': ")
-                if ( attr_def['Statistic_Type'] == 'Total'):
-                    #result.append( str(attribute.cumulative_value) )
-                    result.append( DataModel.mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def, True) )
-                elif ( attr_def['Statistic_Type'] == 'Average'):
-                    #result.append( str(attribute.avg_value) )
-                    result.append( DataModel.mapValueToString(attribute.avg_value, attribute.all_values, attr_def, True) )
-                else:
-                    #result.append( str(attribute.attr_value) )
-                    result.append( DataModel.mapValueToString(attribute.attr_value, attribute.all_values, attr_def, True) )
+            if attr_def:
+                weight = int(float(attr_def['Weight']))
+                if weight != 0:
+                    result.append( ", '" + attribute.attr_name + "': ")
+                    if ( attr_def['Statistic_Type'] == 'Total'):
+                        #result.append( str(attribute.cumulative_value) )
+                        result.append( DataModel.mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def, True) )
+                    elif ( attr_def['Statistic_Type'] == 'Average'):
+                        #result.append( str(attribute.avg_value) )
+                        result.append( DataModel.mapValueToString(attribute.avg_value, attribute.all_values, attr_def, True) )
+                    else:
+                        #result.append( str(attribute.attr_value) )
+                        result.append( DataModel.mapValueToString(attribute.attr_value, attribute.all_values, attr_def, True) )
                     
         result.append(' }')
         result.append(',\n')
