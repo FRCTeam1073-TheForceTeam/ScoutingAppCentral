@@ -51,7 +51,8 @@ def get_page(global_config, access_level):
     page += '<h3> Team Scoring Summary' + '</h3>'
     page += '<hr>'
     page += '<ul>'
-    page += '<li><a href="/static/test/designer.html"> Team Rankings</a></li>'
+    page += '<li><a href="/static/test/designer.html">Team Rankings</a></li>'
+    page += '<li><a href="/recalculaterankings">Recalculate Team Rankings</a></li>'
     
     page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
     other_competitions = global_config['other_competitions'].split(',')

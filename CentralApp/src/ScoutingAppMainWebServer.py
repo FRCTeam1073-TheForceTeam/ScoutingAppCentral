@@ -23,7 +23,7 @@ from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
 import FileSync
-
+import DataModel
 import WebHomePage
 import WebAdminPage
 import WebTeamData
@@ -48,6 +48,7 @@ urls = (
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
     '/rankings',            'TeamRankings',
+    '/recalculaterankings',  'RecalculateRankings',
     '/test',                'TeamAttributes',
     '/teamdata/(.*)',       'TeamDataFiles',
     '/ScoutingData/(.*)',   'TeamDataFile',
@@ -189,6 +190,15 @@ class TeamDataFile(object):
     def GET(self, filename):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_datafile_page(global_config, filename)
+
+class RecalculateRankings(object):
+
+    def GET(self):
+        WebLogin.check_access(global_config,4)
+        DataModel.recalculate_scoring(global_config)
+        WebGenExtJsStoreFiles.gen_js_store_files(global_config)
+
+        raise web.seeother('/static/test/designer.html')
 
 class Events(object):
 
@@ -522,7 +532,8 @@ if __name__ == "__main__":
     print 'Sys Args: %s' % sys.argv
     sys.argv[1:] = args
     
-    WebGenExtJsStoreFiles.gen_js_store_files(attr_definitions)
+    
+    WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
     
     try:
         webserver_app.run()
