@@ -164,15 +164,15 @@ def get_event_standings_page(global_config, event_code):
                 for team in rankings:
                     page += '<tr>'
                     page += '<td><a href="/teamdata/%s">%s</a></td>' % (team['Team'],team['Team'])
-                    page += '<td>' + team['Rank'] + '</td>'
-                    page += '<td>' + team['Record (W-L-T)'] + '</td>'
-                    page += '<td>' + team['Played'] + '</td>'
-                    page += '<td>' + team['TP'] + '</td>'
-                    page += '<td>' + team['CP'] + '</td>'
-                    page += '<td>' + team['QS'] + '</td>'
-                    page += '<td>' + team['BP'] + '</td>'
-                    page += '<td>' + team['HP'] + '</td>'
-                    page += '<td>' + team['DQ'] + '</td>'
+                    page += '<td>%s</td>' % str(team['Rank'])
+                    page += '<td>%s</td>' % str(team['Record (W-L-T)'])
+                    page += '<td>%s</td>' % str(team['Played'])
+                    page += '<td>%s</td>' % str(team['TP'])
+                    page += '<td>%s</td>' % str(team['CP'])
+                    page += '<td>%s</td>' % str(team['QS'])
+                    page += '<td>%s</td>' % str(team['BP'])
+                    page += '<td>%s</td>' % str(team['HP'])
+                    page += '<td>%s</td>' % str(team['DQ'])
                     page += '</tr>'
                 
                 page += '</table>'
