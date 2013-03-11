@@ -63,7 +63,8 @@ def write_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'w+')
     for key, value in config_dict.iteritems():
         if key != 'logger':
-            line = '%s=%s\n' % (key,value)
-            cfg_file.write(line)
+            if value != None and value != 'None':
+                line = '%s=%s\n' % (key,value)
+                cfg_file.write(line)
     cfg_file.close()
 
