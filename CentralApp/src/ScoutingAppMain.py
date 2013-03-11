@@ -536,8 +536,23 @@ if __name__ == '__main__':
     
     # read in the configuration file containing data related to this competition
     read_config(options.cfg_filename)
-    input_dir = './static/' + global_config['this_competition'] + '/ScoutingData/'
     
+    # set the input directory for the scouting data and make sure that it exists
+    input_dir = './static/' + global_config['this_competition'] + '/ScoutingData/'
+    try: 
+        os.makedirs(input_dir)
+    except OSError:
+        if not os.path.isdir(input_dir):
+            raise
+
+    # also make sure that the ScoutingPictures directory exists as well
+    pictures_dir = './static/' + global_config['this_competition'] + '/ScoutingPictures/'
+    try: 
+        os.makedirs(pictures_dir)
+    except OSError:
+        if not os.path.isdir(pictures_dir):
+            raise
+        
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
@@ -640,7 +655,7 @@ if __name__ == '__main__':
                     print "Message Body Length: %d" % len(msg_body)
                         
                     msg_header_lines = msg_header.splitlines()
-                    request_type, request_path = msg_header_lines[0].split()
+                    request_type, request_path = msg_header_lines[0].split(' ',1)
                     
                     print "Request Type: %s" % request_type
                     print "Request Path: %s" % request_path
