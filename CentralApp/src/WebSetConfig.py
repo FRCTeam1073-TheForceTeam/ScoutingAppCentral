@@ -8,6 +8,7 @@ from web import form
 
 # Form definition and callback class for the application configuration settings
 cfg_this_comp_label = "Competition:"
+cfg_this_event_code_label = "Competition Event Code:"
 cfg_attr_defs_label = "Attributes Definitions File:"
 cfg_my_team_label = "My Team Number:"
 cfg_other_comp_label = "Other Competitions:"
@@ -22,6 +23,7 @@ cfg_issues_db_master_options = ['Yes', 'No']
 cfgform = form.Form( 
     form.Textbox(cfg_my_team_label, size=60),
     form.Textbox(cfg_this_comp_label, size=60),
+    form.Textbox(cfg_this_event_code_label, size=60),
     form.Textbox(cfg_other_comp_label, size=60),
     form.Textbox(cfg_attr_defs_label, size=60),
     form.Textbox(cfg_scouting_db_name_label, size=60),
@@ -35,6 +37,7 @@ def get_form(global_config):
     form = cfgform()
     form[cfg_my_team_label].value = global_config['my_team']
     form[cfg_this_comp_label].value = global_config['this_competition']
+    form[cfg_this_event_code_label].value = global_config['event_code']
     form[cfg_other_comp_label].value = global_config['other_competitions']
     form[cfg_attr_defs_label].value = global_config['attr_definitions']
     form[cfg_scouting_db_name_label].value = global_config['db_name']
@@ -49,6 +52,7 @@ def process_form(global_config, form):
 
     global_config['my_team'] = form[cfg_my_team_label].value
     global_config['this_competition'] = form[cfg_this_comp_label].value
+    global_config['event_code'] = form[cfg_this_event_code_label].value
     global_config['other_competitions'] = form[cfg_other_comp_label].value
     global_config['attr_definitions'] = form[cfg_attr_defs_label].value
     
