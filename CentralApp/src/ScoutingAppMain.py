@@ -38,6 +38,7 @@ global_config = { 'this_competition'   : None,
                   'debriefs_db_name'   : 'debriefs2013',
                   'attr_definitions'   : None,
                   'team_list'          : None,
+                  'event_code'         : None,
                   'logger':logger }
 
 def read_config(config_filename):
