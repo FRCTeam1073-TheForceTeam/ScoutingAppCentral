@@ -93,6 +93,7 @@ global_config = { 'my_team'            : '1073',
                   'debriefs_db_name'   : 'debriefs2013',
                   'attr_definitions'   : None,
                   'team_list'          : None,
+                  'event_code'         : None,
                   'logger':logger }
 
 def read_config(config_dict, config_filename):
