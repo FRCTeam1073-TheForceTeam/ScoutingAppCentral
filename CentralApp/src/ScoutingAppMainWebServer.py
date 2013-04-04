@@ -480,7 +480,8 @@ class Sync(object):
         return response_body
         
     def PUT(self, request_path):
-        FileSync.put(global_config, request_path, web.data())
+        content_type = web.ctx.env['CONTENT_TYPE']
+        FileSync.put(global_config, request_path, content_type, web.data())
         return
     
      

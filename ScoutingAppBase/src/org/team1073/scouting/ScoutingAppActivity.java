@@ -615,7 +615,7 @@ public class ScoutingAppActivity extends Activity {
 	        				competition_directory + "/ScoutingData/");
         		} else {
 	        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(
-	        				competition_directory + "/ScoutingData/");
+	        				competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
         		}
         	} 
         });

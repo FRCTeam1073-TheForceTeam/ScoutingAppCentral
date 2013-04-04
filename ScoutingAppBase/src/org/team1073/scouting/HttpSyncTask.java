@@ -1,13 +1,20 @@
 package org.team1073.scouting;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -141,6 +148,11 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 					if ( fileOnDevice.endsWith(".tmp") )
 						continue;
 					
+					// skip any file that ends with a .mp4 suffix, since the 
+					// application is having trouble with those file types.
+					if ( fileOnDevice.endsWith(".mp4") )
+						continue;
+					
 					//TODO: currently, we only check to see if the file is on the server,
 					//      but it would be better to include a timestamp and/or checksum
 					//      to verify to detect changed files, too, and transfer them.
@@ -166,6 +178,66 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 		// connection
 		while ( iterator.hasNext() && !error) {
 			fileOnDevice = iterator.next();
+
+/*			
+			try {
+				String inputFile = directory + "/" + path + fileOnDevice;
+				String outputFile = directory + "/" + path + "New" + fileOnDevice;
+				byte[] fileContents = myread(inputFile);
+				
+				mywrite(fileContents, outputFile);
+				
+
+			} catch(Exception e) {
+				publishProgress( "Error Reading File: " + fileOnDevice );
+				error = true;
+			}
+*/			
+			
+			try {
+				URL url = new URL(baseUrl + path + fileOnDevice);
+				HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+				httpCon.setDoOutput(true);
+				httpCon.setDoInput(true);
+				httpCon.setRequestMethod("PUT");
+				//httpCon.setChunkedStreamingMode(4096);
+				httpCon.setRequestProperty("Content-Type", 
+										   HttpURLConnection.guessContentTypeFromName(fileOnDevice));
+				OutputStream outstream = httpCon.getOutputStream();
+				
+				String inputFile = directory + "/" + path + fileOnDevice;
+				byte[] fileContents = myread(inputFile);
+				outstream.write(fileContents);
+				outstream.flush();
+
+/*				
+				File myFile = new File(myDir, fileOnDevice);
+			    InputStream instream = null;
+			    try {
+			    	instream = new FileInputStream(myFile);
+			        byte[] buffer = new byte[4096];
+			        for (int length = 0; (length = instream.read(buffer)) > 0;) {
+			            outstream.write(buffer, 0, length);
+			        }
+			        outstream.write('\r');
+			        outstream.write('\n');
+			        outstream.flush(); // Important! Output cannot be closed. Close of writer will close output as well.
+			    } finally {
+			        if (instream != null) try { instream.close(); } catch (IOException logOrIgnore) {}
+			    }
+*/
+				int responseCode = httpCon.getResponseCode();
+				if (responseCode >= 200 && responseCode <= 202)
+					filesTransferred++;
+				outstream.close();
+
+			} catch(Exception e) { 
+				publishProgress( "Error Transferring File: " + fileOnDevice );
+				error = true; 
+			}
+			
+			
+/*			
 			StringBuffer buffer = new StringBuffer();
 
 			//TODO: This code will only work for a text file. Need to add the ability
@@ -212,9 +284,72 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 				publishProgress( "Error Transferring File: " + fileOnDevice );
 				error = true; 
 			}
+*/
+			
 		}
 		return filesTransferred;
 	}
+
+	  /** Read the given binary file, and return its contents as a byte array.*/ 
+	  private byte[] myread(String aInputFileName){
+	    //log("Reading in binary file named : " + aInputFileName);
+	    File file = new File(aInputFileName);
+	    //log("File size: " + file.length());
+	    byte[] result = new byte[(int)file.length()];
+	    try {
+	      InputStream input = null;
+	      try {
+	        int totalBytesRead = 0;
+	        input = new BufferedInputStream(new FileInputStream(file));
+	        while(totalBytesRead < result.length){
+	          int bytesRemaining = result.length - totalBytesRead;
+	          //input.read() returns -1, 0, or more :
+	          int bytesRead = input.read(result, totalBytesRead, bytesRemaining); 
+	          if (bytesRead > 0){
+	            totalBytesRead = totalBytesRead + bytesRead;
+	          }
+	        }
+	        /*
+	         the above style is a bit tricky: it places bytes into the 'result' array; 
+	         'result' is an output parameter;
+	         the while loop usually has a single iteration only.
+	        */
+	        //log("Num bytes read: " + totalBytesRead);
+	      }
+	      finally {
+	        //log("Closing input stream.");
+	        input.close();
+	      }
+	    }
+	    catch (IOException ex) {
+	      //log(ex);
+	    }
+	    return result;
+	  }
+	  
+	  /**
+	   Write a byte array to the given file. 
+	   Writing binary data is significantly simpler than reading it. 
+	  */
+	  private void mywrite(byte[] aInput, String aOutputFileName){
+	    //log("Writing binary file...");
+	    try {
+	      OutputStream output = null;
+	      try {
+	        output = new BufferedOutputStream(new FileOutputStream(aOutputFileName));
+	        output.write(aInput);
+	      }
+	      finally {
+	        output.close();
+	      }
+	    }
+	    catch(IOException ex){
+	      //log(ex);
+	    }
+	  }
+	  
+	  
+
 	
 	private Integer retrieveFilesFromServer( String path, List<String> filesToRetrieve) {	
 		File myDir = new File(directory + "/" + path);
@@ -245,10 +380,23 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 		        // give it 15 seconds to respond
 		        connection.setReadTimeout(15*1000);
 		        connection.connect();
-
 				int responseCode = connection.getResponseCode();
+
 				if (responseCode >= 200 && responseCode <= 202) {
-					File myFile = new File(myDir, fileOnServer);
+					File myFile = new File(myDir, fileOnServer);					
+					InputStream input = connection.getInputStream();
+	                byte[] buffer = new byte[4096];
+	                int bytesRead = - 1;
+
+	                OutputStream output = new FileOutputStream( myFile );
+	                while ( (bytesRead = input.read(buffer)) != -1) {
+	                	if (bytesRead > 0) {
+	                		output.write(buffer, 0, bytesRead);
+	                	}
+	                }
+	                output.close();					
+					
+/*					
 			        FileWriter myWriter = new FileWriter(myFile);
 					BufferedWriter writer = new BufferedWriter(myWriter);
 	
@@ -261,6 +409,7 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 			        }
 			        
 					writer.close();
+*/
 					filesTransferred++;
 				}
 			} catch(Exception e) { 
