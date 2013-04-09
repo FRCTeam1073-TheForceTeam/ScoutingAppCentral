@@ -238,8 +238,8 @@ def process_files(session, db_name, attr_definitions, input_dir, recursive, test
         # try/except block so that we don't try to process a bogus file over and over again.       
         DataModel.addProcessedFile(session, data_filename)
         
-    # Commit all updates to the database
-    session.commit()
+        # Commit all updates to the database
+        session.commit()
         
 def process_file(session, attr_definitions, data_filename):
     print 'processing %s'%data_filename
@@ -663,7 +663,7 @@ if __name__ == '__main__':
                     
                     if request_type == "PUT":
                         fullpath = './static/' + request_path
-                        response_code = FileSync.put_file(fullpath, msg_body)
+                        response_code = FileSync.put_file(fullpath, 'text/plain', msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\n')
                         files_received += 1
                     elif request_type == "GET":
