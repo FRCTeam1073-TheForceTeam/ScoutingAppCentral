@@ -177,8 +177,9 @@ def getTeamsInRankOrder(session, comp, max_teams=100):
             all()    
     return teamList
 
-def getTeamsInNumericOrder(session, max_teams=100):
+def getTeamsInNumericOrder(session, comp, max_teams=100):
     teamList = session.query(TeamRank).\
+            filter(TeamRank.competition==comp).\
             order_by(TeamRank.team).\
             all()    
     return teamList
