@@ -124,7 +124,7 @@ def get_team_datafiles_page(global_config, name):
                     # inserts a hyperlink to a url that allows the webserver to create a nicer display of
                     # the file contents
                     #page += '<li><a href="' + filename.lstrip('.') + '">' + basefile + '</a></li>'
-                    page += '<li><a href="' + '/ScoutingData/' + basefile + '">' + basefile + '</a></li>'
+                    page += '<li><a href="' + '/ScoutingData/' + comp + '/' + basefile + '">' + basefile + '</a></li>'
                 page += '</ul>'
 
             if len(mediafiles) > 0:         
@@ -269,7 +269,8 @@ def get_team_datafile_page(global_config, filename):
         
     global_config['logger'].debug( 'GET Team Data File: %s', filename )
         
-    filepath = './static/' + global_config['this_competition'] + '/ScoutingData/' + filename
+    comp, name = filename.split('/', 1)
+    filepath = './static/' + comp + '/ScoutingData/' + name
     datafile = open( filepath, "r" )
     
     team = filename.split('_')[0].lstrip('Team')
