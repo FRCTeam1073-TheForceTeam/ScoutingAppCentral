@@ -75,6 +75,7 @@ def get_page(global_config, access_level):
         else:
             page += '<li><a href="/teamdata/' + team_list_str + '">' + 'Team ' + team_list_str + '</a></li>'
     else:
+        comp = global_config['this_competition']
         team_list = DataModel.getTeamsInNumericOrder(session, comp)
         for entry in team_list:
             page += '<li><a href="/teamdata/' + str(entry.team) + '">' + 'Team ' + str(entry.team) + '</a></li>'
