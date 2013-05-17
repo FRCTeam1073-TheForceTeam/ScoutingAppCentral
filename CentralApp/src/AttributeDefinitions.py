@@ -56,6 +56,11 @@ class AttrDefinitions:
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
                     if definition['Control'] == 'Scoring_Matrix':
+                        disp_type = None
+                        options_str = definition['Options']
+                        if options_str.find('=') != -1:
+                            tokens = options_str.split('=',1)
+                            disp_type = tokens[1]
                         map_values_str = definition['Map_Values']
                         map_values = map_values_str.split(':')
                         for map_value in map_values:
@@ -64,6 +69,8 @@ class AttrDefinitions:
                             
                             new_definition = definition.copy()
                             new_definition['Name'] = attr_name
+                            if disp_type != None:
+                                new_definition['Display_Name'] = attr_name.replace('Points', disp_type)
                             new_definition['Order'] = ''
                             new_definition['Control'] = 'None'
                             new_definition['Options'] = ''

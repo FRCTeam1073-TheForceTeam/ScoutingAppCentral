@@ -56,6 +56,10 @@ def get_team_datafiles_page(global_config, name):
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
     session = DbSession.open_db_session(global_config['db_name'])
 
+    attrdef_filename = './config/' + global_config['attr_definitions']
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename)
+
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
     page += '<head>'
@@ -112,6 +116,43 @@ def get_team_datafiles_page(global_config, name):
             
             page += '<hr>'
             page += '<h3> ' + comp + '</h3>'
+
+            team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
+            if len(team_attributes) > 0:
+                page += '<ul>'
+                page += '<h3>Scouting Data Summary:</h3>'
+                
+                page += '<ul>'
+                page += '<table border="1" cellspacing="5">'
+                page += '<tr>'
+                page += '<th>Attribute Name</th>'
+                page += '<th>Count</th>'
+                page += '<th>Cumulative Value</th>'
+                page += '<th>Average Value</th>'
+                page += '<th>Last Value</th>'
+                page += '<th>All Values</th>'
+                page += '</tr>'
+    
+                for attribute in team_attributes:
+                    attr_def = attr_definitions.get_definition( attribute.attr_name )
+                    if attr_def and attr_def.has_key('Include_In_Team_Display') \
+                                and attr_def['Include_In_Team_Display'] == 'Yes':      
+                        page += '<tr>'
+                        if attr_def.has_key('Display_Name'):
+                            page += '<td>%s</td>' % attr_def['Display_Name']
+                        else:
+                            page += '<td>%s</td>' % attr_def['Name']
+                            
+                        page += '<td>%s</td>' % str(attribute.num_occurs)
+                        page += '<td>%s</td>' % str(attribute.cumulative_value)
+                        page += '<td>%0.2f</td>' % (attribute.avg_value)
+                        page += '<td>%s</td>' % str(attribute.attr_value)
+                        page += '<td>%s</td>' % attribute.all_values
+                        page += '</tr>'
+                        
+                page += '</table>'    
+                page += '</ul>'
+                page += '</ul>'
 
             if len(datafiles) > 0:         
                 page += '<ul>'
