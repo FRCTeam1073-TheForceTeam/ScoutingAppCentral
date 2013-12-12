@@ -18,9 +18,9 @@ def get_page(global_config, access_level):
     page += WebCommonUtils.get_html_head()
     page += '<body>'
     if global_config.has_key('my_team'):
-        page += '<h2> Team ' + global_config['my_team'] + ' Administration Home Page' + '</h3>'
+        page += '<h2> Team ' + global_config['my_team'] + ' Administration Home Page' + '</h2>'
     else:
-        page += '<h2> Team 1073 Administration Page' + '</h3>'
+        page += '<h2> Team 1073 Administration Page' + '</h2>'
     page += '<hr>'
     page += '<a href="/home">Home</a></td>'
     page += '<br>'
