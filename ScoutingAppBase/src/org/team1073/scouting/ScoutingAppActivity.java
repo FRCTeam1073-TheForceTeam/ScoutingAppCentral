@@ -30,6 +30,9 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import org.team1073.utils.BluetoothSyncTask;
+import org.team1073.utils.HttpSyncTask;
+
 /* Following is how to send an email to a list of addresses from the tablet application       		
 String emailList[] = { "foo@email.com", "6031234567@vtext.com" };
 String emailSubject = "Hello from Saggy the tablet!";
@@ -612,7 +615,7 @@ public class ScoutingAppActivity extends Activity {
         		// otherwise use http.
         		if (sync_method.equalsIgnoreCase("Bluetooth")) {
 	        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute(
-	        				competition_directory + "/ScoutingData/");
+	        				competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
         		} else {
 	        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(
 	        				competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
