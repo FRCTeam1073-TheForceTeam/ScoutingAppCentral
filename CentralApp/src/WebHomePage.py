@@ -6,6 +6,7 @@ Created on Feb 7, 2013
 
 import DbSession
 import DataModel
+import WebCommonUtils
 
 def get_page(global_config, access_level):
     global_config['logger'].debug( 'GET Home Page' )
@@ -14,12 +15,12 @@ def get_page(global_config, access_level):
             
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     if global_config.has_key('my_team'):
-        page += '<h2> Team ' + global_config['my_team'] + ' Scouting Application Home Page' + '</h3>'
+        page += '<h2> Team ' + global_config['my_team'] + ' Competition Central' + '</h2>'
     else:
-        page += '<h2> Team 1073 Scouting Application Home Page' + '</h3>'
+        page += '<h2> Team 1073 Competition Central' + '</h2>'
     page += '<hr>'
     page += '<a href="/logout">Logout</a></td>'
     page += '<br>'

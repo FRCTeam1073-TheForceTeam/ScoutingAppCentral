@@ -56,12 +56,15 @@ urls = (
     '/genui',               'GenUi',
     '/config',              'SetConfig',
     '/newissue',            'NewIssue',
+    '/newissue/(.*)',       'NewPlatformIssue',
+    '/api/issue/(.*)',      'IssueJson',
     '/issue/(.*)',          'Issue',
     '/issueupdate/(.*)',    'IssueUpdate',
     '/issuecomment/(.*)',   'IssueComment',
     '/debriefcomment/(.*)', 'DebriefComment',
     '/deletecomment/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
+    '/issues/(.*)',         'PlatformIssuesHomePage',
     '/debrief/(.*)',        'DebriefPage',
     '/debriefs',            'DebriefsHomePage',
     '/user/(.*)',           'User',
@@ -265,6 +268,21 @@ class NewIssue(object):
             result = WebIssueTracker.process_new_issue_form(global_config, form)
             raise web.seeother(result)
 
+class NewPlatformIssue(object):
+    def GET(self, platform_type):
+        WebLogin.check_access(global_config,2)
+        form = WebIssueTracker.get_new_issue_form(global_config, platform_type)
+        return render.new_issue_form(form)
+           
+    def POST(self, platform_type):
+        WebLogin.check_access(global_config,2)
+        form = WebIssueTracker.get_new_issue_form(global_config, platform_type)
+        if not form.validates(): 
+            return render.new_issue_form_done(form)
+        else:
+            result = WebIssueTracker.process_new_issue_form(global_config, form)
+            raise web.seeother(result)
+
 class IssueComment(object):
     def GET(self, issue_id):
         WebLogin.check_access(global_config,5)
@@ -306,6 +324,11 @@ class Issue(object):
         else:
             return WebIssueTracker.get_issue_page(global_config, issue_id)
         
+class IssueJson(object):
+    
+    def GET(self, issue_id):
+        return WebIssueTracker.get_issue_json(global_config, issue_id)
+        
 class DeleteComment(object):
     
     def GET(self, param_str):
@@ -329,6 +352,15 @@ class IssuesHomePage(object):
             return WebIssueTracker.get_issues_home_page(global_config,allow_create=True)
         else:
             return WebIssueTracker.get_issues_home_page(global_config)
+
+class PlatformIssuesHomePage(object):
+
+    def GET(self, platform_type):
+        username, access_level = WebLogin.check_access(global_config,5)
+        if access_level <= 1:
+            return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type, allow_create=True)
+        else:
+            return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type)
 
 class Users(object):
     def GET(self):
@@ -449,7 +481,6 @@ class DebriefPage(object):
             return WebDebrief.get_debrief_page(global_config, match, allow_update=True)
         else:
             return WebDebrief.get_debrief_page(global_config, match)
-        WebLogin.check_access(global_config,5)
 
 class DebriefComment(object):
     def GET(self, match):

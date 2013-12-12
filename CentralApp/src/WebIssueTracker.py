@@ -9,9 +9,10 @@ import time
 
 import DbSession
 import IssueTrackerDataModel
+import WebCommonUtils
 
 # Form definition and callback class for the issue get and post operations
-issue_platforms  = ['Robot', '']
+issue_platforms  = ['Robot', 'MobileBase', 'Ursa', '']
 issue_subgroups  = ['Unassigned','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business' ]
 issue_components = ['Unassigned','Drive_Train', 'Shooter', 'Feeder', 'Climber', 'Comms', 
                     'Autonomous','Vision', 'Dashboard', 'Inspection', 'Drive_Team', 'Strategy', 'Business']
@@ -60,7 +61,7 @@ new_issueform = form.Form(
 commentform = form.Form( 
     form.Textarea(issue_comment_label, size=1024))
 
-def get_new_issue_form(global_config):
+def get_new_issue_form(global_config, platform_type=None):
     global_config['logger'].debug( 'GET New Issue Form' )
         
     session = DbSession.open_db_session(global_config['issues_db_name'])
@@ -72,6 +73,10 @@ def get_new_issue_form(global_config):
     username_list = IssueTrackerDataModel.getDisplayNameList(session)
     form[issue_owner_label].args = username_list
     form[issue_submitter_label].args = username_list
+    
+    # if the platform type is specified, then constrain the platform to that value
+    if platform_type != None:
+        form[issue_platform_label].args = [ platform_type ]
 
     # TODO: can also extract the subgroup and taskgroup(component) lists from the 
     #       database and override the form with the contents
@@ -235,11 +240,13 @@ def get_issue_page(global_config, issue_id, allow_update=False):
     if issue:
         result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
         result += '<html>'
-        result += '<head>'
+        result += WebCommonUtils.get_html_head('FIRST Team 1073 - Issue %s' % issue_id)
         result += '<body>'
         result += '<h2> Team 1073 Issue ' + issue_id + '</h2>'
         result += '<hr>'
         result += '<a href="/home">Home</a></td>'
+        result += '<br>'
+        result += '<a href="/issues/%s">Back</a></td>' % issue_id.split('-')[0]
         result += '<hr>'
         result += '<br>'
         result += '<a href="/issues">IssueTracker</a></td>'
@@ -345,13 +352,28 @@ def get_issue_page(global_config, issue_id, allow_update=False):
     else:
         return None
     
+def get_issue_json(global_config, issue_id, allow_update=False):
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+    issue = IssueTrackerDataModel.getIssue(session, issue_id)
+    if issue:
+        return issue.json()
+    else:
+        return None
+
 def insert_issues_table(heading, issues):
         table_str = '<h3>' + heading + ' Issues Summary' + '</h3>'
         table_str += '<hr>'
         table_str += '<ul>'
         
-        table_str += '<table border="1" cellspacing="5">'
-        
+        #table_str += '<table border="1" cellspacing="5">'
+        table_str += '<script type="text/javascript" charset="utf-8">'
+        table_str += '    $(document).ready(function() {'
+        table_str += '        $(\'#%s\').dataTable();' % heading
+        table_str += '    } );'
+        table_str += '</script>'
+
+        table_str += '<table cellpadding="0" cellspacing="0" border="1" class="display" id="' + heading + '" width="100%">'
+        table_str += '<thead>'
         table_str += '<tr>'
         table_str += '<th>Issue Id</th>'
         table_str += '<th>Priority</th>'
@@ -361,7 +383,9 @@ def insert_issues_table(heading, issues):
         table_str += '<th>Task Group</th>'
         table_str += '<th>Summary</th>'
         table_str += '</tr>'
-        
+        table_str += '</thead>'
+
+        table_str += '<tbody>'
         for issue in issues:
             table_str += '<tr>'
             table_str += '<td><a href="/issue/' + issue.issue_id + '"> ' + issue.issue_id + '</a></td>'
@@ -372,10 +396,11 @@ def insert_issues_table(heading, issues):
                 match_str = issue.debrief_key.split('_')[0]           
                 table_str += '<td><a href="/debrief/' + match_str + '">' + 'Match ' + match_str + '</a></td>'
             else:
-                table_str += '<td></td>'
+                table_str += '<td> </td>'
             table_str += '<td>' + issue.component + '</td>'
             table_str += '<td>' + issue.summary + '</td>'
             table_str += '</tr>'
+        table_str += '</tbody>'
         table_str += '</table>'
         table_str += '</ul>'
         return table_str
@@ -386,28 +411,68 @@ def get_issues_home_page(global_config, allow_create=False):
 
     result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     result += '<html>'
-    result += '<head>'
+    result += WebCommonUtils.get_html_head('FIRST Team 1073 - Issue Tracker Home')
     result += '<body>'
-    result += '<h2> Team 1073 Issues Home Page' + '</h3>'
+    result += '<h2> Team 1073 Issues Home Page' + '</h2>'
     result += '<hr>'
     result += '<a href="/home">Home</a>'
+    result += '<br>'
+    result += '<a href="/home">Back</a>'
+    result += '<br>'
+    result += '<a href="/debriefs"> MatchDebriefs</a></td>'
+    result += '<br>'
+    result += '<hr>'
+
+    result += '<h3> Platforms' + '</h3>'
+    issue_types = IssueTrackerDataModel.getIssueTypes(session)
+    for platform in issue_types:
+        result += '<a href="/issues/%s">%s</a>' % (platform.issue_type,platform.issue_type)
+        result += '<br>'
+    result += '<hr>'
+    
+    if global_config['issues_db_master'] == 'Yes' and allow_create == True:
+        result += '<a href="/newissue"> Create New Issue</a></td>'
+        result += '<br>'
+    result += '<hr>'
+    
+    
+    result += '</body>'
+    result += '</html>'
+    return result
+
+
+def get_platform_issues_home_page(global_config, platform_type, allow_create=False):
+ 
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+
+    result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
+    result += '<html>'
+    result += WebCommonUtils.get_html_head('FIRST Team 1073 - %s Issues' % platform_type)
+    result += '<body>'
+    result += '<h2> Team 1073 %s Issues</h3>' % platform_type
+    result += '<hr>'
+    result += '<a href="/home"> Home</a>'
+    result += '<br>'
+    result += '<a href="/issues"> Back</a>'
     result += '<hr>'
     result += '<br>'
     result += '<a href="/debriefs"> MatchDebriefs</a></td>'
     result += '<br>'
     if global_config['issues_db_master'] == 'Yes' and allow_create == True:
-        result += '<a href="/newissue"> Create New Issue</a></td>'
+        result += '<a href="/newissue/%s"> Create New Issue</a></td>' % platform_type
         result += '<br>'
     result += '<br>'
     result += '<hr>'
     
-    open_issues = IssueTrackerDataModel.getIssuesByMultipleStatus(session, 'Open', 'Working', 
-                                                                  order_by_priority=True)
-    #open_issues = IssueTrackerDataModel.getIssuesByStatus(session, 'Open')
-    #open_issues += IssueTrackerDataModel.getIssuesByStatus(session, 'Working')
+    #open_issues = IssueTrackerDataModel.getIssuesByPlatform(session, platform_type)
+    open_issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Open', 'Working', 
+                                                                             order_by_priority=True)
     result += insert_issues_table('Open', open_issues)
+
+    result += '<br>'
+    result += '<hr>'
     
-    closed_issues = IssueTrackerDataModel.getIssuesByMultipleStatus(session, 'Closed', 'Resolved')
+    closed_issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Closed', 'Resolved')
     result += insert_issues_table('Closed', closed_issues)
 
     result += '</body>'

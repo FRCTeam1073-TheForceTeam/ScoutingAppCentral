@@ -5,6 +5,7 @@
 *.properties
 *.pydevproject
 .classpath
+.metadata
 gen
 bin
 assets

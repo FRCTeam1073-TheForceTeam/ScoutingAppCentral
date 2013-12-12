@@ -6,6 +6,7 @@ Created on Feb 7, 2013
 
 import DbSession
 import DataModel
+import WebCommonUtils
 
 def get_page(global_config, access_level):
     global_config['logger'].debug( 'GET Admin Page' )
@@ -14,7 +15,7 @@ def get_page(global_config, access_level):
             
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     if global_config.has_key('my_team'):
         page += '<h2> Team ' + global_config['my_team'] + ' Administration Home Page' + '</h3>'

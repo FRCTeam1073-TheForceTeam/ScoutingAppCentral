@@ -8,6 +8,7 @@ from web import form
 
 import DbSession
 import IssueTrackerDataModel
+import WebCommonUtils
 
 user_roles = [ 'Mentor', 'Student', 'Guest' ]
 user_subgroups = ['','Mechanical', 'Software', 'Electrical', 'Integration', 'Strategy', 'Business']
@@ -284,7 +285,7 @@ def get_user_list_page(global_config):
 
     result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     result += '<html>'
-    result += '<head>'
+    result += WebCommonUtils.get_html_head()
     result += '<body>'
     result += '<h2> Team ' + global_config['my_team'] + ' Users' + '</h3>'
     result += '<hr>'

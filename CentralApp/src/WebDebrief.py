@@ -10,6 +10,7 @@ import time
 import DbSession
 import IssueTrackerDataModel
 import DebriefDataModel
+import WebCommonUtils
 
 match_comment_label = 'Comment:'
 
@@ -49,7 +50,7 @@ def get_debrief_page(global_config, match_str, allow_update=False):
     if debrief != None:
         result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
         result += '<html>'
-        result += '<head>'
+        result += WebCommonUtils.get_html_head()
         result += '<body>'
         result += '<h2> Team 1073 Debrief For Match ' + match_str + '</h3>'
         result += '<hr>'
@@ -161,7 +162,7 @@ def get_debriefs_home_page(global_config):
 
     result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     result += '<html>'
-    result += '<head>'
+    result += WebCommonUtils.get_html_head()
     result += '<body>'
     result += '<h2> Team 1073 Match Debrief Home Page' + '</h3>'
     result += '<hr>'

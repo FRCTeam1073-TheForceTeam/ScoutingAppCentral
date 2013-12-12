@@ -10,6 +10,7 @@ import web
 
 import DbSession
 import IssueTrackerDataModel
+import WebCommonUtils
 
 allowed = (
     ('user','dean'),
@@ -58,7 +59,7 @@ def do_logout(global_config):
         
         result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
         result += '<html>'
-        result += '<head>'
+        result += WebCommonUtils.get_html_head()
         result += '<body>'
         result += username + ' is now logged out, click <a href="/login">Here</a> to log back in'
         result += '</body>'
@@ -98,7 +99,7 @@ def do_account_disabled(global_config):
         
         result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
         result += '<html>'
-        result += '<head>'
+        result += WebCommonUtils.get_html_head()
         result += '<body>'
         result += username + ' account is disabled, click <a href="/login">Here</a> once account is re-enabled'
         result += '</body>'

@@ -11,6 +11,7 @@ import web
 import AttributeDefinitions
 import DbSession
 import DataModel
+import WebCommonUtils
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -62,7 +63,7 @@ def get_team_datafiles_page(global_config, name):
 
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     page += '<h2> Scouting Data File listing for Team ' + name + '</h2>'
     page += '<hr>'
@@ -318,7 +319,7 @@ def get_team_datafile_page(global_config, filename):
     
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     page += '<h2>' + ' Scouting Data File: ' + filename + '</h2>'
     page += '<hr>'

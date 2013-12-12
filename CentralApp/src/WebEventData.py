@@ -6,7 +6,7 @@ Created on March 3, 2013
 
 import urllib2
 import json
-
+import WebCommonUtils
 
 def get_event_info_page(global_config, filename):
         
@@ -19,7 +19,7 @@ def get_event_info_page(global_config, filename):
     
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     page += '<h2>' + ' Scouting Data File: ' + filename + '</h2>'
     page += '<hr>'
@@ -64,7 +64,7 @@ def get_event_info_page(global_config, filename):
 def getWebPageHeader( title, event_code=None ):
     page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     page += '<html>'
-    page += '<head>'
+    page += WebCommonUtils.get_html_head()
     page += '<body>'
     page += '<h2>' + title + '</h2>'
     page += '<hr>'

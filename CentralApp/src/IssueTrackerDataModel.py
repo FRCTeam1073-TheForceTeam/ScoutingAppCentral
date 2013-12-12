@@ -213,6 +213,23 @@ def getIssuesByStatus(session, status):
     print str(issue_list)
     return issue_list
 
+def getIssuesByPlatform(session, platform):
+    issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).all()
+    print str(issue_list)
+    return issue_list
+    
+def getIssuesByPlatformAndMultipleStatus(session, platform, status1, status2, order_by_priority=False):
+    if order_by_priority:
+        issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                filter(or_(Issue.status==status1, Issue.status==status2)).\
+                order_by(Issue.priority).all()
+    else:
+        issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                filter(or_(Issue.status==status1, Issue.status==status2)).\
+                order_by(Issue.issue_id).all()
+    print str(issue_list)
+    return issue_list
+    
 def getIssuesByMultipleStatus(session, status1, status2, order_by_priority=False):
     if order_by_priority:
         issue_list = session.query(Issue).filter(or_(Issue.status==status1, Issue.status==status2)).\
@@ -565,6 +582,9 @@ def getIssueId(session, issue_type):
     return '%s-%d' % (issue_type,issue.max_id)
         
 
+def getIssueTypes(session):
+    issueTypes = session.query(IssueType).all()
+    return issueTypes
 
         
 def deleteAllProcessedFiles(session):
