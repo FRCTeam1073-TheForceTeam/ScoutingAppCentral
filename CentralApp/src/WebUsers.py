@@ -7,7 +7,7 @@ Created on Feb 14, 2013
 from web import form
 
 import DbSession
-import IssueTrackerDataModel
+import UsersDataModel
 import WebCommonUtils
 
 user_roles = [ 'Mentor', 'Student', 'Guest' ]
@@ -72,9 +72,9 @@ load_users_form = form.Form(
 def get_user_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
         
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
 
-    user = IssueTrackerDataModel.getUser(session, username)
+    user = UsersDataModel.getUser(session, username)
     form = userform()
     if user:
         form[user_username_label].value = user.username
@@ -89,7 +89,7 @@ def get_user_form(global_config, username):
         form[user_nickname_label].value = user.altname
         form[user_access_level_label].value = user.access_level
         form[user_state_label].value = user.state
-        form[user_taskgroups_label].value = IssueTrackerDataModel.getUserTaskgroups(session, user.username)
+        form[user_taskgroups_label].value = UsersDataModel.getUserTaskgroups(session, user.username)
     else:
         form[user_access_level_label].value = 10
         form[user_role_label].value = 'Guest'
@@ -102,14 +102,14 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
         
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
                                 
     email_address = form[user_emailaddress_label].value
     cellphone = form[user_cellphone_label].value
     carrier = form[user_carrier_label].value
     subgroup = form[user_subgroup_label].value
     
-    user = IssueTrackerDataModel.getUser(session, username)
+    user = UsersDataModel.getUser(session, username)
     if user:
         if new_user == True:
             raise Exception('User Already Exists!')
@@ -134,12 +134,12 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
     taskgroups = form[user_taskgroups_label].value
     state = form[user_state_label].value
     
-    IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
+    UsersDataModel.addOrUpdateUser(session, username, email_address, 
                                           cellphone, carrier, subgroup, password, 
                                           display_name, role, contact_mode, nickname,
                                           access_level, state)
 
-    IssueTrackerDataModel.updateUserTaskgroups(session, username, taskgroups)
+    UsersDataModel.updateUserTaskgroups(session, username, taskgroups)
         
     session.commit()
     return '/users'
@@ -147,13 +147,13 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
 def get_delete_user_form(global_config):
     global_config['logger'].debug( 'GET Delete User Form' )
         
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
 
     form = deleteuserform()
 
     # apply the valid list of user names to the dropdown 
     # for the username field
-    username_list = IssueTrackerDataModel.getUsernameList(session)
+    username_list = UsersDataModel.getUsernameList(session)
     form[user_username_label].args = username_list
     form[user_username_label].args = username_list
 
@@ -162,18 +162,18 @@ def get_delete_user_form(global_config):
 def process_delete_user_form(global_config, form):
     global_config['logger'].debug( 'Process Delete User' )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
     username = form[user_username_label].value
-    IssueTrackerDataModel.deleteUser(session, username)
+    UsersDataModel.deleteUser(session, username)
     session.commit()
     return '/users'
 
 def get_userprofile_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
         
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
 
-    user = IssueTrackerDataModel.getUser(session, username)
+    user = UsersDataModel.getUser(session, username)
     
     form = userprofileform()
     form[user_username_label].value = user.username
@@ -191,7 +191,7 @@ def get_userprofile_form(global_config, username):
 def process_userprofile_form(global_config, form, username):
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
                                 
     email_address = form[user_emailaddress_label].value
     cellphone = form[user_cellphone_label].value
@@ -201,7 +201,7 @@ def process_userprofile_form(global_config, form, username):
     # set default access level and rols, and override if the user is already in the system
     access_level = 5
     role = 'Guest'
-    user = IssueTrackerDataModel.getUser(session, username)
+    user = UsersDataModel.getUser(session, username)
     if user:
         # validate the password confirmation only if the user actually changed his
         # password
@@ -218,7 +218,7 @@ def process_userprofile_form(global_config, form, username):
     contact_mode = form[user_contact_mode_label].value
     nickname = form[user_nickname_label].value
                     
-    IssueTrackerDataModel.addOrUpdateUser(session, username, email_address, 
+    UsersDataModel.addOrUpdateUser(session, username, email_address, 
                                           cellphone, carrier, subgroup, password, 
                                           display_name, role, contact_mode, nickname,
                                           access_level, state)
@@ -239,7 +239,7 @@ def process_load_user_form(global_config, form):
                                     
     users_file = './config/' + form[user_file_label].value
     global_config['logger'].debug('Loading Users from file: %s' % users_file)
-    IssueTrackerDataModel.add_users_from_file(global_config['issues_db_name'], users_file)
+    UsersDataModel.add_users_from_file(global_config['users_db_name'], users_file)
     
     return '/users'
 
@@ -281,7 +281,7 @@ def insert_users_table(user_list):
 
 def get_user_list_page(global_config):
  
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'])
 
     result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
     result += '<html>'
@@ -301,7 +301,7 @@ def get_user_list_page(global_config):
     result += '<br>'
     result += '<hr>'
     
-    user_list = IssueTrackerDataModel.getUserList(session)
+    user_list = UsersDataModel.getUserList(session)
     result += insert_users_table(user_list)
     
     result += '</body>'

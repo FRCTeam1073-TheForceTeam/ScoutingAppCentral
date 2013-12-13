@@ -16,6 +16,7 @@ cfg_scouting_db_name_label = "Scouting Database Name:"
 cfg_debrief_db_name_label = "Debrief Database Name:"
 cfg_issues_db_name_label = "Issues Database Name:"
 cfg_issues_db_master_label = "Issues Database Master:"
+cfg_users_db_name_label = "Users Database Name:"
 
 
 cfg_issues_db_master_options = ['Yes', 'No']
@@ -29,7 +30,8 @@ cfgform = form.Form(
     form.Textbox(cfg_scouting_db_name_label, size=60),
     form.Textbox(cfg_issues_db_name_label, size=60),
     form.Dropdown(cfg_issues_db_master_label, cfg_issues_db_master_options),
-    form.Textbox(cfg_debrief_db_name_label, size=60))
+    form.Textbox(cfg_debrief_db_name_label, size=60),
+    form.Textbox(cfg_users_db_name_label, size=60))
 
 def get_form(global_config):
     global_config['logger'].debug( 'GET Set Configuration Form' )
@@ -44,6 +46,7 @@ def get_form(global_config):
     form[cfg_issues_db_name_label].value = global_config['issues_db_name']
     form[cfg_issues_db_master_label].value = global_config['issues_db_master']
     form[cfg_debrief_db_name_label].value = global_config['debriefs_db_name']
+    form[cfg_users_db_name_label].value = global_config['users_db_name']
         
     return form
 
@@ -60,6 +63,7 @@ def process_form(global_config, form):
     global_config['issues_db_name'] = form[cfg_issues_db_name_label].value
     global_config['issues_db_master'] = form[cfg_issues_db_master_label].value
     global_config['debriefs_db_name'] = form[cfg_debrief_db_name_label].value
+    global_config['users_db_name'] = form[cfg_users_db_name_label].value
     
     write_config(global_config, './config/ScoutingAppConfig.txt')
     

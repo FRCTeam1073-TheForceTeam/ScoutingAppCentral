@@ -12,6 +12,7 @@ import DbSession
 import DataModel
 import IssueTrackerDataModel
 import DebriefDataModel
+import UsersDataModel
 import FileParser
 import FileSync
 import AttributeDefinitions
@@ -557,13 +558,15 @@ if __name__ == '__main__':
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
+    users_db_name = global_config['users_db_name']
     session         = DbSession.open_db_session(db_name, DataModel)
     issues_session  = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
     debrief_session = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+    users_session = DbSession.open_db_session(users_db_name, UsersDataModel)
         
     # make sure that there is a default admin user. If no admin user exists, then create one
-    if IssueTrackerDataModel.getUser( issues_session, 'admin' ) is None:
-        IssueTrackerDataModel.create_admin_user(issues_session, 'squirrel!')
+    if UsersDataModel.getUser( users_session, 'admin' ) is None:
+        UsersDataModel.create_admin_user(users_session, 'squirrel!')
 
     # Build the attribute definition dictionary from the definitions csv file
     attrdef_filename = './config/' + global_config['attr_definitions']    

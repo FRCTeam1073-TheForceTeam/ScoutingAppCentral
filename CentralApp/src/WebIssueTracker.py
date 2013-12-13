@@ -9,6 +9,7 @@ import time
 
 import DbSession
 import IssueTrackerDataModel
+import UsersDataModel
 import WebCommonUtils
 
 # Form definition and callback class for the issue get and post operations
@@ -64,13 +65,13 @@ commentform = form.Form(
 def get_new_issue_form(global_config, platform_type=None):
     global_config['logger'].debug( 'GET New Issue Form' )
         
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    users_session = DbSession.open_db_session(global_config['users_db_name'])
 
     form = new_issueform()
 
     # apply the valid list of user names to the dropdown 
     # for the owner field and the submitter field
-    username_list = IssueTrackerDataModel.getDisplayNameList(session)
+    username_list = UsersDataModel.getDisplayNameList(users_session)
     form[issue_owner_label].args = username_list
     form[issue_submitter_label].args = username_list
     
@@ -137,6 +138,7 @@ def get_issue_form(global_config, issue_id):
     global_config['logger'].debug( 'GET Issue Form, Issue: %s', issue_id )
         
     session = DbSession.open_db_session(global_config['issues_db_name'])
+    users_session = DbSession.open_db_session(global_config['users_db_name'])
 
     issue_id = issue_id
     platform = issue_id.split('-')[0]
@@ -157,7 +159,7 @@ def get_issue_form(global_config, issue_id):
     
     # apply the valid list of user names to the dropdown 
     # for the owner field and the submitter field
-    username_list = IssueTrackerDataModel.getDisplayNameList(session)
+    username_list = UsersDataModel.getDisplayNameList(users_session)
     form[issue_owner_label].args = username_list
     form[issue_submitter_label].args = username_list
 

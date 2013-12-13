@@ -17,6 +17,7 @@ import DbSession
 import DataModel
 import DebriefDataModel
 import IssueTrackerDataModel
+import UsersDataModel
 import AttributeDefinitions
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -90,10 +91,11 @@ logger = logging.getLogger('scouting.webapp')
 global_config = { 'my_team'            : '1073',
                   'this_competition'   : None, 
                   'other_competitions' : None, 
-                  'db_name'            : 'scouting2013', 
-                  'issues_db_name'     : 'issues2013',
+                  'db_name'            : 'scouting', 
+                  'issues_db_name'     : 'issues',
                   'issues_db_master'   : 'No',
-                  'debriefs_db_name'   : 'debriefs2013',
+                  'debriefs_db_name'   : 'debriefs',
+                  'users_db_name'      : 'users',
                   'attr_definitions'   : None,
                   'team_list'          : None,
                   'event_code'         : None,
@@ -121,7 +123,7 @@ def write_config(config_dict, config_filename):
     cfg_file.close()
 
 read_config(global_config, './config/ScoutingAppConfig.txt')
-db_name = global_config['db_name']   
+db_name = global_config['db_name'] + '.db'
     
 webserver_app = web.application(urls, globals())
 
@@ -499,7 +501,7 @@ class DebriefComment(object):
         
 class TaskGroupEmail(object):
     def GET(self, name):
-        email_lists = IssueTrackerDataModel.getTaskgroupEmailLists(global_config, name)
+        email_lists = UsersDataModel.getTaskgroupEmailLists(global_config, name)
         fd = open('./config/TaskGroupEmailLists.txt', 'w+')
         fd.write( email_lists )
         fd.close()
@@ -540,22 +542,24 @@ if __name__ == "__main__":
 
     logger.debug("Running the Scouting App Web Server")
 
-    db_name = global_config['db_name']
-    issues_db_name = global_config['issues_db_name']
+    db_name          = global_config['db_name']
+    issues_db_name   = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
-    session         = DbSession.open_db_session(db_name, DataModel)
-    issues_session  = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
-    debrief_session = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+    users_db_name    = global_config['users_db_name']
+    session          = DbSession.open_db_session(db_name, DataModel)
+    issues_session   = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
+    debrief_session  = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+    users_session    = DbSession.open_db_session(users_db_name, UsersDataModel)
  
     # load the users file if one is specified
     if options.users_file != '':
         users_file = './config/' + options.users_file
         logger.debug('Loading Users from file: %s' % users_file)
-        IssueTrackerDataModel.add_users_from_file(issues_db_name, users_file)
+        UsersDataModel.add_users_from_file(users_session, users_file)
 
     # make sure that there is a default admin user. If no admin user exists, then create one
-    if IssueTrackerDataModel.getUser( issues_session, 'admin' ) is None:
-        IssueTrackerDataModel.create_admin_user(issues_session, 'squirrel!')
+    if UsersDataModel.getUser( users_session, 'admin' ) is None:
+        UsersDataModel.create_admin_user(users_session, 'squirrel!')
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
     attrdef_filename = './config/' + global_config['attr_definitions']

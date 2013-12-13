@@ -9,7 +9,7 @@ import base64
 import web
 
 import DbSession
-import IssueTrackerDataModel
+import UsersDataModel
 import WebCommonUtils
 
 allowed = (
@@ -32,8 +32,8 @@ def auth_user(global_config):
         if logged_out_users.has_key(username):
             del logged_out_users[username]
         else:
-            session = DbSession.open_db_session(global_config['issues_db_name'])
-            user = IssueTrackerDataModel.getUser(session, username)
+            session = DbSession.open_db_session(global_config['users_db_name'])
+            user = UsersDataModel.getUser(session, username)
             if user:
                 if user.state == 'Disabled':
                     raise web.seeother('/accountdisabled')
@@ -78,8 +78,8 @@ def check_access(global_config, access_level):
         
         # here is where we need to do a lookup in the user database and see if the
         # user is authorized to access this page.
-        session = DbSession.open_db_session(global_config['issues_db_name'])
-        user = IssueTrackerDataModel.getUser(session, username)
+        session = DbSession.open_db_session(global_config['users_db_name'])
+        user = UsersDataModel.getUser(session, username)
         if user:
             if user.check_access_level(access_level) == True:
                 return (username,user.access_level)
