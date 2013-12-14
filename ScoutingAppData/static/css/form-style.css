@@ -3,6 +3,9 @@
  This keeps clutter out of the global stylesheet file (style.css) 
  */
 
+form {
+
+}
 
 select {
 
@@ -13,5 +16,58 @@ select option {
 }
 
 textarea {
-	
+
 }
+
+table {
+
+}
+
+table tr th {
+
+}
+
+table tr th label {
+
+}
+
+#Priority\: {
+
+}
+
+#Platform\: {
+
+}
+
+#Summary\: {
+
+}
+
+
+
+#Subgroup\:" {
+
+}
+
+#Component\: {
+
+}
+
+/* \: escapes a colon in CSS */
+#Owner\: {
+
+}
+
+#Submitter\: {
+
+}
+
+#Description\: {
+
+}
+
+#formContent {
+
+}
+
+
