@@ -287,7 +287,7 @@ def get_user_list_page(global_config):
     result += '<html>'
     result += WebCommonUtils.get_html_head()
     result += '<body>'
-    result += '<h2> Team ' + global_config['my_team'] + ' Users' + '</h3>'
+    result += '<h2> Team ' + global_config['my_team'] + ' Users' + '</h2>'
     result += '<hr>'
     result += '<br>'
     result += '<a href="/home"> Home</a></td>'
