@@ -1,0 +1,20 @@
+$def with (form)
+<html>
+<head>
+<head>
+	<link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon" />
+	<!-- include the global CSS -->
+	<link rel="stylesheet" href="../static/css/style.css" type="text/css" media="screen" />
+	<!-- include a CSS file specific for these forms -->
+	<link rel="stylesheet" href="../static/css/form-style.css" type = "text/css" media = "screen" />
+</head>
+</head>
+<body>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+<a href="/home">Home</a>
+<hr>
+<form name="main" method="post"> 
+$:form.render()
+<input type="submit" value="Update" />    </form>
+</body>
+</html>

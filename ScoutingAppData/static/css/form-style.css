@@ -1,0 +1,17 @@
+/* a CSS file that contains styling for the various Form HTML controls that web.py will generate 
+
+ This keeps clutter out of the global stylesheet file (style.css) 
+ */
+
+
+select {
+
+}
+
+select option {
+
+}
+
+textarea {
+	
+}
