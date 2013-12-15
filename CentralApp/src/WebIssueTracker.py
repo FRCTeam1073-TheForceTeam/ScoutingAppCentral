@@ -451,7 +451,7 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
     result += '<html>'
     result += WebCommonUtils.get_html_head('FIRST Team 1073 - %s Issues' % platform_type)
     result += '<body>'
-    result += '<h2> Team 1073 %s Issues</h3>' % platform_type
+    result += '<h2> Team 1073 %s Issues</h2>' % platform_type
     result += '<hr>'
     result += '<a href="/home"> Home</a>'
     result += '<br>'

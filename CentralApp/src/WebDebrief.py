@@ -52,7 +52,7 @@ def get_debrief_page(global_config, match_str, allow_update=False):
         result += '<html>'
         result += WebCommonUtils.get_html_head()
         result += '<body>'
-        result += '<h2> Team 1073 Debrief For Match ' + match_str + '</h3>'
+        result += '<h2> Team 1073 Debrief For Match ' + match_str + '</h2>'
         result += '<hr>'
         result += '<a href="/home"> Home</a></td>'
         result += '<hr>'
@@ -164,7 +164,7 @@ def get_debriefs_home_page(global_config):
     result += '<html>'
     result += WebCommonUtils.get_html_head()
     result += '<body>'
-    result += '<h2> Team 1073 Match Debrief Home Page' + '</h3>'
+    result += '<h2> Team 1073 Match Debrief Home Page' + '</h2>'
     result += '<hr>'
     result += '<a href="/home">Home</a></td>'
     result += '<hr>'

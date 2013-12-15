@@ -1,0 +1,13 @@
+$def with (form)
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+<a href="/home">Home</a>
+<br>
+<a href="/admin">System Configuration</a>
+<hr>
+<form name="main" method="post"> 
+$:form.render()
+$if form.valid: <p class="error">Configuration Updated!</p>
+$if not form.valid: <p class="error">Error In Configuration!</p>
+<input type="submit" value="Submit" />    </form>
