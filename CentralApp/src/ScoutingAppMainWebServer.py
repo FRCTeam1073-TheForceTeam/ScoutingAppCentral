@@ -566,6 +566,16 @@ if __name__ == "__main__":
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
 
+    # make sure that the required directories exist
+    directories = ('ScoutingData', 'ScoutingPictures')
+    for directory in directories:        
+        base_dir = './static/data/' + global_config['this_competition'] + '/' + directory + '/'
+        try: 
+            os.makedirs(base_dir)
+        except OSError:
+            if not os.path.isdir(base_dir):
+                raise
+
     print 'Sys Args: %s' % sys.argv
     sys.argv[1:] = args
     

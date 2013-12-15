@@ -104,11 +104,11 @@ def get_team_datafiles_page(global_config, name):
         
     for comp in competitions:
         if comp != '':
-            input_dir = './static/' + comp + '/ScoutingData/'
+            input_dir = './static/data/' + comp + '/ScoutingData/'
             pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.txt'
             datafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
             
-            input_dir = './static/' + comp + '/ScoutingPictures/'
+            input_dir = './static/data/' + comp + '/ScoutingPictures/'
             pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.jpg|mp4'
             mediafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
                         
@@ -312,7 +312,7 @@ def get_team_datafile_page(global_config, filename):
     global_config['logger'].debug( 'GET Team Data File: %s', filename )
         
     comp, name = filename.split('/', 1)
-    filepath = './static/' + comp + '/ScoutingData/' + name
+    filepath = './static/data/' + comp + '/ScoutingData/' + name
     datafile = open( filepath, "r" )
     
     team = filename.split('_')[0].lstrip('Team')

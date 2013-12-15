@@ -37,6 +37,7 @@ global_config = { 'this_competition'   : None,
                   'issues_db_name'     : 'issues2013',
                   'issues_db_master'   : 'No',
                   'debriefs_db_name'   : 'debriefs2013',
+                  'users_db_name'      : 'users',
                   'attr_definitions'   : None,
                   'team_list'          : None,
                   'event_code'         : None,
@@ -425,7 +426,7 @@ def process_debrief_files(global_config, input_dir, recursive, test):
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
-                            issue.create_file('./static/%s/ScoutingData' % competition)
+                            issue.create_file('./static/data/%s/ScoutingData' % competition)
                         DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
                     
                 if debrief_attributes.has_key('Issue2_Summary'):
@@ -450,7 +451,7 @@ def process_debrief_files(global_config, input_dir, recursive, test):
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
-                            issue.create_file('./static/%s/ScoutingData' % competition)
+                            issue.create_file('./static/data/%s/ScoutingData' % competition)
                         DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
                     
                 if debrief_attributes.has_key('Issue3_Summary'):
@@ -475,7 +476,7 @@ def process_debrief_files(global_config, input_dir, recursive, test):
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
-                            issue.create_file('./static/%s/ScoutingData' % competition)
+                            issue.create_file('./static/data/%s/ScoutingData' % competition)
                         DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
         except Exception, e:
             # log the exception but continue processing other files
@@ -539,21 +540,17 @@ if __name__ == '__main__':
     # read in the configuration file containing data related to this competition
     read_config(options.cfg_filename)
     
-    # set the input directory for the scouting data and make sure that it exists
-    input_dir = './static/' + global_config['this_competition'] + '/ScoutingData/'
-    try: 
-        os.makedirs(input_dir)
-    except OSError:
-        if not os.path.isdir(input_dir):
-            raise
+    # make sure that the required directories exist
+    directories = ('ScoutingData', 'ScoutingPictures')
+    for directory in directories:        
+        base_dir = './static/data/' + global_config['this_competition'] + '/' + directory + '/'
+        try: 
+            os.makedirs(base_dir)
+        except OSError:
+            if not os.path.isdir(base_dir):
+                raise
 
-    # also make sure that the ScoutingPictures directory exists as well
-    pictures_dir = './static/' + global_config['this_competition'] + '/ScoutingPictures/'
-    try: 
-        os.makedirs(pictures_dir)
-    except OSError:
-        if not os.path.isdir(pictures_dir):
-            raise
+    input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
         
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
@@ -665,13 +662,13 @@ if __name__ == '__main__':
                     print "Request Path: %s" % request_path
                     
                     if request_type == "PUT":
-                        fullpath = './static/' + request_path
+                        fullpath = './static/data/' + request_path
                         response_code = FileSync.put_file(fullpath, 'text/plain', msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\n')
                         files_received += 1
                     elif request_type == "GET":
                         
-                        fullpath = './static/' + request_path
+                        fullpath = './static/data/' + request_path
                         if os.path.isdir(fullpath):
                             file_list = FileSync.get_file_list(fullpath)
                             response_body = ''

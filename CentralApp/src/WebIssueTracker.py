@@ -122,7 +122,7 @@ def process_new_issue_form(global_config, form):
                                            component, submitter, owner, 
                                            description, timestamp)
     if issue != None:
-        issue.create_file('./static/%s/ScoutingData' % global_config['this_competition'])
+        issue.create_file('./static/data/%s/ScoutingData' % global_config['this_competition'])
     session.commit()
     
     return '/issue/%s' % issue_id            
@@ -204,7 +204,7 @@ def process_issue_form(global_config, form, issue_id, username):
                                            component, submitter, owner, 
                                            description, timestamp)
     if issue != None:
-        issue.create_file('./static/%s/ScoutingData' % global_config['this_competition'])
+        issue.create_file('./static/data/%s/ScoutingData' % global_config['this_competition'])
 
     if comment != '':
         IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
