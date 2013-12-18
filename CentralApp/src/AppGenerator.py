@@ -5,10 +5,21 @@ Created on Dec 29, 2012
 '''
 
 import os
+import re
 import shutil
 
 base_packagename = 'org.team1073.'
 
+'''
+    Recursive function that will split a pathname into its a list of 
+    parts, up to a maximum depth
+'''
+def splitpath(path, maxdepth=20):
+    ( head, tail ) = os.path.split(path)
+    return splitpath(head, maxdepth - 1) + [ tail ] \
+         if maxdepth and head and head != path \
+         else [ head or tail ]
+         
 def prepare_destination_project( base_project_path, base_projectname, dest_project_path, dest_projectname, \
                                  dest_activity_prefix, dest_app_name, dest_app_label ):
     
@@ -75,6 +86,38 @@ def prepare_destination_project( base_project_path, base_projectname, dest_proje
         project_infile.close()
         project_outfile.close()
         shutil.move(os.path.join(dest_project_path, '.project.tmp'),os.path.join(dest_project_path, '.project'))
+        
+        # update the library references in the project.properties file to properly reference
+        # any libraries that are referenced by the base application project
+        #
+        # first, scan the base and destination paths, looking for the common base directory,
+        # and build a relative path from the destination path to the base
+        base_path_parts = splitpath(base_project_path)
+        dest_path_parts = splitpath(dest_project_path)
+        for i in range(len(base_path_parts)):
+            if i > len(dest_path_parts):
+                break
+            if base_path_parts[i] != dest_path_parts[i]:
+                break
+        library_relative_path = ''
+        for j in range(i,len(dest_path_parts)):
+            library_relative_path += '../'
+        for j in range(i,len(base_path_parts)-1):
+            library_relative_path += base_path_parts[j] + '/'
+            
+        # update the project.properties file to set the path to any referenced libraries based 
+        # on the generated relative path
+        project_properties_infile = open(os.path.join(dest_project_path, 'project.properties'), 'r')
+        project_properties_outfile = open(os.path.join(dest_project_path, 'project.properties.tmp'), 'w')
+        for line in project_properties_infile:
+            if line.find('android.library.reference') != -1:
+                newline = line.replace('../', library_relative_path)
+                project_properties_outfile.write(newline)
+            else:
+                project_properties_outfile.write(line)
+        project_properties_infile.close()
+        project_properties_outfile.close()
+        shutil.move(os.path.join(dest_project_path, 'project.properties.tmp'),os.path.join(dest_project_path, 'project.properties'))
         
         # update the manifest XML file to reflect the package name and activity reference
         manifest_infile = open(os.path.join(dest_project_path, 'AndroidManifest.xml'), 'r')
