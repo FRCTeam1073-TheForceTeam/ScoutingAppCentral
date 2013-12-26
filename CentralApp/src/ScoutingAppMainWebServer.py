@@ -48,7 +48,10 @@ urls = (
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
+    '/scorebreakdown/(.*)', 'TeamScoreBreakdown',
     '/rankings',            'TeamRankings',
+    '/attrrankings/(.*)',   'TeamAttributeRankings',
+    '/rankingsarray',       'TeamRankingsArray',
     '/recalculaterankings',  'RecalculateRankings',
     '/test',                'TeamAttributes',
     '/teamdata/(.*)',       'TeamDataFiles',
@@ -173,6 +176,12 @@ class TeamScore(object):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_score_page(global_config, name)
 
+class TeamScoreBreakdown(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        return WebTeamData.get_team_score_breakdown_page(global_config, name)
+        
 class TeamNotes(object):
 
     def GET(self, name):
@@ -184,6 +193,18 @@ class TeamRankings(object):
     def GET(self):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_rankings_page(global_config)
+
+class TeamAttributeRankings(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        return WebTeamData.get_team_attr_rankings_page(global_config,name)
+
+class TeamRankingsArray(object):
+
+    def GET(self):
+        WebLogin.check_access(global_config,10)
+        return WebTeamData.get_team_rankings_array(global_config)
 
 class TeamAttributes(object):
 

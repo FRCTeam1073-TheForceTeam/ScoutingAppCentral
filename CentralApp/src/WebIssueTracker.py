@@ -358,7 +358,7 @@ def get_issue_json(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
-        return issue.json()
+        return issue.json().replace('\'', '"')
     else:
         return None
 

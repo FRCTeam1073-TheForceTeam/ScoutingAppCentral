@@ -201,7 +201,7 @@ def get_team_server_page(global_config, name):
     
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ attributes: [\n')
+    result.append('{ "attributes": [\n')
     comp = global_config['this_competition']
     team_attributes = DataModel.getTeamAttributes(session, name, comp)
     for attribute in team_attributes:
@@ -210,7 +210,7 @@ def get_team_server_page(global_config, name):
     if len(team_attributes) > 0:
         result = result[:-1]
     result.append(']}')
-    return ''.join(result)
+    return ''.join(result).replace('\'', '"')
 
 def get_team_score_page(global_config, name):
         
@@ -220,7 +220,7 @@ def get_team_score_page(global_config, name):
     
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ score: [')
+    result.append('{ "score": [')
     comp = global_config['this_competition']
     team_score = DataModel.getTeamScore(session, name, comp)
     for score in team_score:
@@ -229,7 +229,7 @@ def get_team_score_page(global_config, name):
     if len(team_score) > 0:
         result = result[:-1]
     result.append(']}')
-    return ''.join(result)
+    return ''.join(result).replace('\'', '"')
 
 def get_team_notes_page(global_config, name):
         
@@ -253,16 +253,111 @@ def get_team_rankings_page(global_config):
         
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ rankings: [\n')
+    result.append("{ 'rankings': [\n")
     comp = global_config['this_competition']        
-    team_rankings = DataModel.getTeamsInRankOrder(session, comp)
+    team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
         result.append(team.json())
         result.append(',\n')
     if len(team_rankings) > 0:
         result = result[:-1]
     result.append(']}')
+    return ''.join(result).replace('\'', '"')
+
+def get_team_rankings_array(global_config):
+        
+    global_config['logger'].debug( 'GET Team Rankings Array' )
+    
+    session = DbSession.open_db_session(global_config['db_name'])
+        
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('[')
+    comp = global_config['this_competition']        
+    team_rankings = DataModel.getTeamsInRankOrder(session, comp)
+    for team in team_rankings:
+        data_str = '[%d,%d]' % (team.team,int(team.score))
+        result.append(data_str)
+        result.append(',')
+    if len(team_rankings) > 0:
+        result = result[:-1]
+    result.append(']')
     return ''.join(result)
+
+def get_team_attr_rankings_page(global_config, attr_name):
+        
+    global_config['logger'].debug( 'GET Team Attribute Rankings' )
+    
+    session = DbSession.open_db_session(global_config['db_name'])
+        
+    attrdef_filename = './config/' + global_config['attr_definitions']
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename)
+    attr = attr_definitions.get_definition(attr_name)
+    try:
+        stat_type = attr['Statistic_Type']
+    except:
+        stat_type = 'Total'
+    
+    web.header('Content-Type', 'application/json')
+    result = []
+        
+    result.append('[{ "label":"%s", "data": [\n' % attr_name)
+    comp = global_config['this_competition']        
+    team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name)
+    for team in team_rankings:
+        if stat_type == 'Average':
+            value = int(team.cumulative_value/team.num_occurs)
+        else:
+            value = int(team.cumulative_value)
+        data_str = '[%d,%d]' % (team.team,value)
+        result.append(data_str)
+        result.append(',')
+    if len(team_rankings) > 0:
+        result = result[:-1]
+    result.append('] }]')
+    return ''.join(result).replace('\'', '"')
+
+def get_team_score_breakdown_page(global_config, name):
+        
+    global_config['logger'].debug( 'GET Team Score Breakdown: %s', name )
+    
+    session = DbSession.open_db_session(global_config['db_name'])
+    
+    attrdef_filename = './config/' + global_config['attr_definitions']
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename)
+    
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "score_breakdown": [\n')
+    comp = global_config['this_competition']        
+    team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
+    for attribute in team_attributes:
+        attr_def = attr_definitions.get_definition( attribute.attr_name )
+        if attr_def:
+            try:
+                stat_type = attr_def['Statistic_Type']
+            except:
+                stat_type = 'Total'
+
+            weight = int(float(attr_def['Weight']))
+            if weight != 0:
+                if stat_type == 'Average':
+                    value = int(attribute.cumulative_value/attribute.num_occurs)
+                else:
+                    value = int(attribute.cumulative_value)
+                data_str = '{"attr_name": "%s", "raw_score": %d, "weighted_score": %d}' % (attribute.attr_name,int(value),int(weight*value)) 
+                result.append(data_str)
+                result.append(',\n')
+    if len(team_attributes) > 0:
+        result = result[:-1]
+        result.append('\n')
+    result.append(']}')
+    
+    return ''.join(result).replace('\'', '"')
+
 
 def get_team_attributes_page(global_config):
         
@@ -276,7 +371,7 @@ def get_team_attributes_page(global_config):
     
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ attributes: [\n')
+    result.append('{ "attributes": [\n')
     comp = global_config['this_competition']        
     team_rankings = DataModel.getTeamsInRankOrder(session, comp)
     for team_entry in team_rankings:
@@ -305,7 +400,7 @@ def get_team_attributes_page(global_config):
         result = result[:-1]
         result.append('\n')
     result.append(']}')
-    return ''.join(result)
+    return ''.join(result).replace('\'', '"')
 
 def get_team_datafile_page(global_config, filename):
         

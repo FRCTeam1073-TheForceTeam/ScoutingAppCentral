@@ -164,17 +164,39 @@ def getTeamAttributesInOrder(session, teamId, comp):
             order_by(TeamAttribute.attr_name).all()
     return attrList
 
+def getTeamAttributesInRankOrder(session, comp, name, descending_order=True, max_teams=100):
+    if descending_order == True:
+        teamList = session.query(TeamAttribute).\
+                filter(TeamAttribute.competition==comp).\
+                filter(TeamAttribute.attr_name==name).\
+                order_by(TeamAttribute.cumulative_value.desc()).\
+                all()    
+    else:
+        teamList = session.query(TeamAttribute).\
+                filter(TeamAttribute.competition==comp).\
+                filter(TeamAttribute.attr_name==name).\
+                order_by(TeamAttribute.cumulative_value).\
+                all()    
+    return teamList
+
 def getTeamAttribute(session, team, comp, name):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
                                             filter(TeamAttribute.competition==comp).\
                                             filter(TeamAttribute.attr_name==name)
     return attrList.first()
 
-def getTeamsInRankOrder(session, comp, max_teams=100):
-    teamList = session.query(TeamRank).\
+def getTeamsInRankOrder(session, comp, descending_order=True, max_teams=100):
+    if descending_order == True:
+        teamList = session.query(TeamRank).\
             filter(TeamRank.competition==comp).\
             order_by(TeamRank.score.desc()).\
+            all()
+    else:
+        teamList = session.query(TeamRank).\
+            filter(TeamRank.competition==comp).\
+            order_by(TeamRank.score).\
             all()    
+
     return teamList
 
 def getTeamsInNumericOrder(session, comp, max_teams=100):
