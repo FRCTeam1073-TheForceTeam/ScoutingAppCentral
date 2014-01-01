@@ -483,13 +483,10 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
     return result
 
 
-def get_platform_issues(global_config, platform_type, status=None):
+def get_platform_issues(global_config, platform_type, status=''):
     global_config['logger'].debug( 'GET Issues for platform: %s', platform_type )
  
     session = DbSession.open_db_session(global_config['issues_db_name'])
-
-    if status == 'None':
-        status=''
 
     if status == 'open':
         issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Open', 'Working', 
@@ -501,7 +498,7 @@ def get_platform_issues(global_config, platform_type, status=None):
                 
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ "%s_issues": [\n' %status)
+    result.append('{ "issues": [\n' %status)
     
     for issue in issues:
         result.append(issue.json())

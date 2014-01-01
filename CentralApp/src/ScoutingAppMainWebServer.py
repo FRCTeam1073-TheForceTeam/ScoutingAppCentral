@@ -69,6 +69,8 @@ urls = (
     '/deletecomment/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
     '/issues/(.*)',         'PlatformIssuesHomePage',
+    '/api/issues/(.*)/(.*)','PlatformIssuesJson',
+    '/api/issues/(.*)',     'PlatformIssuesJson2',
     '/debrief/(.*)',        'DebriefPage',
     '/debriefs',            'DebriefsHomePage',
     '/user/(.*)',           'User',
@@ -384,6 +386,18 @@ class PlatformIssuesHomePage(object):
             return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type, allow_create=True)
         else:
             return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type)
+
+class PlatformIssuesJson(object):
+
+    def GET(self, platform_type, status):
+        username, access_level = WebLogin.check_access(global_config,5)
+        return WebIssueTracker.get_platform_issues(global_config, platform_type, status)
+
+class PlatformIssuesJson2(object):
+
+    def GET(self, platform_type):
+        username, access_level = WebLogin.check_access(global_config,5)
+        return WebIssueTracker.get_platform_issues(global_config, platform_type)
 
 class Users(object):
     def GET(self):
