@@ -15,6 +15,7 @@ from sqlalchemy import or_
 from optparse import OptionParser
 
 import time
+import json
 
 import DbSession
 
@@ -62,8 +63,7 @@ class Base(object):
         return self.todict()
 
     def json(self):
-        mystring = str(dict(self))
-        mystring = mystring.replace(": u'", ": '")                
+        mystring = json.dumps(dict(self))
         return mystring
 
 
@@ -175,9 +175,23 @@ def getIssuesByStatus(session, status):
     print str(issue_list)
     return issue_list
 
-def getIssuesByPlatform(session, platform):
-    issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).all()
-    print str(issue_list)
+def getIssuesByPlatform(session, platform, status, order_by_priority=False):
+    if order_by_priority:
+        if status != '':
+            issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                filter(Issue.status==status).\
+                order_by(Issue.priority).all()
+        else:
+            issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                order_by(Issue.priority).all()
+    else:
+        if status != '':
+            issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                filter(Issue.status==status).\
+                order_by(Issue.issue_id).all()
+        else:
+            issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
+                order_by(Issue.issue_id).all()
     return issue_list
     
 def getIssuesByPlatformAndMultipleStatus(session, platform, status1, status2, order_by_priority=False):
@@ -189,7 +203,6 @@ def getIssuesByPlatformAndMultipleStatus(session, platform, status1, status2, or
         issue_list = session.query(Issue).filter(Issue.issue_id.like(platform+'%')).\
                 filter(or_(Issue.status==status1, Issue.status==status2)).\
                 order_by(Issue.issue_id).all()
-    print str(issue_list)
     return issue_list
     
 def getIssuesByMultipleStatus(session, status1, status2, order_by_priority=False):
@@ -200,7 +213,6 @@ def getIssuesByMultipleStatus(session, status1, status2, order_by_priority=False
         issue_list = session.query(Issue).filter(or_(Issue.status==status1, Issue.status==status2)).\
                 order_by(Issue.issue_id).all()
                     
-    print str(issue_list)
     return issue_list
 
 def getIssuesInNumericOrder(session, max_issues=100):

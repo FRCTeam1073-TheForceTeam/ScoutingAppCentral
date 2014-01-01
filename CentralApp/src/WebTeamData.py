@@ -210,7 +210,7 @@ def get_team_server_page(global_config, name):
     if len(team_attributes) > 0:
         result = result[:-1]
     result.append(']}')
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 def get_team_score_page(global_config, name):
         
@@ -229,7 +229,7 @@ def get_team_score_page(global_config, name):
     if len(team_score) > 0:
         result = result[:-1]
     result.append(']}')
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 def get_team_notes_page(global_config, name):
         
@@ -253,7 +253,7 @@ def get_team_rankings_page(global_config):
         
     web.header('Content-Type', 'application/json')
     result = []
-    result.append("{ 'rankings': [\n")
+    result.append('{ "rankings": [\n')
     comp = global_config['this_competition']        
     team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
@@ -262,7 +262,7 @@ def get_team_rankings_page(global_config):
     if len(team_rankings) > 0:
         result = result[:-1]
     result.append(']}')
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 def get_team_rankings_array(global_config):
         
@@ -316,7 +316,7 @@ def get_team_attr_rankings_page(global_config, attr_name):
     if len(team_rankings) > 0:
         result = result[:-1]
     result.append('] }]')
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 def get_team_score_breakdown_page(global_config, name):
         
@@ -356,7 +356,7 @@ def get_team_score_breakdown_page(global_config, name):
         result.append('\n')
     result.append(']}')
     
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 
 def get_team_attributes_page(global_config):
@@ -400,7 +400,7 @@ def get_team_attributes_page(global_config):
         result = result[:-1]
         result.append('\n')
     result.append(']}')
-    return ''.join(result).replace('\'', '"')
+    return ''.join(result)
 
 def get_team_datafile_page(global_config, filename):
         

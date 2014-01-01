@@ -11,7 +11,7 @@ from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
-
+import json
 
 class Base(object):
     '''
@@ -57,8 +57,7 @@ class Base(object):
         return self.todict()
 
     def json(self):
-        mystring = str(dict(self))
-        mystring = mystring.replace(": u'", ": '")                
+        mystring = json.dumps(dict(self))
         return mystring
 
 

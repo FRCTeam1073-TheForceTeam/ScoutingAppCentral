@@ -5,6 +5,7 @@ Created on Feb 7, 2013
 '''
 
 from web import form
+import web
 import time
 
 import DbSession
@@ -358,7 +359,7 @@ def get_issue_json(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
-        return issue.json().replace('\'', '"')
+        return issue.json()
     else:
         return None
 
@@ -480,6 +481,38 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
     result += '</body>'
     result += '</html>'
     return result
+
+
+def get_platform_issues(global_config, platform_type, status=None):
+    global_config['logger'].debug( 'GET Issues for platform: %s', platform_type )
+ 
+    session = DbSession.open_db_session(global_config['issues_db_name'])
+
+    if status == 'None':
+        status=''
+
+    if status == 'open':
+        issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Open', 'Working', 
+                                                                                 order_by_priority=True)
+    elif status == 'closed':
+        issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Closed', 'Resolved')
+    else:
+        issues = IssueTrackerDataModel.getIssuesByPlatform(session, platform_type, status)
+                
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "%s_issues": [\n' %status)
+    
+    for issue in issues:
+        result.append(issue.json())
+        result.append(',\n')
+    if len(issues) > 0:
+        result = result[:-1]
+        result.append('\n')
+    result.append(']}')
+    
+    return ''.join(result)
+
 
 def delete_comment(global_config, issue_id, tag):
  

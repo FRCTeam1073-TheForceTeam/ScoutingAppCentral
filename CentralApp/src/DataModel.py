@@ -66,8 +66,7 @@ class Base(object):
         return self.todict()
 
     def json(self):
-        mystring = str(dict(self))
-        mystring = mystring.replace(": u'", ": '")                
+        mystring = json.dumps(dict(self))
         return mystring
 
 
