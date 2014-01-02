@@ -13,18 +13,8 @@ def get_page(global_config, access_level):
     
     session = DbSession.open_db_session(global_config['db_name'])
             
-    page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    page += '<html>'
-    page += WebCommonUtils.get_html_head()
-    page += '<body>'
-    if global_config.has_key('my_team'):
-        page += '<h2> Team ' + global_config['my_team'] + ' Administration Home Page' + '</h2>'
-    else:
-        page += '<h2> Team 1073 Administration Page' + '</h2>'
+    page = ''
     page += '<hr>'
-    page += '<a href="/home">Home</a></td>'
-    page += '<br>'
-    page += '<br>'
     page += '<a href="/users">User Management</a></td>'
     page += '<br>'
     page += '<a href="/taskgroups">Task Group Admin</a></td>'
@@ -38,7 +28,6 @@ def get_page(global_config, access_level):
         page += '<br>'
     page += '<br>'
     page += '<hr>'
-    page += '</body>'
-    page += '</html>'
+
     return page
 

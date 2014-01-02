@@ -12,30 +12,8 @@ def get_page(global_config, access_level):
     global_config['logger'].debug( 'GET Home Page' )
     
     session = DbSession.open_db_session(global_config['db_name'])
+    page = ''
             
-    page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    page += '<html>'
-    page += WebCommonUtils.get_html_head()
-    page += '<body>'
-    if global_config.has_key('my_team'):
-        page += '<h2> Team ' + global_config['my_team'] + ' Competition Central' + '</h2>'
-    else:
-        page += '<h2> Team 1073 Competition Central' + '</h2>'
-    page += '<hr>'
-    page += '<a href="/logout">Logout</a></td>'
-    page += '<br>'
-    if access_level < 10:
-        page += '<a href="/userprofile">User Settings</a></td>'
-        page += '<hr>'
-        page += '<br>'
-        page += '<a href="/issues">IssueTracker</a></td>'
-        page += '<br>'
-        page += '<a href="/debriefs">MatchDebriefs</a></td>'
-        page += '<br>'
-    if access_level <= 1:
-        page += '<a href="/admin">System Administration</a></td>'
-        page += '<br>'
-    page += '<br>'
     page += '<hr>'
     
     comp = global_config['this_competition']
@@ -52,7 +30,7 @@ def get_page(global_config, access_level):
     page += '<h3> Team Scoring Summary' + '</h3>'
     page += '<hr>'
     page += '<ul>'
-    page += '<li><a href="/static/test/designer.html">Team Rankings</a></li>'
+    page += '<li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>'
     page += '<li><a href="/recalculaterankings">Recalculate Team Rankings</a></li>'
     
     page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
@@ -81,7 +59,5 @@ def get_page(global_config, access_level):
         for entry in team_list:
             page += '<li><a href="/teamdata/' + str(entry.team) + '">' + 'Team ' + str(entry.team) + '</a></li>'
     page += '</ul>'
-    page += '</body>'
-    page += '</html>'
     return page
 

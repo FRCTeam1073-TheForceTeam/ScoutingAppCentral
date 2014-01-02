@@ -37,7 +37,7 @@ import WebDebrief
 import WebUsers
 import WebEventData
 
-render = web.template.render('templates/')
+render = web.template.render('templates/', base='layout')
 
 urls = (
     '/login',               'Login',
@@ -49,7 +49,10 @@ urls = (
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
     '/scorebreakdown/(.*)', 'TeamScoreBreakdown',
-    '/rankings',            'TeamRankings',
+    '/rankchart',           'TeamRanking',
+    '/rankchart/(.*)',      'TeamRanking2',
+    '/rankings',            'TeamRankingJson',
+    '/rankings/(.*)',       'TeamRankingJson2',
     '/attrrankings/(.*)',   'TeamAttributeRankings',
     '/rankingsarray',       'TeamRankingsArray',
     '/recalculaterankings',  'RecalculateRankings',
@@ -85,7 +88,7 @@ urls = (
     '/events',              'Events',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
-    
+        
     '/sync/(.*)',           'Sync'
 )
 
@@ -152,19 +155,37 @@ class HomePage(object):
 
     def GET(self):
         username, access_level = WebLogin.check_access(global_config,10)
-        return WebHomePage.get_page(global_config, access_level)
+        result = WebHomePage.get_page(global_config, access_level)
+        if global_config.has_key('my_team'):
+            team = global_config['my_team']
+        else:
+            team = '1073'
+        return render.page('Team %s Competition Central' % team, result)
+
+    
+class HomePage2(object):
+
+    def GET(self):
+        username, access_level = WebLogin.check_access(global_config,10)
+        return render.scoutingData()
     
 class AdminPage(object):
 
     def GET(self):
-        username, access_level = WebLogin.check_access(global_config,1)
-        return WebAdminPage.get_page(global_config, access_level)
+        access_level = WebLogin.check_access(global_config,1)[1]
+        result = WebAdminPage.get_page(global_config, access_level)
+        if global_config.has_key('my_team'):
+            team = global_config['my_team']
+        else:
+            team = '1073'
+        return render.page('Team %s Administration' % team, result)
     
 class TeamDataFiles(object):
 
     def GET(self, name):
         WebLogin.check_access(global_config,10)
-        return WebTeamData.get_team_datafiles_page(global_config, name)
+        result = WebTeamData.get_team_datafiles_page(global_config, name)
+        return render.page('Team %s Scouting Data Page' % name, result)
                            
 class TeamServer(object):
 
@@ -190,11 +211,30 @@ class TeamNotes(object):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_notes_page(global_config, name)
 
-class TeamRankings(object):
+class TeamRankingJson(object):
 
     def GET(self):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_rankings_page(global_config)
+    
+class TeamRankingJson2(object):
+
+    def GET(self, comp):
+        WebLogin.check_access(global_config,10)
+        return WebTeamData.get_team_rankings_page(global_config, comp)
+
+class TeamRanking(object):
+
+    def GET(self):
+        WebLogin.check_access(global_config,10)
+        comp = global_config['this_competition']
+        return render.scoutingData(comp)
+    
+class TeamRanking2(object):
+
+    def GET(self, comp):
+        WebLogin.check_access(global_config,10)
+        return render.scoutingData(comp)
 
 class TeamAttributeRankings(object):
 
@@ -218,7 +258,9 @@ class TeamDataFile(object):
 
     def GET(self, filename):
         WebLogin.check_access(global_config,10)
-        return WebTeamData.get_team_datafile_page(global_config, filename)
+        result = WebTeamData.get_team_datafile_page(global_config, filename)
+        return render.page('Scouting Data File: %s' % filename.split('/', 1)[1], result)
+
 
 class RecalculateRankings(object):
 
@@ -233,33 +275,35 @@ class Events(object):
 
     def GET(self):
         WebLogin.check_access(global_config,10)
-        return WebEventData.get_events_page(global_config)
+        result = WebEventData.get_events_page(global_config)
+        return render.page('FIRST Robotics Competition Events', result)
                            
 class EventStandings(object):
 
     def GET(self, name):
         WebLogin.check_access(global_config,10)
-        return WebEventData.get_event_standings_page(global_config, name)
+        result = WebEventData.get_event_standings_page(global_config, name)
+        return render.page('FIRST Robotics Standings Details - %s' % name, result)
                            
 class EventResults(object):
 
     def GET(self, name):
         WebLogin.check_access(global_config,10)
-        return WebEventData.get_event_results_page(global_config, name)
-                           
+        result = WebEventData.get_event_results_page(global_config, name)
+        return render.page('FIRST Robotics Event Match Results - %s' % name, result)                           
     
 class GenUi(object):
     
     def GET(self):
         WebLogin.check_access(global_config,0)
         form = WebUiGen.get_form(global_config)
-        return render.formtest(form)
+        return render.default_form(form)
    
     def POST(self):
         WebLogin.check_access(global_config,0)
         form = WebUiGen.get_form(global_config)
         if not form.validates(): 
-            return render.formtest(form)
+            return render.default_form(form)
         else:
             return WebUiGen.process_form(global_config, form)
    
@@ -267,7 +311,7 @@ class SetConfig(object):
     def GET(self):
         WebLogin.check_access(global_config,0)        
         form = WebSetConfig.get_form(global_config)
-        return render.cfg_form(form)
+        return render.default_form(form)
 
     def POST(self):
         WebLogin.check_access(global_config,0)
@@ -282,7 +326,7 @@ class NewIssue(object):
     def GET(self):
         WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_new_issue_form(global_config)
-        return render.new_issue_form(form)
+        return render.default_form(form)
            
     def POST(self):
         WebLogin.check_access(global_config,2)
@@ -297,7 +341,7 @@ class NewPlatformIssue(object):
     def GET(self, platform_type):
         WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_new_issue_form(global_config, platform_type)
-        return render.new_issue_form(form)
+        return render.default_form(form)
            
     def POST(self, platform_type):
         WebLogin.check_access(global_config,2)
@@ -312,7 +356,7 @@ class IssueComment(object):
     def GET(self, issue_id):
         WebLogin.check_access(global_config,5)
         form = WebIssueTracker.get_issue_comment_form(global_config, issue_id)
-        return render.issue_comment_form(form)
+        return render.issue_comment_form(form, issue_id)
            
     def POST(self, issue_id):
         username, access_level = WebLogin.check_access(global_config,5)
@@ -329,7 +373,7 @@ class IssueUpdate(object):
     def GET(self, issue_id):
         WebLogin.check_access(global_config,2)
         form = WebIssueTracker.get_issue_form(global_config, issue_id)
-        return render.issue_form(form)
+        return render.default_form(form)
 
     def POST(self, issue_id):
         username, access_level = WebLogin.check_access(global_config,2)
@@ -345,9 +389,13 @@ class Issue(object):
     def GET(self, issue_id):
         username, access_level = WebLogin.check_access(global_config,5)
         if access_level <=1:
-            return WebIssueTracker.get_issue_page(global_config, issue_id, allow_update=True)
+            result = WebIssueTracker.get_issue_page(global_config, issue_id, allow_update=True)
         else:
-            return WebIssueTracker.get_issue_page(global_config, issue_id)
+            result = WebIssueTracker.get_issue_page(global_config, issue_id)
+        if result:
+            return render.page( 'Issue: %s' % issue_id, result)
+        else:
+            return render.page( 'Issue: %s Not Found' % issue_id, result)
         
 class IssueJson(object):
     
@@ -374,18 +422,21 @@ class IssuesHomePage(object):
     def GET(self):
         username, access_level = WebLogin.check_access(global_config,5)
         if access_level <= 1:
-            return WebIssueTracker.get_issues_home_page(global_config,allow_create=True)
+            result = WebIssueTracker.get_issues_home_page(global_config,allow_create=True)
         else:
-            return WebIssueTracker.get_issues_home_page(global_config)
+            result = WebIssueTracker.get_issues_home_page(global_config)
+            
+        return render.page('Team 1073 Issues Home Page', result)
 
 class PlatformIssuesHomePage(object):
 
     def GET(self, platform_type):
         username, access_level = WebLogin.check_access(global_config,5)
         if access_level <= 1:
-            return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type, allow_create=True)
+            result = WebIssueTracker.get_platform_issues_home_page(global_config, platform_type, allow_create=True)
         else:
-            return WebIssueTracker.get_platform_issues_home_page(global_config, platform_type)
+            result = WebIssueTracker.get_platform_issues_home_page(global_config, platform_type)
+        return render.page('Team 1073 %s Issues' % platform_type, result)
 
 class PlatformIssuesJson(object):
 
@@ -402,14 +453,15 @@ class PlatformIssuesJson2(object):
 class Users(object):
     def GET(self):
         WebLogin.check_access(global_config,1)
-        return WebUsers.get_user_list_page(global_config)
+        result = WebUsers.get_user_list_page(global_config)
+        return render.page('User Administration', result)
     
 class LoadUsers(object):
     
     def GET(self):
         WebLogin.check_access(global_config,1)
         form = WebUsers.get_load_user_form(global_config)
-        return render.user_form(form)
+        return render.default_form(form)
 
     def POST(self):
         WebLogin.check_access(global_config,1)
@@ -429,7 +481,7 @@ class User(object):
     def GET(self, username):
         WebLogin.check_access(global_config,1)
         form = WebUsers.get_user_form(global_config, username)
-        return render.user_form(form)
+        return render.default_form(form)
 
     def POST(self, username):
         my_username, my_access_level = WebLogin.check_access(global_config,1)
@@ -449,7 +501,7 @@ class DeleteUser(object):
     def GET(self):
         WebLogin.check_access(global_config,1)
         form = WebUsers.get_delete_user_form(global_config)
-        return render.user_form(form)
+        return render.default_form(form)
 
     def POST(self):
         WebLogin.check_access(global_config,1)
@@ -469,7 +521,7 @@ class NewUser(object):
     def GET(self):
         WebLogin.check_access(global_config,1)
         form = WebUsers.get_user_form(global_config, '')
-        return render.user_form(form)
+        return render.default_form(form)
 
     def POST(self):
         my_username, my_access_level = WebLogin.check_access(global_config,1)
@@ -489,7 +541,7 @@ class UserProfile(object):
     def GET(self):
         username,access_level = WebLogin.check_access(global_config,9)
         form = WebUsers.get_userprofile_form(global_config, username)
-        return render.user_form(form)
+        return render.default_form(form)
 
     def POST(self):
         username, access_level = WebLogin.check_access(global_config,9)
@@ -508,16 +560,18 @@ class DebriefsHomePage(object):
 
     def GET(self):
         WebLogin.check_access(global_config,5)
-        return WebDebrief.get_debriefs_home_page(global_config)
+        result = WebDebrief.get_debriefs_home_page(global_config)
+        return render.page('Team 1073 Match Debriefs', result)
 
 class DebriefPage(object):
 
     def GET(self, match):
         username, access_level = WebLogin.check_access(global_config,5)
         if access_level <=1:
-            return WebDebrief.get_debrief_page(global_config, match, allow_update=True)
+            result = WebDebrief.get_debrief_page(global_config, match, allow_update=True)
         else:
-            return WebDebrief.get_debrief_page(global_config, match)
+            result = WebDebrief.get_debrief_page(global_config, match)
+        return render.page('Team 1073 Debrief For Match %s' % match, result)
 
 class DebriefComment(object):
     def GET(self, match):

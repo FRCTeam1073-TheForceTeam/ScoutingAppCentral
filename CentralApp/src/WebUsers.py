@@ -5,6 +5,7 @@ Created on Feb 14, 2013
 '''
 
 from web import form
+from myform import pureform as pureform
 
 import DbSession
 import UsersDataModel
@@ -34,7 +35,7 @@ user_state_label = 'State:'
 
 users_list = []
 
-userform = form.Form( 
+userform = pureform(
     form.Textbox(user_username_label, size=30),
     form.Password(user_password_label, size=30),
     form.Password(user_password_confirm_label, size=30),
@@ -50,7 +51,7 @@ userform = form.Form(
     form.Dropdown(user_carrier_label, user_carriers),
     form.Dropdown(user_state_label, user_states))
 
-userprofileform = form.Form( 
+userprofileform = pureform(
     form.Textbox(user_username_label, size=30),
     form.Password(user_password_label, size=30),
     form.Password(user_password_confirm_label, size=30),
@@ -62,11 +63,11 @@ userprofileform = form.Form(
     form.Textbox(user_cellphone_label, size=30),
     form.Dropdown(user_carrier_label, user_carriers))
 
-deleteuserform = form.Form(
+deleteuserform = pureform(
     form.Dropdown(user_username_label, users_list))
                            
 user_file_label = 'Users Spreadsheet Filename:'
-load_users_form = form.Form(
+load_users_form = pureform(
     form.Textbox(user_file_label, size=30))
 
 def get_user_form(global_config, username):
@@ -226,7 +227,7 @@ def process_userprofile_form(global_config, form, username):
     return '/home'
 
 user_file_label = 'Users Spreadsheet Filename:'
-load_users_form = form.Form(
+load_users_form = pureform(
     form.Textbox(user_file_label, size=30))
 
 def get_load_user_form(global_config):
@@ -283,14 +284,8 @@ def get_user_list_page(global_config):
  
     session = DbSession.open_db_session(global_config['users_db_name'])
 
-    result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    result += '<html>'
-    result += WebCommonUtils.get_html_head()
-    result += '<body>'
-    result += '<h2> Team ' + global_config['my_team'] + ' Users' + '</h2>'
+    result = ''
     result += '<hr>'
-    result += '<br>'
-    result += '<a href="/home"> Home</a></td>'
     result += '<br>'
     result += '<a href="/newuser"> Create New User</a></td>'
     result += '<br>'
@@ -303,8 +298,6 @@ def get_user_list_page(global_config):
     
     user_list = UsersDataModel.getUserList(session)
     result += insert_users_table(user_list)
-    
-    result += '</body>'
-    result += '</html>'
+
     return result
 

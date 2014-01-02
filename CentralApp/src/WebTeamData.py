@@ -60,23 +60,8 @@ def get_team_datafiles_page(global_config, name):
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
-
-    page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    page += '<html>'
-    page += WebCommonUtils.get_html_head()
-    page += '<body>'
-    page += '<h2> Scouting Data File listing for Team ' + name + '</h2>'
-    page += '<hr>'
-    page += '<a href="/home"> Home</a></td>'
-    page += '<hr>'
-    page += '<br>'
-    page += '<a href="/issues"> IssueTracker</a></td>'
-    page += '<br>'
-    page += '<a href="/debriefs"> Match Debriefs</a></td>'
-    page += '<br>'
-    page += '<br>'
-    page += '<hr>'
-        
+    page=''
+    
     team_info = DataModel.getTeamInfo(session, int(name))
     if team_info:
         page += '<h3>Team Info</h3>'
@@ -87,8 +72,7 @@ def get_team_datafiles_page(global_config, name):
         page += '<li>Rookie Season: ' + str(team_info.rookie_season) + '</li>'
         page += '<li>Website: <a href="' + team_info.website + '">' + team_info.website + '</a></li>'
         page += '<br>'
-
-            
+     
     competitions = []
     this_comp = global_config['this_competition']
     competitions.append(this_comp)
@@ -189,8 +173,7 @@ def get_team_datafiles_page(global_config, name):
         page += '<li>' + note.data + '</li>'
     
     page += '</ul>'
-    page += '</body>'
-    page += '</html>'
+    
     return page
 
 def get_team_server_page(global_config, name):
@@ -245,7 +228,7 @@ def get_team_notes_page(global_config, name):
         notes_string += note.data + '\n'
     return notes_string
 
-def get_team_rankings_page(global_config):
+def get_team_rankings_page(global_config, comp=None):
         
     global_config['logger'].debug( 'GET Team Rankings' )
     
@@ -254,7 +237,10 @@ def get_team_rankings_page(global_config):
     web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "rankings": [\n')
-    comp = global_config['this_competition']        
+    
+    if comp == None:
+        comp = global_config['this_competition']        
+        
     team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
         result.append(team.json())
@@ -411,27 +397,8 @@ def get_team_datafile_page(global_config, filename):
     datafile = open( filepath, "r" )
     
     team = filename.split('_')[0].lstrip('Team')
-    
-    page = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    page += '<html>'
-    page += WebCommonUtils.get_html_head()
-    page += '<body>'
-    page += '<h2>' + ' Scouting Data File: ' + filename + '</h2>'
-    page += '<hr>'
-    page += '<a href="/home">Home</a></td>'
-    page += '<br>'
-    page += '<a href="/teamdata/' + team + '">Back</a></td>'
-    page += '<hr>'
-    page += '<br>'
-    page += '<a href="/issues">IssueTracker</a></td>'
-    page += '<br>'
-    page += '<a href="/debriefs">Match Debriefs</a></td>'
-    page += '<br>'
-    page += '<br>'
-    page += '<hr>'
-    
-    page += '<table border="1" cellspacing="5">'
-    
+    page =''
+    page += '<table border="1" cellspacing="5">'    
     page += '<tr>'
     page += '<th>Attribute Name</th>'
     page += '<th>Attribute Value</th>'
@@ -451,7 +418,4 @@ def get_team_datafile_page(global_config, filename):
             page += '</tr>'
             
     page += '</table>'
-    page += '</ul>'
-    page += '</body>'
-    page += '</html>'
     return page

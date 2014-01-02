@@ -5,6 +5,7 @@ Created on Feb 7, 2013
 '''
 
 from web import form
+from myform import pureform as pureform
 
 # Form definition and callback class for the application configuration settings
 cfg_this_comp_label = "Competition:"
@@ -21,7 +22,7 @@ cfg_users_db_name_label = "Users Database Name:"
 
 cfg_issues_db_master_options = ['Yes', 'No']
 
-cfgform = form.Form( 
+cfgform = pureform( 
     form.Textbox(cfg_my_team_label, size=60),
     form.Textbox(cfg_this_comp_label, size=60),
     form.Textbox(cfg_this_event_code_label, size=60),

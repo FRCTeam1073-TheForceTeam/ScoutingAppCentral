@@ -6,6 +6,7 @@ Created on Feb 7, 2013
 
 import os
 from web import form
+from myform import pureform as pureform
 
 import UiGenerator
 import AppGenerator
@@ -22,7 +23,7 @@ app_title_label = "Application Title:"
 sheet_type_label = "Sheet Type:"
 attr_defs_label = "Attributes Definition File:"
 gen_action_label = 'Generate:'
-myform = form.Form( 
+myform = pureform( 
     form.Textbox(base_root_dir_label, size=60),
     form.Textbox(base_dir_label, size=60),
     form.Textbox(base_project_label, size=60),
@@ -33,8 +34,7 @@ myform = form.Form(
     form.Textbox(app_title_label, size=60),
     form.Dropdown(sheet_type_label, ['Pit', 'Match', 'Issue', 'Debrief', 'Demo']), 
     form.Textbox(attr_defs_label,form.notnull,form.regexp('[\w_-]+\.xlsx', 'Must be .xlsx file'),size=60),
-    form.Dropdown(gen_action_label, ['Complete App', 'UI Components', 'Base App']),
-    form.Checkbox('mycheckbox', value='ischecked', checked=False)) 
+    form.Dropdown(gen_action_label, ['Complete App', 'UI Components', 'Base App']))
 
 def get_form(global_config):
     global_config['logger'].debug( 'GET UI Generator' )

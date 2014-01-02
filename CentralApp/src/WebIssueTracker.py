@@ -5,6 +5,8 @@ Created on Feb 7, 2013
 '''
 
 from web import form
+from myform import pureform as pureform
+
 import web
 import time
 
@@ -36,7 +38,7 @@ issue_comment_label = 'Comment:'
 issue_last_modified_label = 'LastModified:'
 issue_last_modified_by_label = 'LastModifiedBy:'
 
-issueform = form.Form( 
+issueform = pureform( 
     form.Textbox(issue_id_label, size=20),
     form.Dropdown(issue_platform_label, issue_platforms),
     form.Textbox(issue_summary_label, size=60),
@@ -49,7 +51,7 @@ issueform = form.Form(
     form.Textarea(issue_description_label, size=1024),
     form.Textarea(issue_comment_label, size=1024))
 
-new_issueform = form.Form(                        
+new_issueform = pureform(                        
     form.Dropdown(issue_platform_label, issue_platforms),
     form.Textbox(issue_summary_label, size=60),
     form.Dropdown(issue_status_label, issue_statuses),
@@ -60,7 +62,7 @@ new_issueform = form.Form(
     form.Dropdown(issue_submitter_label, issue_username_list),
     form.Textarea(issue_description_label, size=1024))
 
-commentform = form.Form( 
+commentform = pureform( 
     form.Textarea(issue_comment_label, size=1024))
 
 def get_new_issue_form(global_config, platform_type=None):
@@ -241,22 +243,7 @@ def get_issue_page(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
-        result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-        result += '<html>'
-        result += WebCommonUtils.get_html_head('FIRST Team 1073 - Issue %s' % issue_id)
-        result += '<body>'
-        result += '<h2> Team 1073 Issue ' + issue_id + '</h2>'
-        result += '<hr>'
-        result += '<a href="/home">Home</a></td>'
-        result += '<br>'
-        result += '<a href="/issues/%s">Back</a></td>' % issue_id.split('-')[0]
-        result += '<hr>'
-        result += '<br>'
-        result += '<a href="/issues">IssueTracker</a></td>'
-        result += '<br>'
-        result += '<a href="/debriefs">Match Debriefs</a></td>'
-        result += '<br>'
-        result += '<br>'
+        result = ''
         result += '<hr>'
     
         table_str = '<ul>'
@@ -412,20 +399,7 @@ def get_issues_home_page(global_config, allow_create=False):
  
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
-    result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    result += '<html>'
-    result += WebCommonUtils.get_html_head('FIRST Team 1073 - Issue Tracker Home')
-    result += '<body>'
-    result += '<h2> Team 1073 Issues Home Page' + '</h2>'
-    result += '<hr>'
-    result += '<a href="/home">Home</a>'
-    result += '<br>'
-    result += '<a href="/home">Back</a>'
-    result += '<br>'
-    result += '<a href="/debriefs"> MatchDebriefs</a></td>'
-    result += '<br>'
-    result += '<hr>'
-
+    result = ''
     result += '<h3> Platforms' + '</h3>'
     issue_types = IssueTrackerDataModel.getIssueTypes(session)
     for platform in issue_types:
@@ -438,9 +412,6 @@ def get_issues_home_page(global_config, allow_create=False):
         result += '<br>'
     result += '<hr>'
     
-    
-    result += '</body>'
-    result += '</html>'
     return result
 
 
@@ -448,19 +419,7 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
  
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
-    result = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-    result += '<html>'
-    result += WebCommonUtils.get_html_head('FIRST Team 1073 - %s Issues' % platform_type)
-    result += '<body>'
-    result += '<h2> Team 1073 %s Issues</h2>' % platform_type
-    result += '<hr>'
-    result += '<a href="/home"> Home</a>'
-    result += '<br>'
-    result += '<a href="/issues"> Back</a>'
-    result += '<hr>'
-    result += '<br>'
-    result += '<a href="/debriefs"> MatchDebriefs</a></td>'
-    result += '<br>'
+    result = ''
     if global_config['issues_db_master'] == 'Yes' and allow_create == True:
         result += '<a href="/newissue/%s"> Create New Issue</a></td>' % platform_type
         result += '<br>'
@@ -478,8 +437,6 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
     closed_issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Closed', 'Resolved')
     result += insert_issues_table('Closed', closed_issues)
 
-    result += '</body>'
-    result += '</html>'
     return result
 
 
@@ -498,7 +455,7 @@ def get_platform_issues(global_config, platform_type, status=''):
                 
     web.header('Content-Type', 'application/json')
     result = []
-    result.append('{ "issues": [\n' %status)
+    result.append('{ "issues": [\n')
     
     for issue in issues:
         result.append(issue.json())
