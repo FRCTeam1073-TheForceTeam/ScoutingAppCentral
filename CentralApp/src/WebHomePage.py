@@ -30,7 +30,7 @@ def get_page(global_config, access_level):
     page += '<h3> Team Scoring Summary' + '</h3>'
     page += '<hr>'
     page += '<ul>'
-    page += '<li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>'
+    page += '<li><a href="/rankchart">Team Rankings</a></li>'
     page += '<li><a href="/recalculaterankings">Recalculate Team Rankings</a></li>'
     
     page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
