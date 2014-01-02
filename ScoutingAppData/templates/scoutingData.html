@@ -1,0 +1,131 @@
+$def with (comp)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Scouting Data Summary
+
+
+
+<style type="text/css">
+    #placeholder
+    { 
+        width: 600px; 
+        height: 800px;
+        margin: auto auto auto auto;
+    }
+    #flotTip
+    {
+        padding: 3px 5px;
+        background-color: #000;
+        z-index: 100;
+        color: #fff;
+        box-shadow: 0 0 10px #555;
+        opacity: .7;
+        filter: alpha(opacity=70);
+        border: 2px solid #fff;
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+    }
+</style>
+
+<script type="text/javascript">
+$$(document).ready(function () {
+    var display = "horizontal";
+    var data = [];
+    var teams = [];
+
+    var jqxhr = $$.getJSON( "/rankings/$comp", function(json_data) {
+        console.log( "success" );
+        var numTeams = json_data.rankings.length;
+        for (var i=0;i<numTeams;i++)
+        {
+            data[i] = [];
+            if ( display=='horizontal' ) {
+                data[i][0] = json_data.rankings[i].score;
+                data[i][1] = i;
+            } else {
+                data[i][0] = i;
+                data[i][1] = json_data.rankings[i].score;
+            }
+            teams[i] = json_data.rankings[i].team.toString();
+        }
+
+        $$("#placeholder").bind("plotclick", function( event, pos, item ) {
+            if (item) {
+                window.location.assign( "/static/html/flotPieCharts.html?team=" + teams[item.datapoint[1]] );
+            }
+        });
+
+        $$.plot($$("#placeholder"), [ data ], {
+	    series: {
+                 bars: { 
+                     show: true, 
+		     barWidth: 0.6,
+		     align: "center",
+		     horizontal: true
+                 }
+             },
+             yaxis: {
+                 tickFormatter: function(v,axis) {
+		 if ( (v >= 0) && (v < teams.length) ) {
+		         return teams[v];
+		     } else {
+		         return '';
+		     }
+                 },
+                 tickSize: 1,
+                 tickLength: 0,
+		 axisLabel: 'Team',
+                 axisLabelUseCanvas: true,
+                 axisLabelFontSizePixels: 10,
+                 axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
+                 axisLabelPadding: 5
+
+             },
+             xaxis: {
+                 axisLabel: 'Score',
+             },
+             grid: {
+                 hoverable: true,
+                 clickable: true
+             },
+	     tooltip: true,
+	     tooltipOpts: {
+	         content: function(label, xval, yval, flotItem) {
+		     var tipString;
+		     if ( display == 'horizontal' ) {
+		         tipString = "Team: " + json_data.rankings[yval].team.toString() + 
+		                     ", Score: " + xval.toString();
+		     } else {
+		         tipString = "Team: " + json_data.rankings[xval].team.toString() + 
+		                     ", Score: " + yval.toString();
+                     }
+		     console.log( tipString );
+		     return( tipString );
+	         },
+		 shifts: {
+		     x:20,
+		     y:0
+		 },
+                 defaultTheme: false
+	     },
+             legend: {
+                 labelBoxBorderColor: "none"
+             }
+        });
+    })
+});
+</script>
+
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>Scouting Data Summary: $comp</h1>
+    </div>
+
+    <div id="placeholder"></div>
+
+  </div>  
+

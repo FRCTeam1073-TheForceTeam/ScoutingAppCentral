@@ -1,0 +1,164 @@
+$def with (content)
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+<head>
+
+	<meta charset="utf-8" />
+	
+	<link rel="shortcut icon" href="/static/media/images/1073-favicon.ico" type="image/x-icon" />
+	<meta name="description" content="The Hollis Brookline FIRST Robotics Competition team...">
+	<meta name="keywords" content="FIRST, Hollis Brookline High School, FRC, Robots">
+	
+	<!--[if lte IE 9]> <link href="css/ie.css" rel="stylesheet" type="text/css" /> <![endif]-->
+    <!--[if lte IE 8]><script type="text/javascript" language="javascript" src="excanvas.min.js"></script><![endif]-->
+
+    <link rel="stylesheet" href="/static/media/css/themes/default/default.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/static/media/css/nivo-slider.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/static/media/css/slider.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/static/media/css/style2.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="/static/media/css/pure-min.css" type="text/css" media="screen" />
+	
+    <style type="text/css" title="currentStyle">
+	@import "/static/media/css/demo_page.css";
+	@import "/static/media/css/demo_table.css";
+    </style>
+
+    <script src="/static/media/js/jquery.js"></script>
+    <script src="/static/media/js/jquery.flot.js"></script>
+    <script src="/static/media/js/jquery.flot.tooltip.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.dataTables.js"></script>
+	<script src="/static/media/js/jquery-ui.js"></script>
+	<script type="text/javascript" src="/static/media/js/jquery.nivo.slider.js"></script>
+
+    <script type="text/javascript">
+        $$(document).ready(function() {
+            $$("body").on("mouseenter mouseleave", "#main-nav > li", function(event){
+    	        var ul = $$(this).children("ul");
+    	        ul.stop(true, true);
+    	        if (event.type === "mouseenter") {
+        	        ul.fadeIn("slow").position({
+                        of: $$(this),
+                        my: "left top",
+                        at: "left top",
+                        offset: "0 22"
+                    });
+                }
+                else {
+        	        ul.fadeOut("slow");
+                }
+            });    
+        });
+
+        var common = {
+            showMore : function (link, textBox) {
+                $$(textBox).slideToggle('slow', function(){
+    	            $$(link).text($$(this).is(':visible') ? 'Show Less' : 'Show More');
+    	            $$(link).toggleClass('showLess');
+                });
+            }
+        }    
+    </script>
+
+</head>
+
+<body>
+
+<div class="page">
+
+  <div class="header">
+
+  <div class="logo" onclick="window.location = '/home'"></div>
+
+  <ul id="secondary-nav" class="nav">     
+      <li><a href="http://www.theforceteam.com">FRC Team 1073 Homepage</a> | </li>
+      <li><a href="http://www.thebluealliance.com/">The Blue Alliance</a> | </li>
+      <li><a href="/userprofile">User Settings</a> | </li>
+      <li><a href="/logout">Logout</a></li>
+  </ul>
+
+  <ul id="main-nav" class="nav">
+     <li id="home">
+       <a href="/home" class="homeLink">Home</a>
+     </li>
+     <li id="scouting">
+       <a href="#" class="topNav">Scouting</a>
+       <ul class="menu">
+          <li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>
+          <li><a href="/home">Team Data</a></li>
+       </ul>
+     </li>
+     <li id="issues">
+        <a href="#" class="topNav">Issue Tracker</a>
+        <ul class="menu">
+          <li><a href="/issues">Issues Home</a></li> 
+        </ul>
+     </li>
+     <li id="debriefs">
+        <a href="#" class="topNav">Match Debriefs</a>
+        <ul class="menu">
+          <li><a href="/debriefs">Match Debriefs Home</a></li> 
+        </ul>
+     </li>
+     <li id="admin">
+        <a href="#" class="topNav">Admin</a>
+        <ul class="menu">
+          <li><a href="/users">User Management</a></li>
+          <li><a href="/taskgroups">Task Group Admin</a></li>
+          <li><a href="/taskgroup_email/all">Task Group Message File Gen</a></li>
+          <li><a href="/config">System Configuration</a></li>
+          <li><a href="/genui">Tablet UI Generation</a></li>
+          <li class="footerOnly"><a href="http://www.theforceteam.com">FRC Team 1073 Homepage</a></li>
+          <li class="footerOnly"><a href="http://www.thebluealliance.com/">The Blue Alliance</a></li>
+        </ul>
+     </li>
+  </ul>
+  </div>
+
+    $:content
+
+  <div id="footer">
+     <div id="footer-nav">
+       <ul class="nav">
+     <li id="scouting">
+       <a href="#" class="topNav">Scouting</a>
+       <ul class="menu">
+          <li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>
+          <li><a href="/home">Team Data</a></li>
+       </ul>
+     </li>
+     <li id="issues">
+        <a href="#" class="topNav">Issue Tracker</a>
+        <ul class="menu">
+          <li><a href="/issues">Issues Home</a></li> 
+        </ul>
+     </li>
+     <li id="debriefs">
+        <a href="#" class="topNav">Match Debriefs</a>
+        <ul class="menu">
+          <li><a href="/debriefs">Match Debriefs Home</a></li> 
+        </ul>
+     </li>
+     <li id="admin">
+        <a href="#" class="topNav">Admin</a>
+        <ul class="menu">
+          <li><a href="/users">User Management</a></li>
+          <li><a href="/taskgroups">Task Group Admin</a></li>
+          <li><a href="/taskgroup_email/all">Task Group Message File Gen</a></li>
+          <li><a href="/config">System Configuration</a></li>
+          <li><a href="/genui">Tablet UI Generation</a></li>
+          <li class="footerOnly"><a href="http://www.theforceteam.com">FRC Team 1073 Homepage</a></li>
+          <li class="footerOnly"><a href="http://www.thebluealliance.com/">The Blue Alliance</a></li>
+        </ul>
+     </li>
+    </ul>
+
+  </div>
+
+</body>
+</html>
+

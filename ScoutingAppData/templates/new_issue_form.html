@@ -1,21 +1,13 @@
 $def with (form)
-<html>
-<head>
-	<link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon" />
-	<!-- include the global CSS -->
-	<link rel="stylesheet" href="../static/css/style.css" type="text/css" media="screen" />
-	<!-- include a CSS file specific for these forms -->
-	<link rel="stylesheet" href="../static/css/form-style.css" type = "text/css" media = "screen" />
 
-</head>
-<body>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
-<form name="main" method="post"> 
 
-<div id = "formConent">
-$:form.render()
-<input type="submit" value="Create" />    </form>
-</div> 
-</body>
-</html>
+<form name="main" method="post" class="pure-form pure-form-aligned"> 
+    $:form.render()
+
+    <div class="pure-controls">
+    <button type="submit" class="pure-button pure-button-active">Submit</button> 
+    </div>
+</form>
+

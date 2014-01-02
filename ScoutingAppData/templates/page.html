@@ -1,0 +1,20 @@
+$def with (title, body)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: $title
+
+  <title>$title</title>
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>$title</h1>
+    </div>
+
+    <div id="mypage">
+        $:body
+    </div>
+
+  </div>  
+
