@@ -1,0 +1,21 @@
+html, body {
+	padding: 0;
+	margin: 10;
+	#background: url(../images/header.png) repeat-x #ffffff;
+	font-family: arial, verdana, helvetica, arial, sans-serif;
+	height: 100%
+}
+
+table {
+	border-collapse:collapse;
+	#width:100%;
+}
+table, td, th {
+	border:1px solid black;
+}
+td, th {
+	#text-align:center;
+	vertical-align:middle;
+	padding:5px;
+}
+
