@@ -111,17 +111,25 @@ def get_team_datafiles_page(global_config, name):
                 page += '<table border="1" cellspacing="5">'
                 page += '<tr>'
                 page += '<th>Attribute Name</th>'
-                page += '<th>Count</th>'
+                page += '<th>Matches</th>'
                 page += '<th>Cumulative Value</th>'
                 page += '<th>Average Value</th>'
-                page += '<th>Last Value</th>'
+                #page += '<th>Last Value</th>'
                 page += '<th>All Values</th>'
                 page += '</tr>'
     
                 for attribute in team_attributes:
                     attr_def = attr_definitions.get_definition( attribute.attr_name )
-                    if attr_def and attr_def.has_key('Include_In_Team_Display') \
-                                and attr_def['Include_In_Team_Display'] == 'Yes':      
+                    include_attr = False
+                    if attr_def:
+                        if attr_def.has_key('Include_In_Team_Display'):
+                            if attr_def['Include_In_Team_Display'] == 'Yes':
+                                include_attr = True
+                        elif attr_def.has_key('Include_In_Report') \
+                                and attr_def['Include_In_Report'] == 'Yes':
+                            include_attr = True
+                        
+                    if include_attr == True:   
                         page += '<tr>'
                         if attr_def.has_key('Display_Name'):
                             page += '<td>%s</td>' % attr_def['Display_Name']
@@ -131,7 +139,7 @@ def get_team_datafiles_page(global_config, name):
                         page += '<td>%s</td>' % str(attribute.num_occurs)
                         page += '<td>%s</td>' % str(attribute.cumulative_value)
                         page += '<td>%0.2f</td>' % (attribute.avg_value)
-                        page += '<td>%s</td>' % str(attribute.attr_value)
+                        #page += '<td>%s</td>' % str(attribute.attr_value)
                         page += '<td>%s</td>' % attribute.all_values
                         page += '</tr>'
                         
