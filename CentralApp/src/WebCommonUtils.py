@@ -17,3 +17,23 @@ def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
     head_str += '</head>\n'
     
     return head_str
+
+import ScoutingAppMainWebServer
+
+def get_comp_list():
+    
+    my_config = ScoutingAppMainWebServer.global_config
+    complist = list()
+    complist.append(my_config['this_competition'])
+    
+    other_competitions = my_config['other_competitions'].split(',')
+    for comp in other_competitions:
+        if comp and comp != my_config['this_competition']:
+            complist.append(comp)
+
+    return complist
+
+def get_issue_types():
+    my_config = ScoutingAppMainWebServer.global_config
+    issue_types = my_config['issue_types'].split(',')
+    return issue_types
