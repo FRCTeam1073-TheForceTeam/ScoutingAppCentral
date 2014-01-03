@@ -36,8 +36,10 @@ import WebIssueTracker
 import WebDebrief
 import WebUsers
 import WebEventData
+import WebCommonUtils
 
-render = web.template.render('templates/', base='layout')
+
+render = web.template.render('templates/', base='layout', globals={'utils':WebCommonUtils})
 
 urls = (
     '/login',               'Login',
@@ -68,14 +70,14 @@ urls = (
     '/issue/(.*)',          'Issue',
     '/issueupdate/(.*)',    'IssueUpdate',
     '/issuecomment/(.*)',   'IssueComment',
-    '/debriefcomment/(.*)', 'DebriefComment',
-    '/deletecomment/(.+)',  'DeleteComment',
+    '/debriefcomment/(.*)/(.*)', 'DebriefComment',
+    '/deletecomment/(.*)/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
     '/issues/(.*)',         'PlatformIssuesHomePage',
     '/api/issues/(.*)/(.*)','PlatformIssuesJson',
     '/api/issues/(.*)',     'PlatformIssuesJson2',
-    '/debrief/(.*)',        'DebriefPage',
-    '/debriefs',            'DebriefsHomePage',
+    '/debrief/(.*)/(.*)',   'DebriefPage',
+    '/debriefs/(.*)',       'DebriefsHomePage',
     '/user/(.*)',           'User',
     '/userprofile',         'UserProfile',
     '/newuser',             'NewUser',
@@ -107,6 +109,7 @@ global_config = { 'my_team'            : '1073',
                   'attr_definitions'   : None,
                   'team_list'          : None,
                   'event_code'         : None,
+                  'issue_types'        : 'Robot,MobileBase',
                   'logger':logger }
 
 def read_config(config_dict, config_filename):
@@ -410,7 +413,7 @@ class DeleteComment(object):
         if params[0] == 'issue':
             result = WebIssueTracker.delete_comment(global_config,params[1], params[2])
         elif params[0] == 'debrief':
-            result = WebDebrief.delete_comment(global_config,params[1], params[2])
+            result = WebDebrief.delete_comment(global_config,params[1], params[2], params[3])
         else:
             return "404 Not Found"
 
@@ -558,34 +561,34 @@ class UserProfile(object):
 
 class DebriefsHomePage(object):
 
-    def GET(self):
+    def GET(self,competition):
         WebLogin.check_access(global_config,5)
-        result = WebDebrief.get_debriefs_home_page(global_config)
+        result = WebDebrief.get_debriefs_home_page(global_config, competition)
         return render.page('Team 1073 Match Debriefs', result)
 
 class DebriefPage(object):
 
-    def GET(self, match):
+    def GET(self, comp, match):
         username, access_level = WebLogin.check_access(global_config,5)
         if access_level <=1:
-            result = WebDebrief.get_debrief_page(global_config, match, allow_update=True)
+            result = WebDebrief.get_debrief_page(global_config, comp, match, allow_update=True)
         else:
-            result = WebDebrief.get_debrief_page(global_config, match)
-        return render.page('Team 1073 Debrief For Match %s' % match, result)
+            result = WebDebrief.get_debrief_page(global_config, comp, match)
+        return render.page('Team 1073 Debrief For Match %s:%s' % (comp,match), result)
 
 class DebriefComment(object):
-    def GET(self, match):
+    def GET(self, comp, match):
         WebLogin.check_access(global_config,5)
-        form = WebDebrief.get_match_comment_form(global_config, match)
-        return render.issue_comment_form(form)
+        form = WebDebrief.get_match_comment_form(global_config, comp, match)
+        return render.debrief_comment_form(form, comp, match)
            
-    def POST(self, match):
+    def POST(self, comp, match):
         username,access_level = WebLogin.check_access(global_config,5)
-        form = WebDebrief.get_match_comment_form(global_config, match)
+        form = WebDebrief.get_match_comment_form(global_config, comp, match)
         if not form.validates(): 
             return render.issue_comment_form_done(form)
         else:
-            result = WebDebrief.process_match_comment_form(global_config, form, match, username)
+            result = WebDebrief.process_match_comment_form(global_config, form, comp, match, username)
             raise web.seeother(result)
         
 class TaskGroupEmail(object):
@@ -640,6 +643,9 @@ if __name__ == "__main__":
     debrief_session  = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
     users_session    = DbSession.open_db_session(users_db_name, UsersDataModel)
  
+    # Initialize the issue tracker
+    WebIssueTracker.init_issue_tracker()
+    
     # load the users file if one is specified
     if options.users_file != '':
         users_file = './config/' + options.users_file
