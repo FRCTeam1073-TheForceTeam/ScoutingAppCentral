@@ -38,32 +38,43 @@ issue_comment_label = 'Comment:'
 issue_last_modified_label = 'LastModified:'
 issue_last_modified_by_label = 'LastModifiedBy:'
 
-issueform = pureform( 
-    form.Textbox(issue_id_label, size=20),
-    form.Dropdown(issue_platform_label, issue_platforms),
-    form.Textbox(issue_summary_label, size=60),
-    form.Dropdown(issue_status_label, issue_statuses),
-    form.Dropdown(issue_priority_label, issue_priorities),
-    form.Dropdown(issue_subgroup_label, issue_subgroups),
-    form.Dropdown(issue_component_label, issue_components),
-    form.Dropdown(issue_owner_label, issue_username_list),
-    form.Dropdown(issue_submitter_label, issue_username_list),
-    form.Textarea(issue_description_label, size=1024),
-    form.Textarea(issue_comment_label, size=1024))
+issueform = None
+new_issueform = None
+commentform = None
 
-new_issueform = pureform(                        
-    form.Dropdown(issue_platform_label, issue_platforms),
-    form.Textbox(issue_summary_label, size=60),
-    form.Dropdown(issue_status_label, issue_statuses),
-    form.Dropdown(issue_priority_label, issue_priorities),
-    form.Dropdown(issue_subgroup_label, issue_subgroups),
-    form.Dropdown(issue_component_label, issue_components),
-    form.Dropdown(issue_owner_label, issue_username_list),
-    form.Dropdown(issue_submitter_label, issue_username_list),
-    form.Textarea(issue_description_label, size=1024))
+def init_issue_tracker():
+    global issueform
+    global new_issueform
+    global commentform
+    
+    issue_platforms  = WebCommonUtils.get_issue_types()
 
-commentform = pureform( 
-    form.Textarea(issue_comment_label, size=1024))
+    issueform = pureform( 
+        form.Textbox(issue_id_label, size=20),
+        form.Dropdown(issue_platform_label, issue_platforms),
+        form.Textbox(issue_summary_label, size=60),
+        form.Dropdown(issue_status_label, issue_statuses),
+        form.Dropdown(issue_priority_label, issue_priorities),
+        form.Dropdown(issue_subgroup_label, issue_subgroups),
+        form.Dropdown(issue_component_label, issue_components),
+        form.Dropdown(issue_owner_label, issue_username_list),
+        form.Dropdown(issue_submitter_label, issue_username_list),
+        form.Textarea(issue_description_label, size=1024),
+        form.Textarea(issue_comment_label, size=1024))
+    
+    new_issueform = pureform(                        
+        form.Dropdown(issue_platform_label, issue_platforms),
+        form.Textbox(issue_summary_label, size=60),
+        form.Dropdown(issue_status_label, issue_statuses),
+        form.Dropdown(issue_priority_label, issue_priorities),
+        form.Dropdown(issue_subgroup_label, issue_subgroups),
+        form.Dropdown(issue_component_label, issue_components),
+        form.Dropdown(issue_owner_label, issue_username_list),
+        form.Dropdown(issue_submitter_label, issue_username_list),
+        form.Textarea(issue_description_label, size=1024))
+    
+    commentform = pureform( 
+        form.Textarea(issue_comment_label, size=1024))
 
 def get_new_issue_form(global_config, platform_type=None):
     global_config['logger'].debug( 'GET New Issue Form' )

@@ -18,6 +18,7 @@ cfg_debrief_db_name_label = "Debrief Database Name:"
 cfg_issues_db_name_label = "Issues Database Name:"
 cfg_issues_db_master_label = "Issues Database Master:"
 cfg_users_db_name_label = "Users Database Name:"
+cfg_issue_types_label = "Issue Types (comma-separated):"
 
 
 cfg_issues_db_master_options = ['Yes', 'No']
@@ -27,6 +28,7 @@ cfgform = pureform(
     form.Textbox(cfg_this_comp_label, size=60),
     form.Textbox(cfg_this_event_code_label, size=60),
     form.Textbox(cfg_other_comp_label, size=60),
+    form.Textbox(cfg_issue_types_label, size=60),
     form.Textbox(cfg_attr_defs_label, size=60),
     form.Textbox(cfg_scouting_db_name_label, size=60),
     form.Textbox(cfg_issues_db_name_label, size=60),
@@ -42,6 +44,7 @@ def get_form(global_config):
     form[cfg_this_comp_label].value = global_config['this_competition']
     form[cfg_this_event_code_label].value = global_config['event_code']
     form[cfg_other_comp_label].value = global_config['other_competitions']
+    form[cfg_issue_types_label].value = global_config['issue_types']
     form[cfg_attr_defs_label].value = global_config['attr_definitions']
     form[cfg_scouting_db_name_label].value = global_config['db_name']
     form[cfg_issues_db_name_label].value = global_config['issues_db_name']
@@ -61,6 +64,7 @@ def process_form(global_config, form):
     global_config['attr_definitions'] = form[cfg_attr_defs_label].value
     
     global_config['db_name'] = form[cfg_scouting_db_name_label].value
+    global_config['issue_types'] = form[cfg_issue_types_label].value
     global_config['issues_db_name'] = form[cfg_issues_db_name_label].value
     global_config['issues_db_master'] = form[cfg_issues_db_master_label].value
     global_config['debriefs_db_name'] = form[cfg_debrief_db_name_label].value
