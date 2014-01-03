@@ -1,5 +1,12 @@
 $def with (content)
 
+$# This snippet of python code will retrieve the list of competitions and the list of
+$# issue types. These variables will then be used to dynamically create the menu tree
+$# based on the dynamic data
+$code:
+    complist = utils.get_comp_list()
+    issuetypes = utils.get_issue_types()
+
 <!DOCTYPE html>
 
 <html lang="en">
@@ -88,20 +95,25 @@ $def with (content)
      <li id="scouting">
        <a href="#" class="topNav">Scouting</a>
        <ul class="menu">
-          <li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>
+          <li class="noHover"><a href="/rankchart" class="subMenu">Team Rankings</a>
+          $for comp in complist:
+              <li class="subMenuItem"><a href="/rankchart/$comp">$comp</a></li>
+          </li>
           <li><a href="/home">Team Data</a></li>
        </ul>
      </li>
      <li id="issues">
-        <a href="#" class="topNav">Issue Tracker</a>
+        <a href="/issues" class="topNav">Issue Tracker</a>
         <ul class="menu">
-          <li><a href="/issues">Issues Home</a></li> 
+          $for type in issuetypes:
+            <li><a href="/issues/$type">$type Issues</a></li> 
         </ul>
      </li>
      <li id="debriefs">
         <a href="#" class="topNav">Match Debriefs</a>
         <ul class="menu">
-          <li><a href="/debriefs">Match Debriefs Home</a></li> 
+          $for comp in complist:
+            <li><a href="/debriefs/$comp">$comp</a></li>
         </ul>
      </li>
      <li id="admin">
@@ -127,20 +139,25 @@ $def with (content)
      <li id="scouting">
        <a href="#" class="topNav">Scouting</a>
        <ul class="menu">
-          <li><a href="/static/html/testScoutingData.html">Team Rankings</a></li>
+          <li class="noHover"><a href="/rankchart" class="subMenu">Team Rankings</a>
+          $for comp in complist:
+              <li class="subMenuItem"><a href="/rankchart/$comp">$comp</a></li>
+          </li>
           <li><a href="/home">Team Data</a></li>
        </ul>
      </li>
      <li id="issues">
         <a href="#" class="topNav">Issue Tracker</a>
         <ul class="menu">
-          <li><a href="/issues">Issues Home</a></li> 
+          $for type in issuetypes:
+            <li><a href="/issues/$type">$type Issues</a></li> 
         </ul>
      </li>
      <li id="debriefs">
         <a href="#" class="topNav">Match Debriefs</a>
         <ul class="menu">
-          <li><a href="/debriefs">Match Debriefs Home</a></li> 
+          $for comp in complist:
+            <li><a href="/debriefs/$comp">$comp</a></li>
         </ul>
      </li>
      <li id="admin">

@@ -95,7 +95,11 @@ form {
     color: #ffffff!important;
 }
 
-#footer-nav .subProducts {
+#main-nav .subMenuItem {
+    text-indent: 10px;
+}
+
+#footer-nav .subMenu {
     display: none!important;
 }
 
