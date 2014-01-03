@@ -109,28 +109,37 @@ def addProcessedFile(session, name):
     session.add(file_name)
     
 
-def getDebriefComments(session, match_id):
-    comments = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).all()
+def getDebriefComments(session, competition, match_id):
+    comments = session.query(DebriefComment).\
+                             filter(Debrief.competition==competition).\
+                             filter(DebriefComment.match_id==match_id).all()
     print str(comments)
     return comments
         
-def getDebriefIssues(session, match_id):
-    issues = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).\
+def getDebriefIssues(session, competition, match_id):
+    issues = session.query(DebriefIssue).\
+                           filter(DebriefIssue.match_id==match_id).\
+                           filter(Debrief.competition==competition).\
                            order_by(DebriefIssue.priority).all()
     print str(issues)
     return issues
         
-def getDebriefIssue(session, match_id, priority):
-    issues = session.query(DebriefIssue).filter(DebriefIssue.match_id==match_id).\
-                                         filter(DebriefIssue.priority==priority).all()
+def getDebriefIssue(session, competition, match_id, priority):
+    issues = session.query(DebriefIssue).\
+                           filter(DebriefIssue.match_id==match_id).\
+                           filter(Debrief.competition==competition).\
+                           filter(DebriefIssue.priority==priority).all()
     if len(issues) > 0:
         issue = issues[0]
     else:
         issue = None
     return issue
         
-def getDebrief(session, match_id):
-    debrief_list = session.query(Debrief).filter(Debrief.match_id==match_id).all()
+def getDebrief(session, competition, match_id):
+    debrief_list = session.query(Debrief).\
+        filter(Debrief.match_id==match_id).\
+        filter(Debrief.competition==competition).\
+        all()
     print str(debrief_list)
     if len(debrief_list) > 0:
         debrief = debrief_list[0]
@@ -139,10 +148,17 @@ def getDebrief(session, match_id):
         
     return debrief
 
-def getDebriefsInNumericOrder(session, max_debriefs=100):
-    debriefList = session.query(Debrief).\
+def getDebriefsInNumericOrder(session, competition=None, max_debriefs=100):
+    if competition != None:
+        debriefList = session.query(Debrief).\
+            filter(Debrief.competition==competition).\
+            order_by(Debrief.match_id).\
+            all()
+    else:
+        debriefList = session.query(Debrief).\
             order_by(Debrief.match_id).\
             all()    
+                 
     return debriefList
 
 def addOrUpdateDebrief(session, match_id, competition, summary, description):
@@ -244,16 +260,18 @@ def deleteAllDebriefComments(session):
         session.delete(item)
     session.flush()
     
-def deleteDebriefCommentsByTag(session, match_id, tag):
+def deleteDebriefCommentsByTag(session, competition, match_id, tag):
     comments = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).\
+                                           filter(Debrief.competition==competition).\
                                            filter(DebriefComment.tag==tag).\
                                            all()
     for item in comments:
         session.delete(item)
     session.flush()
 
-def deleteDebriefCommentsByData(session, match_id, data):
+def deleteDebriefCommentsByData(session, competition, match_id, data):
     comments = session.query(DebriefComment).filter(DebriefComment.match_id==match_id).\
+                                           filter(Debrief.competition==competition).\
                                            filter(DebriefComment.data==data).\
                                            all()
     for item in comments:

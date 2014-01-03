@@ -19,20 +19,19 @@ match_comment_label = 'Comment:'
 commentform = pureform( 
     form.Textarea(match_comment_label, size=1024))
 
-def get_match_comment_form(global_config, match_str):
-    global_config['logger'].debug( 'GET match Comment Form, Issue: %s', match_str )
+def get_match_comment_form(global_config, competition, match_str):
+    global_config['logger'].debug( 'GET match Comment Form, Issue: %s:%s', (competition,match_str) )
 
     form = commentform()
 
     return form
 
-def process_match_comment_form(global_config, form, match_str, username):
-    global_config['logger'].debug( 'Process Match Comment Form: %s', match_str )
+def process_match_comment_form(global_config, form, competition, match_str, username):
+    global_config['logger'].debug( 'Process Match Comment Form: %s:%s', (competition,match_str) )
     
     session = DbSession.open_db_session(global_config['debriefs_db_name'])                   
     comment = form[match_comment_label].value
     timestamp = str(int(time.time()))
-    competition = global_config['this_competition']
     
     DebriefDataModel.addOrUpdateDebriefComment(session, int(match_str),
                                                competition, 
@@ -42,11 +41,11 @@ def process_match_comment_form(global_config, form, match_str, username):
     return '/debrief/%s' % match_str            
 
 
-def get_debrief_page(global_config, match_str, allow_update=False):
+def get_debrief_page(global_config, competition, match_str, allow_update=False):
     
     session = DbSession.open_db_session(global_config['debriefs_db_name'])
-    debrief = DebriefDataModel.getDebrief(session, int(match_str))
-    debrief_issues = DebriefDataModel.getDebriefIssues(session, int(match_str))
+    debrief = DebriefDataModel.getDebrief(session, competition, int(match_str))
+    debrief_issues = DebriefDataModel.getDebriefIssues(session, competition, int(match_str))
     issues_session = DbSession.open_db_session(global_config['issues_db_name'])
     
     if debrief != None:
@@ -87,12 +86,12 @@ def get_debrief_page(global_config, match_str, allow_update=False):
 
         result += '<br>'
         result += '<hr>'
-        result += '<a href="/debriefcomment/' + match_str + '"> Comment On This Match</a></td>'
+        result += '<a href="/debriefcomment/' + competition + '/' + match_str + '"> Comment On This Match</a></td>'
         result += '<br>'
         result += '<hr>'
         result += '<h3>Comments</h3>'
         
-        comments = DebriefDataModel.getDebriefComments(session, int(match_str))
+        comments = DebriefDataModel.getDebriefComments(session, competition, int(match_str))
         if len(comments) > 0:
             table_str = '<ul>'
             table_str += '<table border="1" cellspacing="5">'
@@ -109,7 +108,7 @@ def get_debrief_page(global_config, match_str, allow_update=False):
                 table_str += '<td>' + comment.submitter + '</td>'
                 table_str += '<td>' + comment.data + '</td>'
                 if allow_update == True:
-                    table_str += '<td><a href="/deletecomment/debrief/' + match_str + '/' + comment.tag + '">Delete</a></td>'
+                    table_str += '<td><a href="/deletecomment/debrief/' + competition + '/' + match_str + '/' + comment.tag + '">Delete</a></td>'
                 table_str += '</tr>'
             table_str += '</table>'
             table_str += '</ul>'
@@ -121,7 +120,7 @@ def get_debrief_page(global_config, match_str, allow_update=False):
     else:
         return None
     
-def insert_debrief_table(debriefs):
+def insert_debrief_table(debriefs,competition):
     table_str = ''
     table_str += '<ul>'
     
@@ -135,7 +134,10 @@ def insert_debrief_table(debriefs):
     
     for debrief in debriefs:
         table_str += '<tr>'
-        table_str += '<td><a href="/debrief/' + str(debrief.match_id) + '">' + 'Match ' + str(debrief.match_id) + '</a></td>'
+        if competition != None:
+            table_str += '<td><a href="/debrief/' + competition + '/'+ str(debrief.match_id) + '">' + 'Match ' + str(debrief.match_id) + '</a></td>'
+        else:
+            table_str += '<td><a href="/debrief/' + str(debrief.match_id) + '">' + 'Match ' + str(debrief.match_id) + '</a></td>'
         table_str += '<td>' + debrief.summary + '</td>'
         table_str += '<td>' + debrief.description + '</td>'
         table_str += '</tr>'
@@ -143,22 +145,22 @@ def insert_debrief_table(debriefs):
     table_str += '</ul>'
     return table_str
 
-def get_debriefs_home_page(global_config):
+def get_debriefs_home_page(global_config, competition):
  
     session = DbSession.open_db_session(global_config['debriefs_db_name'])
 
     result = ''
     result += '<hr>'
     
-    match_debriefs = DebriefDataModel.getDebriefsInNumericOrder(session)
-    result += insert_debrief_table(match_debriefs)
+    match_debriefs = DebriefDataModel.getDebriefsInNumericOrder(session,competition)
+    result += insert_debrief_table(match_debriefs,competition)
     
     return result
 
-def delete_comment(global_config, match_str, tag):
+def delete_comment(global_config, competition, match_str, tag):
  
     session = DbSession.open_db_session(global_config['debriefs_db_name'])
     
-    DebriefDataModel.deleteDebriefCommentsByTag(session, match_str, tag)
+    DebriefDataModel.deleteDebriefCommentsByTag(session, competition, match_str, tag)
     session.commit()
-    return '/debrief/%s' % match_str
+    return '/debrief/%s/%s' % (competition,match_str)
