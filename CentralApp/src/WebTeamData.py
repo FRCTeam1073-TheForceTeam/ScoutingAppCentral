@@ -11,7 +11,6 @@ import web
 import AttributeDefinitions
 import DbSession
 import DataModel
-import WebCommonUtils
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -251,6 +250,8 @@ def get_team_rankings_page(global_config, comp=None):
         
     team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
+        # round the score to an integer value
+        team.score = float(int(team.score))
         result.append(team.json())
         result.append(',\n')
     if len(team_rankings) > 0:
@@ -278,7 +279,8 @@ def get_team_rankings_array(global_config):
     result.append(']')
     return ''.join(result)
 
-def get_team_attr_rankings_page(global_config, attr_name):
+
+def get_team_attr_rankings_page(global_config, comp, attr_name):
         
     global_config['logger'].debug( 'GET Team Attribute Rankings' )
     
@@ -292,27 +294,27 @@ def get_team_attr_rankings_page(global_config, attr_name):
         stat_type = attr['Statistic_Type']
     except:
         stat_type = 'Total'
-    
+
     web.header('Content-Type', 'application/json')
     result = []
-        
-    result.append('[{ "label":"%s", "data": [\n' % attr_name)
-    comp = global_config['this_competition']        
-    team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name)
+    result.append('{ "rankings": [\n')
+            
+    team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
     for team in team_rankings:
         if stat_type == 'Average':
             value = int(team.cumulative_value/team.num_occurs)
         else:
             value = int(team.cumulative_value)
-        data_str = '[%d,%d]' % (team.team,value)
+        data_str = '{ "team": %d, "value": %d }' % (team.team,value)
         result.append(data_str)
-        result.append(',')
+        result.append(',\n')
     if len(team_rankings) > 0:
         result = result[:-1]
-    result.append('] }]')
+        result.append('\n')
+    result.append(']}')
     return ''.join(result)
 
-def get_team_score_breakdown_page(global_config, name):
+def get_team_score_breakdown_page(global_config, name, comp=None):
         
     global_config['logger'].debug( 'GET Team Score Breakdown: %s', name )
     
@@ -326,7 +328,8 @@ def get_team_score_breakdown_page(global_config, name):
     result = []
 
     result.append('{ "score_breakdown": [\n')
-    comp = global_config['this_competition']        
+    if comp == None:
+        comp = global_config['this_competition']        
     team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
     for attribute in team_attributes:
         attr_def = attr_definitions.get_definition( attribute.attr_name )
