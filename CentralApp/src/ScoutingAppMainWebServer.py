@@ -50,14 +50,13 @@ urls = (
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
-    '/scorebreakdown/(.*)', 'TeamScoreBreakdown',
-    '/rankchart',           'TeamRanking',
-    '/rankchart/(.*)',      'TeamRanking2',
-    '/rankings',            'TeamRankingJson',
-    '/rankings/(.*)',       'TeamRankingJson2',
-    '/attrrankings/(.*)',   'TeamAttributeRankings',
+    '/api/scorebreakdown/(.+)',  'TeamScoreBreakdownJson',
+    '/scorebreakdown/(.+)',      'TeamScoreBreakdown',
+    '/rankchart(.*)',       'TeamRanking',
+    '/rankings(.*)',        'TeamRankingJson',
+    '/attrrankings/(.*)/(.*)',   'TeamAttributeRankings',
     '/rankingsarray',       'TeamRankingsArray',
-    '/recalculaterankings',  'RecalculateRankings',
+    '/recalculaterankings', 'RecalculateRankings',
     '/test',                'TeamAttributes',
     '/teamdata/(.*)',       'TeamDataFiles',
     '/ScoutingData/(.*)',   'TeamDataFile',
@@ -74,8 +73,7 @@ urls = (
     '/deletecomment/(.*)/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
     '/issues/(.*)',         'PlatformIssuesHomePage',
-    '/api/issues/(.*)/(.*)','PlatformIssuesJson',
-    '/api/issues/(.*)',     'PlatformIssuesJson2',
+    '/api/issues/(.*)',     'PlatformIssuesJson',
     '/debrief/(.*)/(.*)',   'DebriefPage',
     '/debriefs/(.*)',       'DebriefsHomePage',
     '/user/(.*)',           'User',
@@ -90,6 +88,8 @@ urls = (
     '/events',              'Events',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
+    
+    '/testpage(.*)',        'TestPage',
         
     '/sync/(.*)',           'Sync'
 )
@@ -166,11 +166,18 @@ class HomePage(object):
         return render.page('Team %s Competition Central' % team, result)
 
     
-class HomePage2(object):
+class TestPage(object):
 
-    def GET(self):
+    def GET(self, param_str):
         username, access_level = WebLogin.check_access(global_config,10)
-        return render.scoutingData()
+        params = param_str.split('/')
+        numparams = len(params)
+        comp = 'GSR2013'
+        attr = 'Teleop_Points'
+        if numparams == 3:
+            comp = params[1]
+            attr = params[2]
+        return render.attrRank(comp,attr)
     
 class AdminPage(object):
 
@@ -202,12 +209,37 @@ class TeamScore(object):
         WebLogin.check_access(global_config,10)
         return WebTeamData.get_team_score_page(global_config, name)
 
+class TeamScoreBreakdownJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams == 1:
+            comp = global_config['this_competition']
+        elif numparams >= 2:
+            comp = params[0]
+            name = params[1]
+        else:
+            return None
+        return WebTeamData.get_team_score_breakdown_page(global_config, name, comp)
+
+        
 class TeamScoreBreakdown(object):
 
-    def GET(self, name):
+    def GET(self, param_str):
         WebLogin.check_access(global_config,10)
-        return WebTeamData.get_team_score_breakdown_page(global_config, name)
-        
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams == 1:
+            comp = global_config['this_competition']
+        elif numparams >= 2:
+            comp = params[0]
+            name = params[1]
+        else:
+            return None
+        return render.scorePieChart(comp, name)
+    
 class TeamNotes(object):
 
     def GET(self, name):
@@ -216,34 +248,33 @@ class TeamNotes(object):
 
 class TeamRankingJson(object):
 
-    def GET(self):
+    def GET(self, param_str):
         WebLogin.check_access(global_config,10)
-        return WebTeamData.get_team_rankings_page(global_config)
-    
-class TeamRankingJson2(object):
-
-    def GET(self, comp):
-        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams < 2 or params[1] == '':
+            comp = global_config['this_competition']
+        else:
+            comp = params[1]
         return WebTeamData.get_team_rankings_page(global_config, comp)
 
 class TeamRanking(object):
 
-    def GET(self):
+    def GET(self, param_str):
         WebLogin.check_access(global_config,10)
-        comp = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams < 2 or params[1] == '':
+            comp = global_config['this_competition']
+        else:
+            comp = params[1]
         return render.scoutingData(comp)
     
-class TeamRanking2(object):
-
-    def GET(self, comp):
-        WebLogin.check_access(global_config,10)
-        return render.scoutingData(comp)
-
 class TeamAttributeRankings(object):
 
-    def GET(self, name):
+    def GET(self, comp, name):
         WebLogin.check_access(global_config,10)
-        return WebTeamData.get_team_attr_rankings_page(global_config,name)
+        return WebTeamData.get_team_attr_rankings_page(global_config,comp,name)
 
 class TeamRankingsArray(object):
 
@@ -443,15 +474,16 @@ class PlatformIssuesHomePage(object):
 
 class PlatformIssuesJson(object):
 
-    def GET(self, platform_type, status):
+    def GET(self, param_str):
         username, access_level = WebLogin.check_access(global_config,5)
+        params = param_str.split('/')
+        numparams = len(params)
+        platform_type = params[0]
+        if numparams > 1:
+            status = params[1]
+        else:
+            status = ''     
         return WebIssueTracker.get_platform_issues(global_config, platform_type, status)
-
-class PlatformIssuesJson2(object):
-
-    def GET(self, platform_type):
-        username, access_level = WebLogin.check_access(global_config,5)
-        return WebIssueTracker.get_platform_issues(global_config, platform_type)
 
 class Users(object):
     def GET(self):
