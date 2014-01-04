@@ -1,0 +1,131 @@
+$def with (comp, team)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Score Breakdown Chart
+
+
+<style type="text/css">
+        #placeholder { width: 500px; height: 300px; }
+        .legend table, .legend > div { 
+                height: 82px !important; 
+                opacity: 1 !important; 
+                left: 340px; 
+                top: 10px; 
+                width: 116px !important; }
+        .legend table { border: 1px solid #555; padding: 5px; }
+
+        #flotTip
+        {
+                padding: 3px 5px;
+                background-color: #000;
+                z-index: 100;
+                color: #fff;
+                box-shadow: 0 0 10px #555;
+                opacity: .7;
+                filter: alpha(opacity=70);
+                border: 2px solid #fff;
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+        }
+</style>
+
+<!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
+<script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
+<script src="/static/media/js/jquery.flot.tooltip.js"></script>
+
+<script type="text/javascript">
+
+$$(document).ready(function () {
+
+    var teamName = "$team";
+
+    if (location.search != "")
+    {
+        var x = location.search.substr(1).split(";")
+        for (var i=0; i<x.length; i++)
+        {
+            var y = x[i].split("=");
+    
+            if ( y[0] == "team" ) {
+        	    teamName = y[1];
+            }
+        }
+    }	
+
+    var jqxhr = $$.getJSON( "/api/scorebreakdown/$comp/" + teamName, function(json_data) {
+        console.log( "success" );
+        var data = [];
+        var attr_data = json_data;
+        var numAttr = json_data.score_breakdown.length;
+        for (var i=0;i<numAttr;i++)
+        {
+            data[i] = [];
+            data[i].label = json_data.score_breakdown[i].attr_name;
+            data[i].data = Math.abs(json_data.score_breakdown[i].weighted_score);
+            if ( json_data.score_breakdown[i].weighted_score < 0 )
+            {
+                // need to add way to assign shades of red for negative scores
+                data[i].color = 'red';
+            }
+        }
+
+        function getAttrInfo(attrName) {
+            var attrInfo = attrName;
+            for (var j=0;j<numAttr;j++)
+            {
+                if ( attrName == json_data.score_breakdown[j].attr_name ) {    
+        	        attrInfo = attrName + ": " + json_data.score_breakdown[j].raw_score +
+        		               " (Weighted: " + json_data.score_breakdown[j].weighted_score + ")";
+                }
+            }
+            return attrInfo;
+        }
+
+        $$.plot($$("#placeholder"), data, {
+             series: {
+                pie: {
+                    show: true
+                }
+             },
+             grid: {
+                 hoverable: true
+             },
+             tooltip: true,
+             tooltipOpts: {
+                content: function(label, xval, yval, flotItem) {
+                                var tipString = getAttrInfo(label);
+                                console.log( tipString );
+                                return( tipString );
+                },
+                shifts: {
+                     x:20,
+                     y:0
+                },
+                defaultTheme: false
+             },
+             legend: {
+                labelBoxBorderColor: "none"
+             }
+        });
+
+        })
+        .fail(function() {
+            console.log( "error" );
+        });
+
+});
+</script>
+ 
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>Score Breakdown Chart - Team: $team</h1>
+    </div>
+
+    <div id="placeholder"></div>
+
+  </div>  
+

@@ -1,8 +1,8 @@
-$def with (comp)
+$def with (comp, attr)
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
-$var title: Scouting Data Summary
+$var title: Attribute Ranking
 
 
 
@@ -35,18 +35,18 @@ $$(document).ready(function () {
     var data = [];
     var teams = [];
 
-    var jqxhr = $$.getJSON( "/rankings/$comp", function(json_data) {
+    var jqxhr = $$.getJSON( "/attrrankings/$comp/$attr", function(json_data) {
         console.log( "success" );
         var numTeams = json_data.rankings.length;
         for (var i=0;i<numTeams;i++)
         {
             data[i] = [];
             if ( display=='horizontal' ) {
-                data[i][0] = json_data.rankings[i].score;
+                data[i][0] = json_data.rankings[i].value;
                 data[i][1] = i;
             } else {
                 data[i][0] = i;
-                data[i][1] = json_data.rankings[i].score;
+                data[i][1] = json_data.rankings[i].value;
             }
             teams[i] = json_data.rankings[i].team.toString();
         }
@@ -122,7 +122,7 @@ $$(document).ready(function () {
   <div class="article">
   
     <div id="title">
-        <h1>Scouting Data Summary: $comp</h1>
+        <h1>Attribute Ranking Summary: $attr</h1>
     </div>
 
     <div id="placeholder"></div>
