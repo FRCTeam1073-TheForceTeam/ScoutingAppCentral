@@ -95,11 +95,11 @@ $code:
      <li id="scouting">
        <a href="#" class="topNav">Scouting</a>
        <ul class="menu">
-          <li class="noHover"><a href="/rankchart" class="subMenu">Team Rankings</a>
           $for comp in complist:
-              <li class="subMenuItem"><a href="/rankchart/$comp">$comp</a></li>
-          </li>
-          <li><a href="/testpage">Attribute Data</a></li>
+            <li class="noHover"><a href="/rankchart" class="subMenu">$comp</a>
+              <li class="subMenuItem"><a href="/rankchart/$comp">Team Rankings</a></li>
+              <li class="subMenuItem"><a href="/testpage/$comp/Teleop_Points">Attribute Data</a></li>
+            </li>
           <li><a href="/home">Team Data</a></li>
        </ul>
      </li>
@@ -140,11 +140,11 @@ $code:
      <li id="scouting">
        <a href="#" class="topNav">Scouting</a>
        <ul class="menu">
-          <li class="noHover"><a href="/rankchart" class="subMenu">Team Rankings</a>
           $for comp in complist:
-              <li class="subMenuItem"><a href="/rankchart/$comp">$comp</a></li>
-          </li>
-          <li><a href="/testpage">Attribute Data</a></li>
+            <li class="noHover"><a href="/rankchart" class="subMenu">$comp</a>
+              <li class="subMenuItem"><a href="/rankchart/$comp">Team Rankings</a></li>
+              <li class="subMenuItem"><a href="/testpage/$comp/Teleop_Points">Attribute Data</a></li>
+            </li>
           <li><a href="/home">Team Data</a></li>
        </ul>
      </li>
