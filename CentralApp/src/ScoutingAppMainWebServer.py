@@ -10,9 +10,6 @@ import web
 import sys
 import traceback
 
-import logging
-import logging.config
-
 import DbSession
 import DataModel
 import DebriefDataModel
@@ -25,6 +22,9 @@ from optparse import OptionParser
 
 import FileSync
 import DataModel
+import Logger
+import ProcessFiles
+import TimerThread
 import WebHomePage
 import WebAdminPage
 import WebTeamData
@@ -53,6 +53,7 @@ urls = (
     '/api/scorebreakdown/(.+)',  'TeamScoreBreakdownJson',
     '/scorebreakdown/(.+)',      'TeamScoreBreakdown',
     '/rankchart(.*)',       'TeamRanking',
+    '/api/rankings(.*)',    'TeamRankingJson',
     '/rankings(.*)',        'TeamRankingJson',
     '/attrrankings/(.*)/(.*)',   'TeamAttributeRankings',
     '/rankingsarray',       'TeamRankingsArray',
@@ -95,36 +96,36 @@ urls = (
 )
 
 
-logging.config.fileConfig('config/logging.conf')
-logger = logging.getLogger('scouting.webapp')
+logger = Logger.init_logger('./config', 'logging.conf', 'scouting.webapp')
 
 global_config = { 'my_team'            : '1073',
-                  'this_competition'   : None, 
-                  'other_competitions' : None, 
+                  'this_competition'   : 'Test2014', 
+                  'other_competitions' : '', 
                   'db_name'            : 'scouting', 
                   'issues_db_name'     : 'issues',
                   'issues_db_master'   : 'No',
                   'debriefs_db_name'   : 'debriefs',
                   'users_db_name'      : 'users',
                   'attr_definitions'   : None,
-                  'team_list'          : None,
-                  'event_code'         : None,
+                  'team_list'          : '',
+                  'event_code'         : '',
                   'issue_types'        : 'Robot,MobileBase',
                   'logger':logger }
 
 def read_config(config_dict, config_filename):
-    cfg_file = open(config_filename, 'r')
-    for cfg_line in cfg_file:
-        if cfg_line.startswith('#'):
-            continue
-        cfg_line = cfg_line.rstrip()
-        if cfg_line.count('=') > 0:
-            (attr,value) = cfg_line.split('=',1)
-            config_dict[attr] = value
-        else:
-            # ignore lines that don't have an equal sign in them
-            pass   
-    cfg_file.close()
+    if os.path.exists(config_filename):
+        cfg_file = open(config_filename, 'r')
+        for cfg_line in cfg_file:
+            if cfg_line.startswith('#'):
+                continue
+            cfg_line = cfg_line.rstrip()
+            if cfg_line.count('=') > 0:
+                (attr,value) = cfg_line.split('=',1)
+                config_dict[attr] = value
+            else:
+                # ignore lines that don't have an equal sign in them
+                pass   
+        cfg_file.close()
 
 def write_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'w+')
@@ -301,9 +302,8 @@ class RecalculateRankings(object):
     def GET(self):
         WebLogin.check_access(global_config,4)
         DataModel.recalculate_scoring(global_config)
-        WebGenExtJsStoreFiles.gen_js_store_files(global_config)
-
-        raise web.seeother('/static/test/designer.html')
+        
+        raise web.seeother('/rankchart')
 
 class Events(object):
 
@@ -630,6 +630,14 @@ class TaskGroupEmail(object):
         fd.write( email_lists )
         fd.close()
         return email_lists
+    
+class TaskGroup(object):
+    def GET(self, name):   
+        raise web.notfound('Taskgroup Management Not Yet Available')
+    
+class TaskGroups(object):
+    def GET(self):     
+        raise web.notfound('Taskgroup Management Not Yet Available')
 
 class Sync(object):
     def GET(self, request_path):
@@ -649,6 +657,37 @@ class UsersUpdate(object):
     def POST(self):
 '''
    
+counter = 0
+def process_files():
+    global counter
+    counter += 1
+    
+    try:
+        print 'Scanning for new files to process'
+        input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
+
+        if global_config['attr_definitions'] == None:
+            print 'No Attribute Definitions, Skipping Process Files'
+        else:
+            attrdef_filename = './config/' + global_config['attr_definitions']
+            if os.path.exists(attrdef_filename):   
+                ProcessFiles.process_files(global_config, attr_definitions, input_dir)
+                ProcessFiles.process_issue_files(global_config, input_dir)
+                ProcessFiles.process_debrief_files(global_config, input_dir)
+                ProcessFiles.dump_database_as_csv_file(session, attr_definitions)
+                print 'Scan %d complete' % counter
+            else:
+                print 'Attribute File %s Does Not Exist' % attrdef_filename
+    except Exception, e:
+        global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+        traceback.print_exc(file=sys.stdout)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+        for line in exception_info:
+            line = line.replace('\n','')
+            global_config['logger'].debug(line)
+
+   
 if __name__ == "__main__":
 
     # command line options handling
@@ -660,6 +699,9 @@ if __name__ == "__main__":
     parser.add_option(    
         "-u","--users",dest="users_file",default='',
         help="List of Users to use for issue tracking")
+    parser.add_option(
+        "-l","--processloop",dest="processloop", default='0',
+        help='Process Team Files')
    
     # Parse the command line arguments
     (options,args) = parser.parse_args()
@@ -689,9 +731,14 @@ if __name__ == "__main__":
         UsersDataModel.create_admin_user(users_session, 'squirrel!')
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
-    attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
-    attr_definitions.parse(attrdef_filename)
+    if global_config['attr_definitions'] != None:
+        attrdef_filename = './config/' + global_config['attr_definitions']
+        if os.path.exists(attrdef_filename):
+            attr_definitions = AttributeDefinitions.AttrDefinitions()
+            attr_definitions.parse(attrdef_filename)
+            
+            WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
+
 
     # make sure that the required directories exist
     directories = ('ScoutingData', 'ScoutingPictures')
@@ -706,8 +753,8 @@ if __name__ == "__main__":
     print 'Sys Args: %s' % sys.argv
     sys.argv[1:] = args
     
-    
-    WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
+    if int(options.processloop) > 0:
+        process_file_timer = TimerThread.RepeatedTimer(int(options.processloop), process_files)
     
     try:
         webserver_app.run()

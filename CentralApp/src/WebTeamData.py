@@ -56,6 +56,9 @@ def get_team_datafiles_page(global_config, name):
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
     session = DbSession.open_db_session(global_config['db_name'])
 
+    if global_config['attr_definitions'] == None:
+        return None
+    
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
