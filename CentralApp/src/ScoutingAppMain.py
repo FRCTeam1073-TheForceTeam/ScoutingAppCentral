@@ -269,6 +269,19 @@ def process_file(session, attr_definitions, data_filename):
 
     DataModel.addTeamToEvent(session, team, competition)
     
+    if file_attributes.has_key('Scouter'):
+        scouter = file_attributes['Scouter']
+    else:
+        scouter = 'Unknown'
+        
+    if file_attributes.has_key('Match'):
+        category = 'Match'
+    else:
+        if '_Pit_' in data_filename:
+            category = 'Pit'
+        else:
+            category = 'Other'
+
     # Loop through the attributes from the data file and post them to the
     # database
     for attribute, value in file_attributes.iteritems():
@@ -281,7 +294,7 @@ def process_file(session, attr_definitions, data_filename):
                 print err_str
             elif attr_definition['Database_Store']=='Yes':
                 try:
-                    DataModel.createOrUpdateAttribute(session, team, competition, attribute, value, attr_definition)
+                    DataModel.createOrUpdateAttribute(session, team, competition, category, attribute, value, attr_definition)
                 except Exception, exception:
                     traceback.print_exc(file=sys.stdout)
                     exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -298,6 +311,20 @@ def process_file(session, attr_definitions, data_filename):
                 line = line.replace('\n','')
                 global_config['logger'].debug(line)
             print err_str
+            
+        if category == 'Match':
+            try:
+                match = file_attributes['Match']
+                DataModel.createOrUpdateMatchDataAttribute(session, team, competition, match, scouter, attribute, value)
+            except:
+                err_str = 'ERROR: Match Data Attribute Could Not Be Processed: %s' % attribute
+                traceback.print_exc(file=sys.stdout)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+                for line in exception_info:
+                    line = line.replace('\n','')
+                    global_config['logger'].debug(line)
+                print err_str
             
     score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
     DataModel.setTeamScore(session, team, competition, score)

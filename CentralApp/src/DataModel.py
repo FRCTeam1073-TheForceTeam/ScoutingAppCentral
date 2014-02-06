@@ -86,9 +86,9 @@ class TeamRank(Base):
 class TeamAttribute(Base):
     __tablename__ = 'attributes'
 
-    # Constructor parameters.
     team             = Column(Integer)
     competition      = Column(String(32))
+    category         = Column(String(32))
     attr_name        = Column(String(32), nullable=False)
     attr_value       = Column(Float)
     attr_type        = Column(String(32))
@@ -108,6 +108,17 @@ class TeamInfo(Base):
     motto           = Column(String(128))
     location        = Column(String(64))
 
+class MatchData(Base):
+    __tablename__ = 'match_data'
+    
+    team             = Column(Integer)
+    competition      = Column(String(32))
+    match            = Column(String(32))
+    scouter          = Column(String(32))
+    attr_name        = Column(String(32), nullable=False)
+    attr_value       = Column(String(64))
+    
+    
 class EventTeamList(Base):
     __tablename__ = 'eventteams'
     
@@ -284,7 +295,7 @@ def mapValueToString(value, all_values, attr_def, need_quote=False):
         return str(value)
     
         
-def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
+def createOrUpdateAttribute(session, team, comp, category, name, value, attribute_def):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
                                             filter(TeamAttribute.competition==comp).\
                                             filter(TeamAttribute.attr_name==name)
@@ -298,7 +309,8 @@ def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
         if attr:
             attr.all_values += ':' + value
         else:
-            attr = TeamAttribute(team=team, competition=comp, attr_name=name, 
+            attr = TeamAttribute(team=team, competition=comp,
+                                 category = category, attr_name=name, 
                                  attr_type=attr_type, num_occurs=1,
                                  attr_value=0.0, cumulative_value=0.0, 
                                  avg_value=0.0, all_values=value)
@@ -315,12 +327,31 @@ def createOrUpdateAttribute(session, team, comp, name, value, attribute_def):
             attr.all_values += ':' + value
             print attr.json()
         else:
-            attr = TeamAttribute(team=team, competition=comp, attr_name=name, 
+            attr = TeamAttribute(team=team, competition=comp,
+                                 category = category, attr_name=name, 
                                  attr_type=attr_type, num_occurs=1,
                                  attr_value=attr_value, cumulative_value=attr_value, 
                                  avg_value=attr_value, all_values=value)
             session.add(attr)
             print attr.json()
+
+def createOrUpdateMatchDataAttribute(session, team, comp, match, scouter, name, value):
+    attrList = session.query(MatchData).filter(MatchData.team==team).\
+                                        filter(MatchData.competition==comp).\
+                                        filter(MatchData.match==match).\
+                                        filter(MatchData.attr_name==name)
+    attr = attrList.first()    
+    if attr:
+        attr.attr_value = value
+        attr.scouter = scouter
+        print attr.json()
+    else:
+        attr = MatchData(team=team, competition=comp,
+                         match=match, scouter=scouter,
+                         attr_name=name, attr_value=value)
+        session.add(attr)
+        print attr.json()
+
 
 def addOrUpdateTeamInfo(session, team, nickname, fullname, rookie_season, 
                         motto, location, website):
@@ -453,11 +484,14 @@ def dump_db_tables(my_db):
 def recalculate_scoring(global_config):
     session = DbSession.open_db_session(global_config['db_name'])
     competition = global_config['this_competition']
-    if competition == None:
+    if competition == None or competition == '':
         raise Exception( 'Competition Not Specified!')
 
     # Build the attribute definition dictionary from the definitions csv file
     #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
+    if global_config['attr_definitions'] == None:
+        return
+    
     attrdef_filename = './config/' + global_config['attr_definitions']    
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
