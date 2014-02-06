@@ -159,7 +159,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:text=\"Misses\" />\n\n"
          
         xml_str += "    <TextView\n"
-        xml_str += "        android:id=\"@+id/NAME_" + self.config['Type'] + "\"\n"
+        xml_str += "        android:id=\"@+id/NAME_" + self.config['Type'] + "Tag\"\n"
         xml_str += "        android:layout_width=\"wrap_content\"\n"
         xml_str += "        android:layout_height=\"wrap_content\"\n"
         xml_str += "        android:layout_alignRight=\"@+id/" + score_label + "\"\n"
@@ -193,7 +193,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_height=\"wrap_content\"\n"
             xml_str += "        android:layout_alignBaseline=\"@+id/NAME_" + label + "\"\n"
             xml_str += "        android:layout_alignBottom=\"@+id/NAME_" + label + "\"\n"
-            xml_str += "        android:layout_toRightOf=\"@+id/NAME_" + self.config['Type'] + "\"\n"
+            xml_str += "        android:layout_toRightOf=\"@+id/NAME_" + self.config['Type'] + "Tag\"\n"
             xml_str += "        android:layout_marginLeft=\"20dp\"\n"
             xml_str += "        android:text=\"Total\" />\n\n"
          
@@ -249,13 +249,21 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             java_str += "                if (!NAME_" + level[0] + ".getText().toString().isEmpty())\n"
             java_str += "                    value = NAME_" + level[0] + ".getText().toString();\n"
             java_str += "                value2 = Integer.parseInt(value);\n"
-            java_str += "                value2++;\n"
+            if self.config.has_key('Max'):
+                java_str += "                if ( value2 < " + self.config['Max'] + " ) {\n"
+                java_str += "                    value2++;\n"
+                java_str += "                }\n"
+            else:    
+                java_str += "                value2++;\n"
             java_str += "                NAME.requestFocus();\n"
             java_str += "                NAME.clearFocus();\n"
             java_str += "                NAME_" + level[0] + ".setText(Integer.toString(value2));\n"
             java_str += "                NAME.setText(Integer.toString(\n"
             for second_pass in second_pass_values:
-                java_str += "                        (Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())*" + second_pass[1] + ")+\n"
+                if second_pass[1].upper() == 'CUSTOM':
+                    java_str += "                        (NAME_CustomScore(Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())))+\n"
+                else:
+                    java_str += "                        (Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())*" + second_pass[1] + ")+\n"
             java_str += "                        0));\n"
             java_str += "            }\n"
             java_str += "        });\n\n"
@@ -274,8 +282,11 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             java_str += "                if(value2 >= 0){\n"
             java_str += "                    NAME_" + level[0] + ".setText(Integer.toString(value2));\n"
             java_str += "                    NAME.setText(Integer.toString(\n"
-            for second_pass in self.values:
-                java_str += "                        (Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())*" + second_pass[1] + ")+\n"
+            for second_pass in second_pass_values:
+                if second_pass[1].upper() == 'CUSTOM':
+                    java_str += "                        (NAME_CustomScore(Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())))+\n"
+                else:
+                    java_str += "                        (Integer.parseInt(NAME_" + second_pass[0] + ".getText().toString())*" + second_pass[1] + ")+\n"
             java_str += "                        0));\n"
             java_str += "                }\n"
             java_str += "                else\n"
