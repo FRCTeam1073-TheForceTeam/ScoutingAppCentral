@@ -729,6 +729,14 @@ if __name__ == "__main__":
     # Initialize the issue tracker
     WebIssueTracker.init_issue_tracker()
     
+    # we need a temporary directory, so make sure that it exists
+    tmp_dir = './tmp'
+    try: 
+        os.makedirs(tmp_dir)
+    except OSError:
+        if not os.path.isdir(tmp_dir):
+            raise
+    
     # load the users file if one is specified
     if options.users_file != '':
         users_file = './config/' + options.users_file
