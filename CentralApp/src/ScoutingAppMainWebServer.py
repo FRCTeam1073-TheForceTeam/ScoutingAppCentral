@@ -9,6 +9,7 @@ import os
 import web
 import sys
 import traceback
+import datetime
 
 import DbSession
 import DataModel
@@ -20,6 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
+import BluetoothSyncServer
 import FileSync
 import DataModel
 import Logger
@@ -664,18 +666,22 @@ def process_files():
     
     try:
         print 'Scanning for new files to process'
+        start_time = datetime.datetime.now()
+        
         input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
 
         if global_config['attr_definitions'] == None:
             print 'No Attribute Definitions, Skipping Process Files'
         else:
             attrdef_filename = './config/' + global_config['attr_definitions']
-            if os.path.exists(attrdef_filename):   
+            if os.path.exists(attrdef_filename):
+                attr_definitions = AttributeDefinitions.AttrDefinitions()
+                attr_definitions.parse(attrdef_filename)
+                   
                 ProcessFiles.process_files(global_config, attr_definitions, input_dir)
                 ProcessFiles.process_issue_files(global_config, input_dir)
                 ProcessFiles.process_debrief_files(global_config, input_dir)
-                ProcessFiles.dump_database_as_csv_file(session, attr_definitions)
-                print 'Scan %d complete' % counter
+                print 'Scan %d complete, elapsed time - %s' % (counter,str(datetime.datetime.now()-start_time))
             else:
                 print 'Attribute File %s Does Not Exist' % attrdef_filename
     except Exception, e:
@@ -702,6 +708,9 @@ if __name__ == "__main__":
     parser.add_option(
         "-l","--processloop",dest="processloop", default='0',
         help='Process Team Files')
+    parser.add_option(
+        "-b","--bluetooth",action="store_true", dest="bluetoothServer", default=False,
+        help='Run Bluetooth Server')
    
     # Parse the command line arguments
     (options,args) = parser.parse_args()
@@ -756,6 +765,11 @@ if __name__ == "__main__":
     if int(options.processloop) > 0:
         process_file_timer = TimerThread.RepeatedTimer(int(options.processloop), process_files)
     
+    bluetooth_sync_server = None
+    if options.bluetoothServer:
+        bluetooth_sync_server = BluetoothSyncServer.BluetoothSyncServer()
+        bluetooth_sync_server.start()
+    
     try:
         webserver_app.run()
 
@@ -770,3 +784,7 @@ if __name__ == "__main__":
 
         print 'Program terminated, press <CTRL-C> to exit'
         data = sys.stdin.readlines()
+        
+    if bluetooth_sync_server != None:
+        bluetooth_sync_server.shutdown()
+        bluetooth_sync_server.join()
