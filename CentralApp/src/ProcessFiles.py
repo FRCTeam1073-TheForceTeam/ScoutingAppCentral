@@ -133,13 +133,17 @@ def dump_database_as_csv_file(global_config, session, attr_definitions, competit
     fo.close()
 
   
-def process_files(global_config, session, db_name, attr_definitions, input_dir, recursive=True):
+def process_files(global_config, attr_definitions, input_dir, recursive=True):
+    # Initialize the database session connection
+    db_name  = global_config['db_name']
+    session  = DbSession.open_db_session(db_name)
+    
     # The following regular expression will select all files that conform to 
     # the file naming format Team*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Team[a-zA-Z0-9_]+.txt')
-    files = get_files(session, db_name, input_dir, file_regex, recursive)
+    files = get_files(global_config, session, db_name, input_dir, file_regex, recursive)
     
     # Process data files
     for data_filename in files:
@@ -155,6 +159,8 @@ def process_files(global_config, session, db_name, attr_definitions, input_dir, 
         
         # Commit all updates to the database
         session.commit()
+        
+    dump_database_as_csv_file(global_config, session, attr_definitions)
         
 def process_file(global_config, session, attr_definitions, data_filename):
     print 'processing %s'%data_filename
@@ -255,7 +261,7 @@ def process_issue_files(global_config, input_dir, recursive=True):
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Issue[a-zA-Z0-9_-]+.txt')
-    files = get_files(issues_session, issues_db_name, input_dir, file_regex, recursive)
+    files = get_files(global_config, issues_session, issues_db_name, input_dir, file_regex, recursive)
     
     files.sort()
     
@@ -306,7 +312,7 @@ def process_debrief_files(global_config, input_dir, recursive=True):
     # the naming format within the directory passed in via command line 
     # arguments.
     file_regex = re.compile('Debrief[a-zA-Z0-9_-]+.txt')
-    files = get_files(debrief_session, debrief_db_name, input_dir, file_regex, recursive)
+    files = get_files(global_config, debrief_session, debrief_db_name, input_dir, file_regex, recursive)
     
     # Process data files
     for data_filename in files:
