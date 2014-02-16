@@ -148,7 +148,7 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
     # Process data files
     for data_filename in files:
         try:
-            process_file( session, attr_definitions, data_filename)
+            process_file( global_config, session, attr_definitions, data_filename)
         except Exception, e:
             # log the exception but continue processing other files
             log_exception(global_config['logger'], e)
