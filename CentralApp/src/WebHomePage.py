@@ -45,7 +45,7 @@ def get_page(global_config, access_level):
     page += '<ul>'
     
     team_list_str = global_config['team_list']
-    if team_list_str != None:
+    if team_list_str != None and team_list_str != '':
         if team_list_str.count(',') > 0:
             team_list = team_list_str.split(',')
             #team_list.sort()
