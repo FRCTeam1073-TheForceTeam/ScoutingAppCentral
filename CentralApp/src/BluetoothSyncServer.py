@@ -13,7 +13,7 @@ class BluetoothSyncServer(Thread):
         Thread.__init__(self)
         self.shutdown = False
     
-    def shutdown(self):
+    def terminate(self):
         self.shutdown = True
         
     def run(self):

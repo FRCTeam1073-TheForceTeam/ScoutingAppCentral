@@ -777,7 +777,7 @@ if __name__ == "__main__":
     if options.bluetoothServer:
         bluetooth_sync_server = BluetoothSyncServer.BluetoothSyncServer()
         bluetooth_sync_server.start()
-    
+
     try:
         webserver_app.run()
 
@@ -794,5 +794,5 @@ if __name__ == "__main__":
         data = sys.stdin.readlines()
         
     if bluetooth_sync_server != None:
-        bluetooth_sync_server.shutdown()
+        bluetooth_sync_server.terminate()
         bluetooth_sync_server.join()
