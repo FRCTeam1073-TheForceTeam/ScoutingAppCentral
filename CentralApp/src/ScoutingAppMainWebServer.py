@@ -754,7 +754,7 @@ if __name__ == "__main__":
             attr_definitions = AttributeDefinitions.AttrDefinitions()
             attr_definitions.parse(attrdef_filename)
             
-            WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
+            # WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
 
 
     # make sure that the required directories exist
