@@ -161,6 +161,7 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
         session.commit()
         
     dump_database_as_csv_file(global_config, session, attr_definitions)
+    session.close()
         
 def process_file(global_config, session, attr_definitions, data_filename):
     print 'processing %s'%data_filename
@@ -293,7 +294,9 @@ def process_issue_files(global_config, input_dir, recursive=True):
             
     debrief_session.commit()
     issues_session.commit()
-        
+    debrief_session.close()
+    issues_session.close()
+    
     
 def process_debrief_files(global_config, input_dir, recursive=True):
 
@@ -434,3 +437,5 @@ def process_debrief_files(global_config, input_dir, recursive=True):
     
     issues_session.commit()
     debrief_session.commit()
+    debrief_session.close()
+    issues_session.close()
