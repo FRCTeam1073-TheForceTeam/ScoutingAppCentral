@@ -12,11 +12,12 @@ class ScoringMatrixUiGenControl( UiGenControl ):
     attr_def = None
     num_levels = None
     values = None
-    config = { 'Type':'Score', 'Misses':'No' }
+    config = {}
 
     def __init__(self, attr_def):
         self.attr_def = attr_def
         self.values = []
+        self.config = { 'Type':'Score', 'Misses':'No' }
         option_str = attr_def['Options']
         options = option_str.split(':')
         for option in options:

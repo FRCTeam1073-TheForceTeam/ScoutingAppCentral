@@ -8,10 +8,12 @@ from UiGeneratorControl import UiGenControl
 
 class ButtonUiGenControl( UiGenControl ):
     attr_def = None
-    config = { 'Label':None, 'Align':None }
+    config = {}
 
     def __init__(self, attr_def):
         self.attr_def = attr_def
+        self.config = { 'Label':None, 'Align':None }
+
         option_str = attr_def['Options']
         options = option_str.split(':')
         for option in options:
