@@ -481,7 +481,7 @@ def dump_db_tables(my_db):
     meta.reflect()
     meta.drop_all()
 
-def recalculate_scoring(global_config):
+def recalculate_scoring(global_config, attr_definitions=None):
     session = DbSession.open_db_session(global_config['db_name'])
     competition = global_config['this_competition']
     if competition == None or competition == '':
@@ -492,9 +492,10 @@ def recalculate_scoring(global_config):
     if global_config['attr_definitions'] == None:
         return
     
-    attrdef_filename = './config/' + global_config['attr_definitions']    
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
-    attr_definitions.parse(attrdef_filename)
+    if attr_definitions is None:
+        attrdef_filename = './config/' + global_config['attr_definitions']    
+        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions.parse(attrdef_filename)
 
     team_rankings = getTeamsInRankOrder(session, competition)
     for team_entry in team_rankings:
