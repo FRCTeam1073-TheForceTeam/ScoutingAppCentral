@@ -1,3 +1,5 @@
+import os
+import AttributeDefinitions
 
 def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
     head_str  = '<head>\n'
@@ -37,3 +39,17 @@ def get_issue_types():
     my_config = ScoutingAppMainWebServer.global_config
     issue_types = my_config['issue_types'].split(',')
     return issue_types
+
+def get_attr_list():
+    my_config = ScoutingAppMainWebServer.global_config
+    attr_list = list()
+    
+    attrdef_filename = './config/' + my_config['attr_definitions']
+    if os.path.exists(attrdef_filename):
+        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions.parse(attrdef_filename)
+        attr_dict = attr_definitions.get_definitions()
+        attr_list = attr_dict.keys()
+        attr_list.sort()
+                
+    return attr_list
