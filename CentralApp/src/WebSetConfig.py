@@ -71,6 +71,7 @@ def process_form(global_config, form):
     global_config['users_db_name'] = form[cfg_users_db_name_label].value
     
     write_config(global_config, './config/ScoutingAppConfig.txt')
+    write_tablet_config(global_config, './static/data/ScoutingConfig/CompetitionConfig.txt')
     
 def write_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'w+')
@@ -81,3 +82,17 @@ def write_config(config_dict, config_filename):
                 cfg_file.write(line)
     cfg_file.close()
 
+def write_tablet_config(config_dict, config_filename):
+    cfg_file = open(config_filename, 'w+')
+    for key, value in config_dict.iteritems():
+        
+        # write out any of the competition configuration required by the tablets to
+        # a separate file that will be downloaded by the tablets
+        if key == 'this_competition':
+            if value != None and value != 'None':
+                line = 'Competition=%s\n' % value
+                cfg_file.write(line)
+            else:
+                line = 'Competition=%s\n' % 'Test2014'
+
+    cfg_file.close()
