@@ -39,28 +39,37 @@ class AttrDefinitions:
         self._csv_reader = csv.reader(open(filename, 'r'))
         for row in self._csv_reader:
             if first_row == True:
-                first_row = False 
+                first_row = False
                 header_row = row
+                # make sure that all column headings are capitalized
+                for index, heading in enumerate(row):
+                    header_row[index] = heading.title()
                 #print header_row
             else:
                 definition = {}
                 for index, item in enumerate(row):
                     #print 'attr: ', header_row[index], ' value: ', item
-                    definition[header_row[index]] = item
+                    definition[header_row[index]] = item.title()
                         
                 #print 'attribute definition: ', definition
                 sheet_qualifier = definition['Sheet']
-                if sheet_type == None or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
+                if sheet_type == None or sheet_qualifier.lower() == 'all' or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
                     self._attrdefinitions[definition['Name']] = definition
                     
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
                     if definition['Control'] == 'Scoring_Matrix':
                         disp_type = None
-                        options_str = definition['Options']
-                        if options_str.find('=') != -1:
-                            tokens = options_str.split('=',1)
-                            disp_type = tokens[1]
+                        options_str = definition['Options']    
+                        if options_str != '':
+                            options = options_str.split(':')
+                            for option in options:
+                                if option.find('=') != -1:
+                                    option_name, option_value = option.split('=')
+                                    if option_name == 'Type':
+                                        disp_type = option_value
+                                        break
+
                         map_values_str = definition['Map_Values']
                         map_values = map_values_str.split(':')
                         for map_value in map_values:
@@ -104,6 +113,7 @@ class AttrDefinitions:
         for row in xrange(sheet.nrows):
             writer.writerow([sheet.cell_value(row,col) for col in xrange(sheet.ncols)])
         outfile.close()
+
         return outfile_name
 
     # the __repr__ method allows this class to be printed 
