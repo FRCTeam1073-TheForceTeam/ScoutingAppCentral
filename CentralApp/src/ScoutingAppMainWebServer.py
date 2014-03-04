@@ -17,8 +17,7 @@ import DebriefDataModel
 import IssueTrackerDataModel
 import UsersDataModel
 import AttributeDefinitions
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from optparse import OptionParser
 
 import BluetoothSyncServer
@@ -39,6 +38,7 @@ import WebDebrief
 import WebUsers
 import WebEventData
 import WebCommonUtils
+import WebAttributeDefinitions
 
 
 render = web.template.render('templates/', base='layout', globals={'utils':WebCommonUtils})
@@ -91,6 +91,7 @@ urls = (
     '/events',              'Events',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
+    '/setweights',          'SetWeights',
     
     '/testpage(.*)',        'TestPage',
         
@@ -311,22 +312,26 @@ class Events(object):
 
     def GET(self):
         WebLogin.check_access(global_config,10)
-        result = WebEventData.get_events_page(global_config)
+        result = WebEventData.get_events_page(global_config, '2014')
         return render.page('FIRST Robotics Competition Events', result)
                            
 class EventStandings(object):
 
     def GET(self, name):
         WebLogin.check_access(global_config,10)
-        result = WebEventData.get_event_standings_page(global_config, name)
-        return render.page('FIRST Robotics Standings Details - %s' % name, result)
+        year = name[0:4]
+        event_code = name[4:]
+        result = WebEventData.get_event_standings_page(global_config, year, event_code)
+        return render.page('FIRST Robotics Standings Details - %s' % event_code.upper(), result)
                            
 class EventResults(object):
 
     def GET(self, name):
         WebLogin.check_access(global_config,10)
-        result = WebEventData.get_event_results_page(global_config, name)
-        return render.page('FIRST Robotics Event Match Results - %s' % name, result)                           
+        year = name[0:4]
+        event_code = name[4:]
+        result = WebEventData.get_event_results_page(global_config, year, event_code)
+        return render.page('FIRST Robotics Event Match Results - %s' % event_code.upper(), result)                           
     
 class GenUi(object):
     
@@ -628,7 +633,8 @@ class DebriefComment(object):
 class TaskGroupEmail(object):
     def GET(self, name):
         email_lists = UsersDataModel.getTaskgroupEmailLists(global_config, name)
-        fd = open('./config/TaskGroupEmailLists.txt', 'w+')
+        taskgroups_filename = './static/data/ScoutingConfig/TaskGroupEmailLists.txt'
+        fd = open(taskgroups_filename, 'w+')
         fd.write( email_lists )
         fd.close()
         return email_lists
@@ -650,6 +656,22 @@ class Sync(object):
         content_type = web.ctx.env['CONTENT_TYPE']
         FileSync.put(global_config, request_path, content_type, web.data())
         return
+
+class SetWeights(object):
+    def GET(self):
+        WebLogin.check_access(global_config,2)
+        form = WebAttributeDefinitions.get_attr_def_form(global_config)
+        return render.default_form(form)
+           
+    def POST(self):
+        WebLogin.check_access(global_config,2)
+        form = WebAttributeDefinitions.get_attr_def_form(global_config)
+        if not form.validates(): 
+            return render.default_form(form)
+        else:
+            result = WebAttributeDefinitions.process_attr_def_form(global_config, form)
+            raise web.seeother(result)
+
     
      
 '''    
@@ -721,9 +743,14 @@ if __name__ == "__main__":
     issues_db_name   = global_config['issues_db_name']
     debriefs_db_name = global_config['debriefs_db_name']
     users_db_name    = global_config['users_db_name']
+    
+
     session          = DbSession.open_db_session(db_name, DataModel)
+    '''
     issues_session   = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
     debrief_session  = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
+    '''
+    
     users_session    = DbSession.open_db_session(users_db_name, UsersDataModel)
  
     # Initialize the issue tracker
@@ -747,6 +774,8 @@ if __name__ == "__main__":
     if UsersDataModel.getUser( users_session, 'admin' ) is None:
         UsersDataModel.create_admin_user(users_session, 'squirrel!')
 
+    users_session.close()
+
     # Build the attribute definition dictionary from the definitions spreadsheet file
     if global_config['attr_definitions'] != None:
         attrdef_filename = './config/' + global_config['attr_definitions']
@@ -755,6 +784,7 @@ if __name__ == "__main__":
             attr_definitions.parse(attrdef_filename)
             
             # WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
+            WebAttributeDefinitions.init_attr_def_forms(attr_definitions)
 
 
     # make sure that the required directories exist
