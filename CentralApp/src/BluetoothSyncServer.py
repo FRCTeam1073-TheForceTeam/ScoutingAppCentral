@@ -72,8 +72,10 @@ class BluetoothSyncServer(Thread):
                         else:
                             response_body = FileSync.get_file(fullpath)
                             if response_body != '':
-                                client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n\r\n')
-                                client_sock.send(response_body + '\r\n\r\n')
+                                client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
+                                client_sock.send('Content-Length: %d\r\n' % len(response_body))
+                                client_sock.send('\r\n')
+                                client_sock.send(response_body + '\r\n')
                             else:
                                 client_sock.send('HTTP/1.1 ' + '404 Not Found' + '\r\n\r\n')
                                     
