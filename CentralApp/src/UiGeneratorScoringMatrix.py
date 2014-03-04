@@ -316,9 +316,9 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         java_str = ''
         for level in self.values:
             java_str += "        NAME_" + level[0] + ".setText(\"0\");\n"
-        java_str += "        NAME.setText(\"\");\n"    
-        if self.config['Misses'] == 'Yes':
-            java_str += "        NAME_" + level[0] + "_Misses.setText(\"0\");\n"
+            if self.config['Misses'] == 'Yes':
+                java_str += "        NAME_" + level[0] + "_Misses.setText(\"0\");\n"            
+        java_str += "        NAME.setText(\"\");\n"            
         return java_str
     
     def gen_java_save_handler(self):
