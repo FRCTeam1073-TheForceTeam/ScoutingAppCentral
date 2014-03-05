@@ -812,7 +812,7 @@ if __name__ == "__main__":
                 raise
     
     # also create the configuration directory used to provide data to the tablets
-    base_dir = './static/ScoutingConfig'
+    base_dir = './static/data/ScoutingConfig'
     try: 
         os.makedirs(base_dir)
     except OSError:
