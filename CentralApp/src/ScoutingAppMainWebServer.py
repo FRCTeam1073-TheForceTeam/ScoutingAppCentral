@@ -760,10 +760,8 @@ if __name__ == "__main__":
     
 
     session          = DbSession.open_db_session(db_name, DataModel)
-    '''
     issues_session   = DbSession.open_db_session(issues_db_name, IssueTrackerDataModel)
     debrief_session  = DbSession.open_db_session(debriefs_db_name, DebriefDataModel)
-    '''
     
     users_session    = DbSession.open_db_session(users_db_name, UsersDataModel)
  
