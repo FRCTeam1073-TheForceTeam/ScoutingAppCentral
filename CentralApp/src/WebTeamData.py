@@ -124,13 +124,16 @@ def get_team_datafiles_page(global_config, name):
                     attr_def = attr_definitions.get_definition( attribute.attr_name )
                     include_attr = False
                     if attr_def:
-                        if attr_def.has_key('Include_In_Team_Display'):
-                            if attr_def['Include_In_Team_Display'] == 'Yes':
+                        if attr_def.has_key('Include_In_Team_Display') \
+                                and attr_def['Include_In_Team_Display'] == 'Yes':
                                 include_attr = True
                         elif attr_def.has_key('Include_In_Report') \
                                 and attr_def['Include_In_Report'] == 'Yes':
                             include_attr = True
-                        
+                        elif attr_def.has_key('Weight') \
+                                and attr_def.has_key('Weight') != '0':
+                            include_attr = True
+
                     if include_attr == True:   
                         page += '<tr>'
                         if attr_def.has_key('Display_Name'):
