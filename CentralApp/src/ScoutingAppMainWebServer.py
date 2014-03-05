@@ -92,6 +92,7 @@ urls = (
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
     '/setweights',          'SetWeights',
+    '/attrrank(.*)',        'AttrRankPage',
     
     '/testpage(.*)',        'TestPage',
         
@@ -178,6 +179,19 @@ class TestPage(object):
         numparams = len(params)
         comp = 'GSR2013'
         attr = 'Teleop_Points'
+        if numparams == 3:
+            comp = params[1]
+            attr = params[2]
+        return render.attrRank(comp,attr)
+    
+class AttrRankPage(object):
+
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        comp = global_config['this_competition']
+        attr = 'Teleop_Goals'
         if numparams == 3:
             comp = params[1]
             attr = params[2]
@@ -659,12 +673,12 @@ class Sync(object):
 
 class SetWeights(object):
     def GET(self):
-        WebLogin.check_access(global_config,2)
+        WebLogin.check_access(global_config,7)
         form = WebAttributeDefinitions.get_attr_def_form(global_config)
         return render.default_form(form)
            
     def POST(self):
-        WebLogin.check_access(global_config,2)
+        WebLogin.check_access(global_config,7)
         form = WebAttributeDefinitions.get_attr_def_form(global_config)
         if not form.validates(): 
             return render.default_form(form)
