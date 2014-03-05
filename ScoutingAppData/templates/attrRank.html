@@ -1,5 +1,11 @@
 $def with (comp, attr)
 
+$# This snippet of python code will retrieve the list of attribute types
+$# This list will then be used to dynamically create the select dropdown for
+$# attribute rank display
+$code:
+    attrlist = utils.get_attr_list()
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
 $var title: Attribute Ranking
@@ -28,6 +34,19 @@ $var title: Attribute Ranking
         border-radius: 4px;
     }
 </style>
+
+<script type="text/javascript">
+function SelectAttr()
+{
+    var e = document.getElementById("attrdropdown1");
+    var SelValue = e.options[e.selectedIndex].text
+
+    var baseURL  = "/testpage/$comp/" + SelValue;
+    window.location.assign( baseURL );
+    
+    return true;
+}
+</script>
 
 <script type="text/javascript">
 $$(document).ready(function () {
@@ -125,6 +144,12 @@ $$(document).ready(function () {
         <h1>Attribute Ranking Summary: $attr</h1>
     </div>
 
+    <label for="attrdropdown">Attribute Name:</label>
+    <select id="attrdropdown1" name="attrdropdown" onchange="SelectAttr();">
+        $for attr in attrlist:
+            <option value=$attr>$attr</option>
+    </select>
+    
     <div id="placeholder"></div>
 
   </div>  
