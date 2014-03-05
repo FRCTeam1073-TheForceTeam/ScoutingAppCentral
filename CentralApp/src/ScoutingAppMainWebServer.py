@@ -810,6 +810,15 @@ if __name__ == "__main__":
         except OSError:
             if not os.path.isdir(base_dir):
                 raise
+    
+    # also create the configuration directory used to provide data to the tablets
+    base_dir = './static/ScoutingConfig'
+    try: 
+        os.makedirs(base_dir)
+    except OSError:
+        if not os.path.isdir(base_dir):
+            raise
+
 
     print 'Sys Args: %s' % sys.argv
     sys.argv[1:] = args
