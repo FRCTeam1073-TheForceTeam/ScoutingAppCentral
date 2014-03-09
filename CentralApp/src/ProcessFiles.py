@@ -70,68 +70,6 @@ def get_files(global_config, session, db_name, input_dir, pattern, recursive=Tru
         
     return file_list
 
-def dump_database_as_csv_file(global_config, session, attr_definitions, competition=None):
-    
-    if competition == None:
-        competition = global_config['this_competition']
-    
-    # read in the attribute definitions and sort them in the colum order
-    attr_dict = attr_definitions.get_definitions()
-    attr_order = [{} for i in range(len(attr_dict))]
-    
-    try:
-        for key, value in attr_dict.items():
-            attr_order[(int(float(value['Column_Order']))-1)] = value
-            #attr_order[(int(value['Column_Order'])-1)] = value
-    except Exception, e:
-        print 'Exception: %s' % str(e)
-
-    # open up the output filename that matches the database name
-    path = './static/attr'
-    if not os.path.exists(path):
-        os.makedirs(path)
-    outputFilename = path + '/' + competition + '.csv'
-    fo = open(outputFilename, "w+")
-
-    # Write out the column headers
-    mystring = 'Team,Score'
-    try:
-        for attr_def in attr_order:
-            if attr_def['Database_Store'] == 'Yes':
-                mystring += ',' + attr_def['Name']
-    except Exception, e:
-        print 'Exception: %s' % str(e)
-
-    mystring += '\n'
-    fo.write( mystring )
-    
-    # Get the list of teams in rank order, then loop through teams and dump their stored
-    # attribute values
-    team_rankings = DataModel.getTeamsInRankOrder(session, competition)
-    for team_entry in team_rankings:
-        mystring = str(team_entry.team) + ',' + str(team_entry.score)
-        # retrieve each attribute from the database in the proper order
-        for attr_def in attr_order:
-            if attr_def['Database_Store'] == 'Yes':
-                attribute = DataModel.getTeamAttribute(session, team_entry.team, competition, attr_def['Name'])
-                # if the attribute doesn't exist, just put in an empty field so that the columns
-                # stay aligned
-                if attribute == None:
-                    mystring += ','
-                elif ( attr_def['Statistic_Type'] == 'Total'):
-                    #mystring += ',' + str(attribute.cumulative_value)
-                    mystring += ',' + DataModel.mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def)
-                elif ( attr_def['Statistic_Type'] == 'Average'):
-                    #mystring += ',' + str(attribute.avg_value)
-                    mystring += ',' + DataModel.mapValueToString(attribute.avg_value, attribute.all_values, attr_def)
-                else:
-                    #mystring += ',' + str(attribute.attr_value)
-                    mystring += ',' + DataModel.mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
-
-        mystring += '\n'
-        fo.write( mystring )
-    fo.close()
-
   
 def process_files(global_config, attr_definitions, input_dir, recursive=True):
     # Initialize the database session connection
@@ -160,7 +98,7 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
         # Commit all updates to the database
         session.commit()
         
-    dump_database_as_csv_file(global_config, session, attr_definitions)
+    DataModel.dump_database_as_csv_file(session, global_config, attr_definitions)
     session.close()
         
 def process_file(global_config, session, attr_definitions, data_filename):
