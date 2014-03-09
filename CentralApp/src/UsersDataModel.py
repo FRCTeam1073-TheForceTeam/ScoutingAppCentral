@@ -191,8 +191,9 @@ def addUserFromAttributes(session, user_attributes):
                     subgroup, password, display_name, role, contact_mode, altname,
                     access_level, state)
     
-    taskgroups = user_attributes['Taskgroups'].split(',')
+    taskgroups = user_attributes['Taskgroups'].replace(' ','').split(',')
     for group in taskgroups:
+        group = group.title()
         addUserToTaskgroup(session, group, username)
     
     session.commit()
@@ -244,13 +245,13 @@ def getTaskgroupEmailList(session, taskgroup):
     results = session.query(TaskgroupMember).filter(TaskgroupMember.taskgroup==taskgroup).all()
     for result in results:
         user = getUser(session, result.username)
+        contact = None
         if user:
-            if user.contact_mode == 'Email':
-                contact = user.email_address
-            elif user.contact_mode == 'Text':
-                contact = getEmailAddrFromCarrier(user.cellphone, user.carrier)
-            else:
-                contact = None
+            if user.state == 'Enabled':
+                if user.contact_mode == 'Email':
+                    contact = user.email_address
+                elif user.contact_mode == 'Text':
+                    contact = getEmailAddrFromCarrier(user.cellphone, user.carrier)
         if contact != None:
             email_list_str += '%s;' % contact
             
@@ -387,7 +388,8 @@ def add_users_from_file( session, input_path):
     users = user_definitions.get_definitions()
     for user, definition in users.iteritems():
         print 'Adding/Updating User %s' % user
-        addUserFromAttributes(session, definition)
+        if user != '':
+            addUserFromAttributes(session, definition)
     
     session.commit()
     
