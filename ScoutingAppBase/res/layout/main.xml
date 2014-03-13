@@ -117,7 +117,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/NotesEntry"
         android:layout_centerInParent="true"        
-        android:text="Discard"/>
+        android:text="@string/discard_string"/>
 
     <Button
         android:id="@+id/ReloadButton"

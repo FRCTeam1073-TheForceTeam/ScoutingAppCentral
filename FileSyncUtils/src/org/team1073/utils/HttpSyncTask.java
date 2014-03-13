@@ -52,15 +52,23 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 		int count = paths.length;
         for (int i = 0; i < count; i++) {
     		HashSet<String> filesOnServer = new HashSet<String>();
-    		HashSet<String> fileSetToRetrieve = new HashSet<String>();
-    		List<String> filesToSend = new ArrayList<String>();
     		
         	getFilesOnServer(paths[i], filesOnServer);
-        	syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
-        	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);            	
-        	numFilesSent += sendFilesToServer( paths[i], filesToSend);
-        	if ( syncControl.equalsIgnoreCase("Upload_Download"))
-        		numFilesRetrieved += retrieveFilesFromServer( paths[i], filesToRetrieve);
+        	
+    		if ( syncControl.equalsIgnoreCase("Download_Updates")) {
+               	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
+        		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
+    		} else {
+        		HashSet<String> fileSetToRetrieve = new HashSet<String>();
+        		List<String> filesToSend = new ArrayList<String>();
+
+	        	syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
+	        	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);            	
+	        	numFilesSent += sendFilesToServer( paths[i], filesToSend);
+	        	
+	        	if ( syncControl.equalsIgnoreCase("Upload_Download"))
+	        		numFilesRetrieved += retrieveFilesFromServer( paths[i], filesToRetrieve);
+    		}
         }
         
         numFilesTransferred = numFilesSent + numFilesRetrieved;

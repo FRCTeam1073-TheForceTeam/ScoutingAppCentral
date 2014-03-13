@@ -68,26 +68,32 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
         	
 	    		// loop through the paths that have been passed in and sync the
 	    		// directory with the server over a bluetooth connection
-	            publishProgress( "Syncing Files To Server" );
 	
 	    		int count = paths.length;
 	            for (int i = 0; i < count; i++) {
 	        		HashSet<String> filesOnServer = new HashSet<String>();
-	        		HashSet<String> fileSetToRetrieve = new HashSet<String>();
-	        		List<String> filesToSend = new ArrayList<String>();
 	        		
 	    	        publishProgress( "Retrieving File List From Server" );
 	        		syncHelper.getFilelistFromServer(paths[i], filesOnServer);
-	        		syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
-	            	
-	                publishProgress( "Sending Files To Server" );
-	               	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
-	            	
-	            	if ( syncControl.equalsIgnoreCase("Upload_Download")) {
-	                    publishProgress( "Receiving Files From Server" );
-	                   	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);
+	        		
+	        		if ( syncControl.equalsIgnoreCase("Download_Updates")) {
+	                    publishProgress( "Downloading Files From Server" );
+	                   	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
 	            		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
-	            	}
+	        		} else {
+		        		HashSet<String> fileSetToRetrieve = new HashSet<String>();
+		        		List<String> filesToSend = new ArrayList<String>();
+		        		syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
+		            	
+		                publishProgress( "Sending Files To Server" );
+		               	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
+		            	
+		            	if ( syncControl.equalsIgnoreCase("Upload_Download")) {
+		                    publishProgress( "Receiving Files From Server" );
+		                   	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);
+		            		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
+		            	}
+	        		}
 	            }
 	            
 	            numFilesTransferred = numFilesSent + numFilesRetrieved;

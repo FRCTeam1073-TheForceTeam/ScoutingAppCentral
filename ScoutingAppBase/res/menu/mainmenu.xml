@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     
-    <item android:id="@+id/Settings" android:title="Scouting Settings"></item>
-
+    <item android:id="@+id/EditSettings" android:title="Edit Device Settings"></item>
+    <item android:id="@+id/EditCompetitionSettings" android:title="Edit Competition Settings"></item>
+    <item android:id="@+id/LoadCompetitionSettings" android:title="Load Competition Settings"></item>
+    
 </menu>

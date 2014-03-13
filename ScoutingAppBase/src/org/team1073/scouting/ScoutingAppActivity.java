@@ -55,14 +55,101 @@ startActivity(emailIntent);
 public class ScoutingAppActivity extends Activity {
 	private String device_name="unknown";
 	private String device_id="un";
-	private String competition_directory="Test2013";
+	private String competition_directory="Test2014";
 	private String host_addr = "";
 	private String sync_method = "Bluetooth";
 	private String sync_control = "Upload_Only";
-	
+	private Boolean sync_text_files = true;
+	private Boolean sync_media_files = false;
 	private Boolean unsavedChanges = false;
-    final String tmpFile = "ScoutingData.tmp";
 	
+    final String tmpFile = "ScoutingData.tmp";
+
+	private void DownloadCompetitionConfiguration( ) {
+		// create an asynchronous task to transfer the scouting data and media files
+		// to the server. If no host IP address has been specified, use bluetooth,
+		// otherwise use http.
+		String download_control = "Download_Updates";
+		if (sync_method.equalsIgnoreCase("Bluetooth")) {
+    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, download_control).execute(
+    				"/ScoutingConfig/");
+		} else {
+    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, download_control).execute(
+    				"/ScoutingConfig/");
+		}
+    
+	}
+	
+	private void LoadCompetitionConfiguration( boolean showDialog ) {
+
+    	try {
+    		// This code block will attempt to read the device configuration
+    		// file containing the device name, id, and other configuration 
+    		// parameters. If the file is there, the information is read and
+    		// stored for later access by the application itself
+    		File directory = Environment.getExternalStorageDirectory();
+			File myDir = new File(directory + "/ScoutingConfig");
+			File myFile = new File(myDir, "CompetitionConfig.txt");
+	        FileReader myReader = new FileReader(myFile);
+			BufferedReader reader = new BufferedReader(myReader);
+			String line;
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer tokenizer = new StringTokenizer(line, "=\t\n\r\f");
+				String token = tokenizer.nextToken();
+				
+                if ( token.equalsIgnoreCase("Competition")) {
+                	competition_directory = tokenizer.nextToken();
+                }
+			}
+    	} catch (Exception e) {
+    		showDialog = true;
+    	}
+    	
+    	if ( showDialog == true ) {
+    		// The configuration file is not there, so create a pop up dialog
+    		// to prompt the user for the necessary device configuration information
+    		// needed to continue with the application.
+	        Dialog dialog = new Dialog(ScoutingAppActivity.this);
+	        dialog.setContentView(R.layout.competitiondialog);
+	        dialog.setTitle("Please Enter Competition Information");
+	        dialog.setCancelable(true);
+	        Button button = (Button) dialog.findViewById(R.id.CompOkButton);
+	        final EditText CompetitionNameEntry = (EditText) dialog.findViewById(R.id.CompetitionNameEntry);     
+
+	        CompetitionNameEntry.setText(competition_directory);
+	        
+	        button.setOnClickListener(new OnClickListener() {
+	        @Override
+	            public void onClick(View v) {
+					try {
+
+			    		File directory = Environment.getExternalStorageDirectory();
+						File myDir = new File(directory + "/ScoutingConfig");
+						myDir.mkdirs();
+						File myFile = new File(myDir, "CompetitionConfig.txt");	
+				        FileWriter myWriter = new FileWriter(myFile);
+						BufferedWriter writer = new BufferedWriter(myWriter);
+				        
+	                    StringBuffer buffer = new StringBuffer();
+	                    String eol = System.getProperty("line.separator");
+	                    
+	                    if ( !CompetitionNameEntry.getText().toString().isEmpty() )
+	                        buffer.append("Competition=" + CompetitionNameEntry.getText().toString() + eol);
+	                    
+						// write the formatted buffer to the file
+						writer.write(buffer.toString());
+						writer.close();
+					} catch (Exception e) {
+				        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+					}
+	                finish();
+	            }
+	        });
+	        //now that the dialog is set up, it's time to show it    
+	        dialog.show();
+    	}
+	}
+
 	private void LoadDeviceConfiguration( boolean showDialog ) {
 
     	try {
@@ -84,14 +171,22 @@ public class ScoutingAppActivity extends Activity {
                 	device_name = tokenizer.nextToken();
                 } else if ( token.equalsIgnoreCase("DeviceId")) {
                     device_id = tokenizer.nextToken();
-                } else if ( token.equalsIgnoreCase("Competition")) {
-                	competition_directory = tokenizer.nextToken();
 	            } else if ( token.equalsIgnoreCase("HostAddr")) {
 	            	host_addr = tokenizer.nextToken();
 	            } else if ( token.equalsIgnoreCase("SyncMethod")) {
 	            	sync_method = tokenizer.nextToken();
 	            } else if ( token.equalsIgnoreCase("SyncControl")) {
 	            	sync_control = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("SyncTextFiles")) {
+	            	if ( tokenizer.nextToken().equalsIgnoreCase("Yes"))
+	            		sync_text_files = true;
+	            	else
+	            		sync_text_files = false;
+	            } else if ( token.equalsIgnoreCase("SyncMediaFiles")) {
+	            	if ( tokenizer.nextToken().equalsIgnoreCase("Yes"))
+	            		sync_media_files = true;
+	            	else
+	            		sync_media_files = false;
 	            }
 			}
     	} catch (Exception e) {
@@ -109,7 +204,6 @@ public class ScoutingAppActivity extends Activity {
 	        Button button = (Button) dialog.findViewById(R.id.DeviceOkButton);
 	        final EditText DeviceNameEntry = (EditText) dialog.findViewById(R.id.DeviceNameEntry);
 	        final EditText DeviceIdEntry = (EditText) dialog.findViewById(R.id.DeviceIdEntry);     
-	        final EditText CompetitionNameEntry = (EditText) dialog.findViewById(R.id.CompetitionNameEntry);     
 	        final EditText HostAddrEntry = (EditText) dialog.findViewById(R.id.HostAddrEntry);     
 	        final RadioGroup SyncMethodRadioGroup = (RadioGroup) dialog.findViewById(R.id.SyncMethodRadioGroup);
 	        final RadioButton SyncMethod_Bluetooth_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncMethod_Bluetooth_RadioButton);
@@ -117,10 +211,11 @@ public class ScoutingAppActivity extends Activity {
 	        final RadioGroup SyncControlRadioGroup = (RadioGroup) dialog.findViewById(R.id.SyncControlRadioGroup);
 	        final RadioButton SyncControl_Upload_Only_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncControl_Upload_Only_RadioButton);
 	        final RadioButton SyncControl_Upload_Download_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncControl_Upload_Download_RadioButton);
+	        final CheckBox TextFileTypeCheckBox_Checkbox = (CheckBox) dialog.findViewById(R.id.TextFileTypeCheckBox);
+	        final CheckBox MediaFileTypeCheckBox_Checkbox = (CheckBox) dialog.findViewById(R.id.MediaFileTypeCheckBox);
 
 	        DeviceNameEntry.setText(device_name);
 	        DeviceIdEntry.setText(device_id);
-	        CompetitionNameEntry.setText(competition_directory);
 	        HostAddrEntry.setText(host_addr);
 	        if (sync_method.equalsIgnoreCase("Bluetooth"))
 	        	SyncMethodRadioGroup.check(R.id.SyncMethod_Bluetooth_RadioButton);
@@ -130,6 +225,8 @@ public class ScoutingAppActivity extends Activity {
 	        	SyncControlRadioGroup.check(R.id.SyncControl_Upload_Only_RadioButton);
             else if (sync_control.equalsIgnoreCase("Upload_Download"))
 	        	SyncControlRadioGroup.check(R.id.SyncControl_Upload_Download_RadioButton);
+	        TextFileTypeCheckBox_Checkbox.setChecked(sync_text_files);
+	        MediaFileTypeCheckBox_Checkbox.setChecked(sync_media_files);
 	        
 	        button.setOnClickListener(new OnClickListener() {
 	        @Override
@@ -150,8 +247,6 @@ public class ScoutingAppActivity extends Activity {
 	                        buffer.append("DeviceName=" + DeviceNameEntry.getText().toString() + eol);
 	                    if ( !DeviceIdEntry.getText().toString().isEmpty() )
 	                        buffer.append("DeviceId=" + DeviceIdEntry.getText().toString() + eol);
-	                    if ( !CompetitionNameEntry.getText().toString().isEmpty() )
-	                        buffer.append("Competition=" + CompetitionNameEntry.getText().toString() + eol);
 	                    if ( !HostAddrEntry.getText().toString().isEmpty() )
 	                        buffer.append("HostAddr=" + HostAddrEntry.getText().toString() + eol);
 	                    if (SyncMethod_Bluetooth_RadioButton.isChecked())
@@ -162,6 +257,14 @@ public class ScoutingAppActivity extends Activity {
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Only_RadioButton.getText().toString() + eol);
 	                    else if (SyncControl_Upload_Download_RadioButton.isChecked())
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Download_RadioButton.getText().toString() + eol);
+	                    if (TextFileTypeCheckBox_Checkbox.isChecked())
+	                        buffer.append("SyncTextFiles=Yes" + eol);
+	                    else
+	                        buffer.append("SyncTextFiles=No" + eol);
+	                    if (MediaFileTypeCheckBox_Checkbox.isChecked())
+	                        buffer.append("SyncMediaFiles=Yes" + eol);
+	                    else
+	                        buffer.append("SyncMediaFiles=No" + eol);
 	                    
 						// write the formatted buffer to the file
 						writer.write(buffer.toString());
@@ -541,9 +644,15 @@ public class ScoutingAppActivity extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    switch (item.getItemId()) {
-		    case R.id.Settings:
-		        LoadDeviceConfiguration(true);
-		    	break;
+	    case R.id.EditSettings:
+	        LoadDeviceConfiguration(true);
+	    	break;
+	    case R.id.EditCompetitionSettings:
+	        LoadCompetitionConfiguration(true);
+	    	break;
+	    case R.id.LoadCompetitionSettings:
+	        DownloadCompetitionConfiguration();
+	    	break;
 		    default:
 		      break;
 	    }
@@ -559,6 +668,7 @@ public class ScoutingAppActivity extends Activity {
         // Look for a device configuration file and prompt the user for settings if
         // there isn't a file there.
         LoadDeviceConfiguration(false);
+        LoadCompetitionConfiguration(false);
 
         // declare field variables for everything we care about on the user interface
         SaveButton = (Button) findViewById(R.id.SaveButton);
@@ -609,16 +719,33 @@ public class ScoutingAppActivity extends Activity {
         // Processes the click event for the Sync button
         syncButton.setOnClickListener(new OnClickListener(){
         	public void onClick(View v){
+        		String[] directoriesToSync = null;
         		
-        		// create an asynchronous task to transfer the scouting data and media files
-        		// to the server. If no host IP address has been specified, use bluetooth,
-        		// otherwise use http.
-        		if (sync_method.equalsIgnoreCase("Bluetooth")) {
-	        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute(
-	        				competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
+        		if (sync_text_files && sync_media_files) {
+        			directoriesToSync = new String[2];
+        			directoriesToSync[0] = competition_directory + "/ScoutingData/";
+        			directoriesToSync[1] = competition_directory + "/ScoutingPictures/";
+        		} else if ( sync_text_files ) {
+        			directoriesToSync = new String[1];
+        			directoriesToSync[0] = competition_directory + "/ScoutingData/";
+	    		} else if ( sync_media_files ) {
+	    			directoriesToSync = new String[1];
+	    			directoriesToSync[0] = competition_directory + "/ScoutingPictures/";
+	    		}
+        		
+        		if ( directoriesToSync != null ) {
+	        		// create an asynchronous task to transfer the scouting data and media files
+	        		// to the server. If no host IP address has been specified, use bluetooth,
+	        		// otherwise use http.
+	        		if (sync_method.equalsIgnoreCase("Bluetooth")) {
+		        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute( directoriesToSync );
+		        		//		competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
+	        		} else {
+		        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute( directoriesToSync );
+		        		//		competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
+	        		}
         		} else {
-	        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(
-	        				competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
+        			Toast.makeText(ScoutingAppActivity.this, "No Folders Selected To Sync", Toast.LENGTH_LONG).show();        			
         		}
         	} 
         });
@@ -764,24 +891,36 @@ public class ScoutingAppActivity extends Activity {
                 // Perform action on clicks
                 if ( unsavedChanges == true ) {
                     new AlertDialog.Builder(ScoutingAppActivity.this)
-                    .setTitle("Discarding Scouting Data")
+                    .setTitle("Discarding Unsaved Scouting Data")
                     .setMessage("Do You Really Want To Do This?")
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             Toast.makeText(ScoutingAppActivity.this, "Discard Cancelled", Toast.LENGTH_LONG).show();
                         }
                     })
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    .setNeutralButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                         	discardScoutingData();
+                        	unsavedChanges = false;
                             Toast.makeText(ScoutingAppActivity.this, "Scouting Data Discarded!", Toast.LENGTH_LONG).show();	
                         }
                     })
-                    .show();                      
+                    .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                		    //// UIGEN:BUILD_FILENAME_BEGIN - insert generated code for the buildFilename() call
+                            final String filename = buildFilename( TeamEntry, "Base", "" );
+                		    //// UIGEN:BUILD_FILENAME_END
+                            saveScoutingData( filename, true );
+                        	discardScoutingData();
+                            unsavedChanges = false;
+                			Toast.makeText(ScoutingAppActivity.this, "Scouting Data Saved To File: " + filename, Toast.LENGTH_LONG).show();
+                        }
+                    })
+                   .show();                      
                 } else {
                 	discardScoutingData();
                 	unsavedChanges = false;
-                    Toast.makeText(ScoutingAppActivity.this, "Scouting Data Discarded!", Toast.LENGTH_LONG).show();	
+                    Toast.makeText(ScoutingAppActivity.this, "Scouting Data Cleared!", Toast.LENGTH_LONG).show();	
                 }                
             }
         });

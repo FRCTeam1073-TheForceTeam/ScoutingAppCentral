@@ -108,6 +108,7 @@ public class FileSyncUtils {
 		// through the list, adding any file that is not already on the server to
 		// the list of files to be transferred
 		File myDir = new File(mBaseDirectory + "/" + path);
+		myDir.mkdirs();
 		File[] listOfFiles = myDir.listFiles(); 
 		String fileOnDevice;
 		
