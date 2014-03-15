@@ -155,6 +155,14 @@ def addNotesEntry(session, teamnum, comp, notes, notestag):
     notes = NotesEntry(team=teamnum, competition=comp, data=notes, tag=notestag)
     session.add(notes)
     
+def modifyNotesEntry(session, teamnum, comp, old_notes, new_notes, notestag):
+    notes = session.query(NotesEntry).filter(NotesEntry.team==teamnum).\
+                                      filter(NotesEntry.competition==comp).\
+                                      filter(NotesEntry.data==old_notes)
+    if notes:
+        notes.data = new_notes
+        notes.tag = notestag                                  
+    
 def getTeamNotes(session, teamId, comp):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
                                       filter(NotesEntry.competition==comp).all()
@@ -334,6 +342,35 @@ def createOrUpdateAttribute(session, team, comp, category, name, value, attribut
                                  avg_value=attr_value, all_values=value)
             session.add(attr)
             print attr.json()
+
+def modifyAttributeValue(session, team, comp, name, old_value, new_value, attribute_def):
+    attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
+                                            filter(TeamAttribute.competition==comp).\
+                                            filter(TeamAttribute.attr_name==name)
+    attr = attrList.first()
+    attr_type = attribute_def['Type']
+    date = datetime.datetime.now(); #gets the current date and time down to the microsecond
+    
+    if attribute_def['Name'] == 'Notes':
+        modifyNotesEntry(session, team, comp, old_value, new_value, date)
+    elif attribute_def['Type'] == 'String':
+        if attr.all_values.find(old_value) != -1:
+            if attr:
+                attr.all_values = attr.all_values.replace(old_value,new_value,1)            
+    else:
+        # make sure that the value itself has been applied to this attribute
+        if attr.all_values.find(old_value) != -1:
+            old_attr_value = convertValues(attr_type, old_value, attribute_def)
+            new_attr_value = convertValues(attr_type, new_value, attribute_def)
+        
+            if attr:
+                attr.attr_value = new_attr_value
+                attr.cumulative_value -= old_attr_value
+                attr.cumulative_value += new_attr_value
+                attr.avg_value = attr.cumulative_value / attr.num_occurs
+                attr.all_values = attr.all_values.replace(old_value,new_value,1)            
+                print attr.json()
+
 
 def createOrUpdateMatchDataAttribute(session, team, comp, match, scouter, name, value):
     attrList = session.query(MatchData).filter(MatchData.team==team).\
