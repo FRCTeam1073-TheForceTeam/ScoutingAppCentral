@@ -7,6 +7,7 @@ Created on Feb 09, 2013
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 def open_db_session( db_name, db_model=None ):
     if db_name.endswith('.db') == False:
