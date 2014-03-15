@@ -6,8 +6,10 @@ Created on Jan 24, 2012
 
 import csv
 import xlrd
+import os
 
 tmpfile = 'attr-tmp.csv'
+attrdef_overrides_filename = './config/attrdef_overrides.txt'
 
 class AttrDefinitions:
     
@@ -97,7 +99,8 @@ class AttrDefinitions:
                 extra_attr['Column_Order'] = str(extra_column_order)
                 extra_column_order += 1
                 self._attrdefinitions[key] = extra_attr
-                
+        
+        self.read_attr_overrides()
 
     # function will convert Excel spreadsheet files (xls or xlsx) to a csv file that can
     # then be parsed by this class
@@ -115,6 +118,38 @@ class AttrDefinitions:
         outfile.close()
 
         return outfile_name
+
+    def read_attr_overrides(self):
+    
+        if os.path.exists(attrdef_overrides_filename):
+            override_file = open(attrdef_overrides_filename, 'r')
+            for override_line in override_file:
+                if override_line.startswith('#'):
+                    continue
+                override_line = override_line.rstrip()
+                if override_line.count('=') > 0:
+                    (attr,value) = override_line.split('=',1)
+                    
+                    if self._attrdefinitions.has_key(attr):
+                        self._attrdefinitions[attr]['Weight'] = value
+                else:
+                    # ignore lines that don't have an equal sign in them
+                    pass   
+            override_file.close()
+    
+    def write_attr_overrides(self):
+        attrdef_overrides = {}
+        override_file = open(attrdef_overrides_filename, 'w+')
+        #for key, value in attrdef_overrides.iteritems():
+        for key, attr_def in sorted(self._attrdefinitions.items()):
+            attrdef_overrides[key] = attr_def['Weight']
+            
+        for attr, weight in sorted(attrdef_overrides.items()):
+            line = '%s=%s\n' % (attr,weight)
+            override_file.write(line)
+        override_file.close()
+
+            
 
     # the __repr__ method allows this class to be printed 
     def __repr__(self):
