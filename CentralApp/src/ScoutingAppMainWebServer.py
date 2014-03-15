@@ -32,6 +32,7 @@ import WebTeamData
 import WebGenExtJsStoreFiles
 import WebUiGen
 import WebSetConfig
+import WebModifyAttr
 import WebLogin
 import WebIssueTracker
 import WebDebrief
@@ -66,6 +67,7 @@ urls = (
     '/notes/(.*)',          'TeamNotes',
     '/genui',               'GenUi',
     '/config',              'SetConfig',
+    '/modifyattr',          'ModifyAttr',
     '/newissue',            'NewIssue',
     '/newissue/(.*)',       'NewPlatformIssue',
     '/api/issue/(.*)',      'IssueJson',
@@ -376,6 +378,21 @@ class SetConfig(object):
         else:
             WebSetConfig.process_form(global_config, form)
             return render.cfg_form_done(form)
+
+class ModifyAttr(object):
+    def GET(self):
+        WebLogin.check_access(global_config,7)        
+        form = WebModifyAttr.get_form(global_config)
+        return render.default_form(form)
+
+    def POST(self):
+        WebLogin.check_access(global_config,7)
+        form = WebModifyAttr.get_form(global_config)
+        if not form.validates(): 
+            return render.default_form(form)
+        else:
+            WebModifyAttr.process_form(global_config, form)
+            return render.default_form(form)
 
 class NewIssue(object):
     def GET(self):
