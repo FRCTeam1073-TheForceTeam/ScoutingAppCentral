@@ -10,6 +10,7 @@ import web
 import sys
 import traceback
 import datetime
+import subprocess
 
 import DbSession
 import DataModel
@@ -21,6 +22,7 @@ import AttributeDefinitions
 from optparse import OptionParser
 
 import BluetoothSyncServer
+import ConfigUtils
 import FileSync
 import DataModel
 import Logger
@@ -140,7 +142,7 @@ def write_config(config_dict, config_filename):
         cfg_file.write(line)
     cfg_file.close()
 
-read_config(global_config, './config/ScoutingAppConfig.txt')
+ConfigUtils.read_config(global_config, './config/ScoutingAppConfig.txt')
 db_name = global_config['db_name'] + '.db'
     
 webserver_app = web.application(urls, globals())
@@ -711,41 +713,23 @@ class UsersUpdate(object):
             
     def POST(self):
 '''
-   
-counter = 0
-def process_files():
-    global counter
-    counter += 1
+
+command_running = False   
+def process_files_timer_callback(cmd):
+    global command_running
+    # check to see if there is already a file process invocation underway. If so, 
+    # then do not start another one and just return.
+    if command_running == False:
+        command_running = True
+        # launch the file process command using the subprocess call function. This
+        # method will not return until the called command itself returns.
+        process_file_subprocess = subprocess.call(['python', cmd])
+        print 'Subprocess returned - %s' % str(process_file_subprocess)
+        command_running = False
+    else:
+        print 'Process files command already running'
+
     
-    try:
-        print 'Scanning for new files to process'
-        start_time = datetime.datetime.now()
-        
-        input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
-
-        if global_config['attr_definitions'] == None:
-            print 'No Attribute Definitions, Skipping Process Files'
-        else:
-            attrdef_filename = './config/' + global_config['attr_definitions']
-            if os.path.exists(attrdef_filename):
-                attr_definitions = AttributeDefinitions.AttrDefinitions()
-                attr_definitions.parse(attrdef_filename)
-                   
-                ProcessFiles.process_files(global_config, attr_definitions, input_dir)
-                ProcessFiles.process_issue_files(global_config, input_dir)
-                ProcessFiles.process_debrief_files(global_config, input_dir)
-                print 'Scan %d complete, elapsed time - %s' % (counter,str(datetime.datetime.now()-start_time))
-            else:
-                print 'Attribute File %s Does Not Exist' % attrdef_filename
-    except Exception, e:
-        global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
-        traceback.print_exc(file=sys.stdout)
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
-        for line in exception_info:
-            line = line.replace('\n','')
-            global_config['logger'].debug(line)
-
    
 if __name__ == "__main__":
 
@@ -836,10 +820,14 @@ if __name__ == "__main__":
 
 
     print 'Sys Args: %s' % sys.argv
+    arg0 = sys.argv[0]
     sys.argv[1:] = args
     
+    process_file_timer = None
     if int(options.processloop) > 0:
-        process_file_timer = TimerThread.RepeatedTimer(int(options.processloop), process_files)
+        # build the command to launch when the process files callback function is invoked
+        launch_cmd = arg0.replace('ScoutingAppMainWebServer', 'ProcessFiles')
+        process_file_timer = TimerThread.RepeatedTimer(int(options.processloop), process_files_timer_callback, launch_cmd)
     
     bluetooth_sync_server = None
     if options.bluetoothServer:
@@ -864,3 +852,6 @@ if __name__ == "__main__":
     if bluetooth_sync_server != None:
         bluetooth_sync_server.terminate()
         bluetooth_sync_server.join()
+
+    if process_file_timer != None:
+        process_file_timer.stop()
