@@ -7,14 +7,19 @@ import os
 import re
 import traceback
 import time
+import datetime
+import sys
 
+from optparse import OptionParser
+
+import AttributeDefinitions
+import ConfigUtils
 import DbSession
 import DataModel
 import IssueTrackerDataModel
 import DebriefDataModel
 import FileParser
-
-import sys
+import Logger
 
 
 def log_exception(logger, e):
@@ -377,3 +382,74 @@ def process_debrief_files(global_config, input_dir, recursive=True):
     debrief_session.commit()
     debrief_session.close()
     issues_session.close()
+
+
+if __name__ == "__main__":
+
+    # command line options handling
+    parser = OptionParser()
+    
+    parser.add_option(
+        "-l","--processloop",dest="processloop", default='0',
+        help='Process Team Files')
+    
+    # Parse the command line arguments
+    (options,args) = parser.parse_args()
+
+    global_config = {}
+    
+    ConfigUtils.read_config(global_config, './config/ScoutingAppConfig.txt')
+
+    logger = Logger.get_logger('./config', 'logging.conf', 'scouting.fileproc')
+    global_config['logger'] = logger
+
+    session = DbSession.open_db_session(global_config['db_name'], DataModel)
+
+    counter = 0
+    done = False
+
+    while not done:
+        try:
+            global_config['logger'].debug( 'Scanning for new files to process' )
+            print 'Scanning for new files to process'
+            start_time = datetime.datetime.now()
+            
+            input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
+    
+            if global_config['attr_definitions'] == None:
+                global_config['logger'].debug( 'No Attribute Definitions, Skipping Process Files' )
+                print 'No Attribute Definitions, Skipping Process Files'
+            else:
+                attrdef_filename = './config/' + global_config['attr_definitions']
+                if os.path.exists(attrdef_filename):
+                    attr_definitions = AttributeDefinitions.AttrDefinitions()
+                    attr_definitions.parse(attrdef_filename)
+                       
+                    process_files(global_config, attr_definitions, input_dir)
+                    process_issue_files(global_config, input_dir)
+                    process_debrief_files(global_config, input_dir)
+                    global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
+                    print 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+                else:
+                    global_config['logger'].debug( 'Attribute File %s Does Not Exist' % attrdef_filename )
+                    print 'Attribute File %s Does Not Exist' % attrdef_filename
+        except Exception, e:
+            global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
+            print 'Exception Caught Processing Files: %s' % str(e)
+            traceback.print_exc(file=sys.stdout)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+            for line in exception_info:
+                line = line.replace('\n','')
+                global_config['logger'].debug(line)
+                print line
+        
+        if int(options.processloop) > 0:
+            time.sleep(int(options.processloop))
+        else:
+            done = True
+
+
+
+
+    
