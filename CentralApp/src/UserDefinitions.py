@@ -6,7 +6,7 @@ Created on Feb 02, 2013
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import IssueTrackerDataModel
+import UsersDataModel
 import os
 import csv
 import xlrd
@@ -88,28 +88,28 @@ if __name__ == '__main__':
 
     # Create the database if it doesn't already exist
     if not os.path.exists('./' + db_name):    
-        IssueTrackerDataModel.create_db_tables(my_db)
+        UsersDataModel.create_db_tables(my_db)
 
     users = user_definitions.get_definitions()
     for user, definition in users.iteritems():
-        IssueTrackerDataModel.addUserFromAttributes(session, definition)
+        UsersDataModel.addUserFromAttributes(session, definition)
     
     session.commit()
     
-    taskgroups = IssueTrackerDataModel.getTaskgroupList(session)
+    taskgroups = UsersDataModel.getTaskgroupList(session)
     print taskgroups
     for group in taskgroups:
         print group
-        members = IssueTrackerDataModel.getTaskgroupMembers(session,group)
+        members = UsersDataModel.getTaskgroupMembers(session,group)
         print members
     
-    subgroups = IssueTrackerDataModel.getSubgroupList(session)
+    subgroups = UsersDataModel.getSubgroupList(session)
     print subgroups
     
-    users = IssueTrackerDataModel.getUserList(session)
+    users = UsersDataModel.getUserList(session)
     print users
     
-    users = IssueTrackerDataModel.getDisplayNameList(session)
+    users = UsersDataModel.getDisplayNameList(session)
     print users
     
     
