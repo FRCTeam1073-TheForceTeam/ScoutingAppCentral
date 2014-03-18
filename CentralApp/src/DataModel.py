@@ -540,6 +540,7 @@ def recalculate_scoring(global_config, attr_definitions=None):
         setTeamScore(session, team_entry.team, competition, score)
     session.commit()
     dump_database_as_csv_file(session, global_config, attr_definitions, competition)
+    session.close()
 
 def dump_database_as_csv_file(session, global_config, attr_definitions, competition=None):
     
