@@ -54,14 +54,16 @@ def isFileProcessed(global_config, session, db_name, filepath):
                                                  
 def get_files(global_config, session, db_name, input_dir, pattern, recursive=True):    
     file_list = []    
-    
+        
     if recursive:
         for root, dirs, files in os.walk(input_dir):
+
             #print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
             for name in files:
                 if pattern.match(name):
                     if((isFileProcessed(global_config, session, db_name, os.path.join(root, name))) == False):
                         file_list.append(os.path.join(root, name))
+
     else:
         files = os.listdir(input_dir)
         #print 'Files:', files
@@ -77,9 +79,13 @@ def get_files(global_config, session, db_name, input_dir, pattern, recursive=Tru
 
   
 def process_files(global_config, attr_definitions, input_dir, recursive=True):
+    start_time = datetime.datetime.now()
+    
     # Initialize the database session connection
     db_name  = global_config['db_name']
     session  = DbSession.open_db_session(db_name)
+ 
+    some_files_processed = False
     
     # The following regular expression will select all files that conform to 
     # the file naming format Team*.txt. Build a list of all datafiles that match
@@ -88,6 +94,8 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
     file_regex = re.compile('Team[a-zA-Z0-9_]+.txt')
     files = get_files(global_config, session, db_name, input_dir, file_regex, recursive)
     
+    print 'files retrieved, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+
     # Process data files
     for data_filename in files:
         try:
@@ -99,11 +107,19 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
         # add the file to the set of processed files so that we don't process it again. Do it outside the
         # try/except block so that we don't try to process a bogus file over and over again.       
         DataModel.addProcessedFile(session, data_filename)
+        some_files_processed = True
         
         # Commit all updates to the database
         session.commit()
-        
-    DataModel.dump_database_as_csv_file(session, global_config, attr_definitions)
+
+    print 'files processed, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+    
+    if some_files_processed == True:    
+        DataModel.dump_database_as_csv_file(session, global_config, attr_definitions)
+    
+        print 'database dumped, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+    
+    
     session.close()
         
 def process_file(global_config, session, attr_definitions, data_filename):
@@ -424,7 +440,7 @@ if __name__ == "__main__":
                 if os.path.exists(attrdef_filename):
                     attr_definitions = AttributeDefinitions.AttrDefinitions()
                     attr_definitions.parse(attrdef_filename)
-                       
+                    
                     process_files(global_config, attr_definitions, input_dir)
                     process_issue_files(global_config, input_dir)
                     process_debrief_files(global_config, input_dir)
