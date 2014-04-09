@@ -29,15 +29,18 @@ $code:
 
   <!-- makes iOS web app persist -->
   <script>
-    var a=document.getElementsByTagName("a");
-    for(var i=0;i<a.length;i++)
-    {
-        a[i].onclick=function()
-        {
-            window.location=this.getAttribute("href");
-            return false
-        }
-    }
+    window.document.onload = function(e) = {
+      console.log("running iOS function in layout.html head");
+      var a=document.getElementsByTagName("a");
+      for(var i=0;i<a.length;i++)
+      {
+          a[i].onclick=function()
+          {
+              window.location=this.getAttribute("href");
+              return false
+          }
+      }
+    };
   </script>
 
 	<meta charset="utf-8" />
