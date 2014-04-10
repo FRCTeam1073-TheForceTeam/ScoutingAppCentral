@@ -33,6 +33,7 @@ $code:
       var a=document.getElementsByTagName("a");
       for(var i=0;i<a.length;i++)
       {
+          if (a.className === "openinnewpage") continue; // leave the web application on iOS
           a[i].onclick=function()
           {
               window.location=this.getAttribute("href");
@@ -124,6 +125,7 @@ $code:
       <li><a href="http://www.theforceteam.com">FRC Team 1073 Homepage</a> | </li>
       <li><a href="http://www.thebluealliance.com/">The Blue Alliance</a> | </li>
       <li><a href="/userprofile">User Settings</a> | </li>
+      <li><a class = "openinnewpage" href="https://github.com/FRCTeam1073-TheForceTeam/ScoutingAppCentral">Scouting App Central Source Code</a> | </li>
       <li><a href="/logout">Logout</a></li>
   </ul>
 
