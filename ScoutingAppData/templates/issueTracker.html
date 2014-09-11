@@ -1,0 +1,109 @@
+$def with (platform, allow_create)
+
+$var title: Issues Table
+
+<script type="text/javascript">
+
+$$(document).ready(function() {
+
+    var platformType = "$platform";
+
+    function drawOpenIssuesTable( json_data ) {
+        $$('#openissues').dataTable( {
+            "aaData": json_data.issues,
+            "bAutoWidth": true, // Disable the auto width calculation 
+            "aoColumns": [
+                { "mData": "issue_id", "mRender": function(issue_id) { return '<a href="/issue/'+issue_id+'">'+issue_id+'</a>'; } },
+                { "mData": "priority" },
+                { "mData": "owner" },
+                { "mData": "status" },
+                { "mData": "subgroup" },
+                { "mData": "summary" }
+            ]
+        } );   
+    }
+
+    function drawClosedIssuesTable( json_data ) {
+        $$('#closedissues').dataTable( {
+            "aaData": json_data.issues,
+            "bAutoWidth": true, // Disable the auto width calculation 
+            "aoColumns": [
+                { "mData": "issue_id", "mRender": function(issue_id) { return '<a href="/issue/'+issue_id+'">'+issue_id+'</a>'; } },
+                { "mData": "priority" },
+                { "mData": "owner" },
+                { "mData": "status" },
+                { "mData": "subgroup" },
+                { "mData": "summary" }
+            ]
+        } );   
+    }
+
+
+    var jqxhr = $$.getJSON( "/api/issues/" + platformType + "/open", function(json_data) {
+        console.log( "success" );
+
+        console.log( json_data );
+        drawOpenIssuesTable( json_data );
+
+    } );   
+
+    var jqxhr = $$.getJSON( "/api/issues/" + platformType + "/closed", function(json_data) {
+        console.log( "success" );
+
+        console.log( json_data );
+        drawClosedIssuesTable( json_data );
+
+    } );   
+} );
+
+</script>
+    <h2>$platform Project</h2>
+    <hr>
+    <h3>Open Issues</h3>
+    <hr>
+
+    <ul>
+    <table id="openissues" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+    <thead>
+        <tr role="row">
+			<th>Issue Id</th>
+			<th>Priority</th>
+			<th>Owner</th>
+			<th>Status</th>
+			<th>Task Group</th>
+			<th width=40%>Summary</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+	</table>
+    </ul>
+
+    $if allow_create == True:
+        <a class="btn btn-primary btn-default" href="/newissue/$platform">Create New Issue</a>
+        <!-- or we can create a modal window that pops up a form to be filled in
+        <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#createIssueModal">
+            Create Issue
+		</button>
+         -->
+
+    <hr>
+    <h3>Closed Issues</h3>
+    <hr>
+
+    <ul>
+    <table id="closedissues" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+    <thead>
+        <tr role="row">
+			<th>Issue Id</th>
+			<th>Priority</th>
+			<th>Owner</th>
+			<th>Status</th>
+			<th>Task Group</th>
+			<th width=40%>Summary</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+	</table>
+    </ul>

@@ -1,0 +1,54 @@
+$def with (competition)
+
+$var title: Match Debriefs
+
+<script type="text/javascript">
+
+$$(document).ready(function() {
+
+    var comp = "$competition";
+
+    function drawDebriefTable( json_data ) {
+        $$('#debriefs').dataTable( {
+            "aaData": json_data.debriefs,
+            "bAutoWidth": true, // Disable the auto width calculation 
+            "aoColumns": [
+                { "mData": "match_id" },
+                { "mData": "summary" },
+                { "mData": "description" }
+            ]
+        } );   
+    }
+
+
+    var jqxhr = $$.getJSON( "/api/debriefs/" + comp , function(json_data) {
+        console.log( "success" );
+
+        console.log( json_data );
+        drawDebriefTable( json_data );
+
+    } );   
+
+} );
+
+</script>
+
+    <h2>Competition: $competition</h2>
+    <hr>
+    <h3>Match Debriefs</h3>
+    <hr>
+
+    <ul>
+    <table id="debriefs" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+    <thead>
+        <tr role="row">
+			<th>Match Id</th>
+            <th width=30%>Summary</th>
+			<th width=50%>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+	</table>
+    </ul>
+

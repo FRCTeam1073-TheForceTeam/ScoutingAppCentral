@@ -1,0 +1,143 @@
+$def with ()
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: FIRST Event Page
+
+$code:
+    event_info = utils.get_comp_list()
+
+<style type="text/css">
+        #placeholder_rankings { width: 100%; height: 300px; }
+        #placeholder_rankings { width: 100%; height: 300px; }
+        #placeholder_rankings { width: 100%; height: 300px; }
+
+        .legend table, .legend > div { 
+                height: 100px !important; 
+                opacity: 1 !important; 
+                left: 740px; 
+                top: 10px; 
+                width: 116px !important; }
+        .legend table { border: 1px solid #555; padding: 5px; }
+
+        #flotTip
+        {
+                padding: 3px 5px;
+                background-color: #000;
+                z-index: 100;
+                color: #fff;
+                box-shadow: 0 0 10px #555;
+                opacity: .7;
+                filter: alpha(opacity=70);
+                border: 2px solid #fff;
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+        }
+</style>
+
+<!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
+<script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
+<script src="/static/media/js/jquery.flot.tooltip.js"></script>
+
+<script type="text/javascript">
+
+$$(document).ready(function () {
+
+      var jqxhr_events = $$.getJSON( "/api/events", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+              $$('#events').dataTable( {
+                  "aaData": json_data,
+                  "bAutoWidth": true, // Disable the auto width calculation 
+                  "aoColumns": [
+                      { "mData": "key", "mRender": function(key) { 
+                            short_key = key.substring(4).toUpperCase();
+                            return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
+                      { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
+                      { "mData": "start_date" },
+                      { "mData": "end_date" },
+                      { "mData": "official" }
+                  ],
+                  "order": [[ 3, "asc" ]]
+              } );   
+          }
+
+          drawTable( json_data );
+
+      } );   
+
+
+});
+</script>
+ 
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>Competition Central</h1>
+    </div>
+
+    <div class="container-fluid">
+
+    <div class="tabbable">
+      <ul class="nav nav-tabs">
+          <li class="active"><a href="#pane_events" data-toggle="tab">FRC Events</a></li>
+          <!--
+          <li><a href="#pane_qualresults" data-toggle="tab">Qualification Match Results</a></li>
+          <li><a href="#pane_elimresults" data-toggle="tab">Elimination Match Results</a></li>
+          -->
+      </ul>
+ 
+      <div class="tab-content">
+          <div id="pane_events" class="tab-pane active">
+          <ul>
+          <table id="events" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+                  <tr role="row">
+			          <th>Event Code</th>
+			          <th>Event Name</th>
+			          <th>Start Date</th>
+			          <th>End Date</th>
+			          <th>Official Event</th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <!--
+          <div id="pane_qualresults" class="tab-pane">
+          <ul>
+          <table id="event_qualresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_elimresults" class="tab-pane">
+          <ul>
+          <table id="event_elimresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          -->
+
+      </div>
+    </div>
+    </div>
+  </div>  
+

@@ -15,46 +15,6 @@ $code:
 
 <head>
 
-  <!-- iOS and Android home screen icons -->
-  <meta name="mobile-web-app-capable" content="yes"> <!-- android -->
-  <meta name="apple-mobile-web-app-capable" content="yes"> <!-- iOS -->
-  <meta name="apple-mobile-web-app-status-bar-style" content="black"> <!-- iOS -->
-  <!-- Android icon -->
-  <link rel="icon" sizes="196x196" href="/static/media/images/ANDROID.png">
-  <link rel="apple-touch-icon"     href="/static/media/images/ANDROID.png"> <!-- use same img for now... -->
-  <!-- end of icons -->
-
-  <!-- mobile viewability -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-
-  <!-- makes iOS web app persist -->
-  <script>
-    window.onload = function(e) {
-      var a=document.getElementsByTagName("a");
-      for(var i=0;i<a.length;i++)
-      {
-          if (a.className === "openinnewpage") continue; // leave the web application on iOS
-          a[i].onclick=function()
-          {
-              window.location=this.getAttribute("href");
-              return false
-          }
-      }
-    };
-  </script>
-
-  <!-- google analytics -->
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-    ga('create', 'UA-49867047-1', '54.235.71.118:8080');
-    ga('send', 'pageview');
-
-  </script> 
-
 	<meta charset="utf-8" />
 	
 	<link rel="shortcut icon" href="/static/media/images/1073-favicon.ico" type="image/x-icon" />
@@ -125,7 +85,6 @@ $code:
       <li><a href="http://www.theforceteam.com">FRC Team 1073 Homepage</a> | </li>
       <li><a href="http://www.thebluealliance.com/">The Blue Alliance</a> | </li>
       <li><a href="/userprofile">User Settings</a> | </li>
-      <li><a class = "openinnewpage" href="https://github.com/FRCTeam1073-TheForceTeam/ScoutingAppCentral">Scouting App Central Source Code</a> | </li>
       <li><a href="/logout">Logout</a></li>
   </ul>
 

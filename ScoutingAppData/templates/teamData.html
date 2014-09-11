@@ -1,0 +1,290 @@
+$def with (team)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Score Breakdown Chart
+
+$code:
+    complist = utils.get_team_comp_list(team)
+
+<style type="text/css">
+       $for comp in complist:
+           #placeholder_$comp { width: 100%; height: 300px; }
+
+        .legend table, .legend > div { 
+                height: 100px !important; 
+                opacity: 1 !important; 
+                left: 740px; 
+                top: 10px; 
+                width: 116px !important; }
+        .legend table { border: 1px solid #555; padding: 5px; }
+
+        #flotTip
+        {
+                padding: 3px 5px;
+                background-color: #000;
+                z-index: 100;
+                color: #fff;
+                box-shadow: 0 0 10px #555;
+                opacity: .7;
+                filter: alpha(opacity=70);
+                border: 2px solid #fff;
+                -webkit-border-radius: 4px;
+                -moz-border-radius: 4px;
+                border-radius: 4px;
+        }
+</style>
+
+<!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
+<script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
+<script src="/static/media/js/jquery.flot.tooltip.js"></script>
+
+<script type="text/javascript">
+
+$$(document).ready(function () {
+
+    var teamName = "$team";
+
+    if (location.search != "")
+    {
+        var x = location.search.substr(1).split(";")
+        for (var i=0; i<x.length; i++)
+        {
+            var y = x[i].split("=");
+    
+            if ( y[0] == "team" ) {
+        	    teamName = y[1];
+            }
+        }
+    }	
+
+    $for comp in complist:
+      var jqxhr_$comp = $$.getJSON( "/api/teamdatasummary/$comp/" + teamName, function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawSummaryTable( json_data ) {
+            $$('#scouting_data_$comp').dataTable( {
+                "aaData": json_data.scouting_data_summary,
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aoColumns": [
+                    { "mData": "name" },
+                    { "mData": "matches" },
+                    { "mData": "cumulative_value" },
+                    { "mData": "average_value" },
+                    { "mData": "all_values" }
+                ]
+            } );
+          }
+
+          drawSummaryTable( json_data );
+
+      } );   
+
+      var jqxhr_$comp = $$.getJSON( "/api/teamdatafiles/$comp/" + teamName, function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawDatafileTable( json_data ) {
+            $$('#datafiles_$comp').dataTable( {
+                "aaData": json_data.scouting_datafiles,
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aoColumns": [
+                    { "mData": "filename", "mRender": function(name) { return '<a href="/ScoutingData/$comp/'+name+'">'+name+'</a>'; } }
+                ]
+            } );
+          }
+
+          drawDatafileTable( json_data );
+
+      } );   
+
+      var jqxhr_$comp = $$.getJSON( "/api/teammediafiles/$comp/" + teamName, function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawMediafileTable( json_data ) {
+            $$('#mediafiles_$comp').dataTable( {
+                "aaData": json_data.scouting_mediafiles,
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aoColumns": [
+                    { "mData": "filename", "mRender": function(name) { return '<a href="/static/data/$comp/ScoutingPictures/'+name+'">'+name+'</a>'; } }
+                ]
+            } );
+          }
+
+          drawMediafileTable( json_data );
+
+      } );   
+
+      var jqxhr_$comp = $$.getJSON( "/api/teamnotes/$comp/" + teamName, function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawNotesTable( json_data ) {
+            $$('#notes_$comp').dataTable( {
+                "aaData": json_data.scouting_notes,
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aoColumns": [
+                    { "mData": "note" }
+                ]
+            } );
+          }
+
+          drawNotesTable( json_data );
+
+      } );   
+
+      var jqxhr_$comp = $$.getJSON( "/api/scorebreakdown/$comp/" + teamName, function(json_data) {
+        console.log( "success" );
+        var data = [];
+        var attr_data = json_data;
+        var numAttr = json_data.score_breakdown.length;
+        for (var i=0;i<numAttr;i++)
+        {
+            data[i] = [];
+            data[i].label = json_data.score_breakdown[i].attr_name;
+            data[i].data = Math.abs(json_data.score_breakdown[i].weighted_score);
+            if ( json_data.score_breakdown[i].weighted_score < 0 )
+            {
+                // need to add way to assign shades of red for negative scores
+                data[i].color = 'red';
+            }
+        }
+
+        function getAttrInfo(attrName) {
+            var attrInfo = attrName;
+            for (var j=0;j<numAttr;j++)
+            {
+                if ( attrName == json_data.score_breakdown[j].attr_name ) {    
+        	        attrInfo = attrName + ": " + json_data.score_breakdown[j].raw_score +
+        		               " (Weighted: " + json_data.score_breakdown[j].weighted_score + ")";
+                }
+            }
+            return attrInfo;
+        }
+
+        function drawChart( data ) {
+            $$.plot($$("#placeholder_$comp"), data, {
+                 series: {
+                    pie: {
+                        show: true
+                    }
+                 },
+                 grid: {
+                     hoverable: true
+                 },
+                 tooltip: true,
+                 tooltipOpts: {
+                    content: function(label, xval, yval, flotItem) {
+                                    var tipString = getAttrInfo(label);
+                                    console.log( tipString );
+                                    return( tipString );
+                    },
+                    shifts: {
+                         x:20,
+                         y:0
+                    },
+                    defaultTheme: false
+                 },
+                 legend: {
+                    labelBoxBorderColor: "none"
+                 }
+            });
+        }
+
+        drawChart(data);
+
+        window.onresize = function(event) {
+            console.log( "resize" );
+            drawChart(data);
+        }
+
+        })
+        .fail(function() {
+            console.log( "error" );
+        })
+
+});
+</script>
+ 
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>Team $team Scouting Data Page</h1>
+    </div>
+
+    <div class="container-fluid">
+
+        $for comp in complist:
+            <hr>
+            <h3>$comp</h3>
+            <h4>Weighted Scoring Breakdown</h4>
+            <div id="placeholder_$comp"></div>
+
+            <br>
+            <h4>Scouting Data Summary</h4>
+            <ul>
+            <table id="scouting_data_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+                <thead>
+                    <tr role="row">
+                        <th>Attribute Name</th>
+                        <th>Matches</th>
+                        <th>Cumulative Value</th>
+                        <th>Average Value</th>
+                        <th width=40%>All Values</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+	        </table>
+            </ul>
+
+            <h4>Pit and Match Data Files</h4>
+            <ul>
+            <table id="datafiles_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+                <thead>
+                    <tr role="row">
+                        <th>Fileame</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+	        </table>
+            </ul>
+
+            <h4>Pictures and Video Files</h4>
+            <ul>
+            <table id="mediafiles_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+                <thead>
+                    <tr role="row">
+                        <th>Fileame</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+	        </table>
+            </ul>
+
+            <h4>Scouting Notes</h4>
+            <ul>
+            <table id="notes_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+                <thead>
+                    <tr role="row">
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+	        </table>
+            </ul>
+
+
+    </div>
+  </div>  
+

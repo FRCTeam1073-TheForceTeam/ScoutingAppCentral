@@ -1,0 +1,48 @@
+$def with (competition,scouting_file)
+
+$var title: Scouting Data File
+
+<script type="text/javascript">
+
+$$(document).ready(function() {
+
+    function drawDataTable( json_data ) {
+        $$('#scoutingdata').dataTable( {
+            "aaData": json_data.scouting_data,
+            "bAutoWidth": true, // Disable the auto width calculation 
+            "aoColumns": [
+                { "mData": "name" },
+                { "mData": "value" }
+            ]
+        } );   
+    }
+
+
+    var jqxhr = $$.getJSON( "/api/scoutingdata/" + "$competition" + "/" + "$scouting_file", function(json_data) {
+        console.log( "success" );
+
+        console.log( json_data );
+        drawDataTable( json_data );
+
+    } );   
+
+} );
+
+</script>
+
+    <h2>$competition Scouting Data File: $scouting_file</h2>
+    <hr>
+
+    <ul>
+    <table id="scoutingdata" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+    <thead>
+        <tr role="row">
+			<th>Attribute Name</th>
+			<th>Attribute Value</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+	</table>
+    </ul>
+

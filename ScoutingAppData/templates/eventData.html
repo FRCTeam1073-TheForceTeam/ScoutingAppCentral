@@ -1,0 +1,310 @@
+$def with (event_code)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: FIRST Event Page
+
+$code:
+    event_info = utils.get_event_info_str(event_code)
+    event_name = event_info[0][1]
+    event_key = event_info[1][1]
+    comp = utils.map_event_code_to_comp(event_code)
+
+<style type="text/css">
+    #placeholder_scouting_rank
+    { 
+        width: 100%; 
+        height: 800px;
+        margin: auto auto auto auto;
+    }
+
+    .legend table, .legend > div { 
+            height: 100px !important; 
+            opacity: 1 !important; 
+            left: 740px; 
+            top: 10px; 
+            width: 116px !important; }
+    .legend table { border: 1px solid #555; padding: 5px; }
+
+    #flotTip
+    {
+            padding: 3px 5px;
+            background-color: #000;
+            z-index: 100;
+            color: #fff;
+            box-shadow: 0 0 10px #555;
+            opacity: .7;
+            filter: alpha(opacity=70);
+            border: 2px solid #fff;
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+    }
+</style>
+
+<!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
+<script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
+<script src="/static/media/js/jquery.flot.tooltip.js"></script>
+
+<script type="text/javascript">
+
+$$(document).ready(function () {
+
+    var display = "horizontal";
+    var data = [];
+    var teams = [];
+
+    var jqxhr = $$.getJSON( "/rankings/$comp", function(json_data) {
+        console.log( "success" );
+        var numTeams = json_data.rankings.length;
+        for (var i=0;i<numTeams;i++)
+        {
+            data[i] = [];
+            if ( display=='horizontal' ) {
+                data[i][0] = json_data.rankings[i].score;
+                data[i][1] = i;
+            } else {
+                data[i][0] = i;
+                data[i][1] = json_data.rankings[i].score;
+            }
+            teams[i] = json_data.rankings[i].team.toString();
+        }
+
+        $$("#placeholder_scouting_rank").bind("plotclick", function( event, pos, item ) {
+            if (item) {
+                window.location.assign( "/teamdata/$comp/" + teams[item.datapoint[1]] );
+            }
+        });
+
+        function generatePlot(data) {
+            $$.plot($$("#placeholder_scouting_rank"), [ data ], {
+	            series: {
+                    bars: { 
+                        show: true, 
+		                barWidth: 0.6,
+		                align: "center",
+		                horizontal: true
+                    }
+                },
+                yaxis: {
+                    tickFormatter: function(v,axis) {
+		                if ( (v >= 0) && (v < teams.length) ) {
+		                    return teams[v];
+		                } else {
+		                    return '';
+		                }
+                    },
+                    tickSize: 1,
+                    tickLength: 0,
+		            axisLabel: 'Team',
+                    axisLabelUseCanvas: true,
+                    axisLabelFontSizePixels: 10,
+                    axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
+                    axisLabelPadding: 5
+                },
+                xaxis: {
+                    axisLabel: 'Score',
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true
+                },
+	            tooltip: true,
+	            tooltipOpts: {
+	                content: function(label, xval, yval, flotItem) {
+		                var tipString;
+		                if ( display == 'horizontal' ) {
+		                    tipString = "Team: " + json_data.rankings[yval].team.toString() + 
+		                        ", Score: " + xval.toString();
+		                } else {
+		                    tipString = "Team: " + json_data.rankings[xval].team.toString() + 
+		                        ", Score: " + yval.toString();
+                        }
+		                console.log( tipString );
+		                return( tipString );
+	                },
+		            shifts: {
+		                x:20,
+		                y:0
+		            },
+                    defaultTheme: false
+	            },
+                legend: {
+                    labelBoxBorderColor: "none"
+                }
+            });
+        }
+
+        generatePlot(data);
+
+        window.onresize = function(event) {
+            console.log("resizing");
+            generatePlot(data);
+        }
+    })
+
+      var jqxhr_standings = $$.getJSON( "/api/teams/$comp", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_teams').dataTable( {
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aaData": json_data.teams,
+                "aoColumns": [
+                    { "mData": "number", "mRender": function(team) { return '<a href="/teamdata/$comp/'+team+'">'+team+'</a>'; } },
+                    { "mData": "nickname" }
+                ]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );   
+
+      var jqxhr_standings = $$.getJSON( "/api/eventstandings/$event_code", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_rankings').dataTable( {
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aaData": json_data.rankings,
+                "aoColumns": json_data.columns,
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );   
+
+      var jqxhr_qualresults = $$.getJSON( "/api/eventresults/$event_code/qual", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_qualresults').dataTable( {
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aaData": json_data.matchresults,
+                "aoColumns": json_data.columns,
+                "order": [[ 1, "asc" ]]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );   
+
+      var jqxhr_elimresults = $$.getJSON( "/api/eventresults/$event_code/elim", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_elimresults').dataTable( {
+                "bAutoWidth": true, // Disable the auto width calculation
+                "aaData": json_data.matchresults,
+                "aoColumns": json_data.columns,
+                "order": [[ 2, "asc" ]]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );   
+
+});
+</script>
+ 
+
+  <div class="article">
+  
+    <div id="title">
+        <h1>$event_info[0][1] Page($event_info[1][1])</h1>
+    </div>
+
+    <div class="container-fluid">
+
+    <div>
+        <ul>
+        $for line in event_info[1:]:
+            $if line[2] == 'link':
+                <li>$line[0]:<a href=$line[1]>$line[1]</a></li>
+            $else:
+                <li>$line[0]: $line[1]</li>
+        </ul>
+        <br>
+    </div>
+
+    <div class="tabbable">
+      <ul class="nav nav-tabs">
+          <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rank Summary</a></li>
+          <li><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
+          <li><a href="#pane_rankings"    data-toggle="tab">Match Rankings</a></li>
+          <li><a href="#pane_qualresults" data-toggle="tab">Qualification Match Results</a></li>
+          <li><a href="#pane_elimresults" data-toggle="tab">Elimination Match Results</a></li>
+      </ul>
+ 
+      <div class="tab-content">
+          <div id="pane_scouting_rank" class="tab-pane active">
+          <ul>
+            <div id="placeholder_scouting_rank"></div>
+          </ul>
+          </div>
+
+          <div id="pane_teams" class="tab-pane">
+          <ul>
+          <table id="event_teams" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+                <tr role="row">
+			        <th>Team</th>
+			        <th>Team Name</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_rankings" class="tab-pane">
+          <ul>
+          <table id="event_rankings" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_qualresults" class="tab-pane">
+          <ul>
+          <table id="event_qualresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_elimresults" class="tab-pane">
+          <ul>
+          <table id="event_elimresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+      </div>
+    </div>
+    </div>
+  </div>  
+
