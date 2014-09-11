@@ -136,7 +136,8 @@ def process_new_issue_form(global_config, form):
                                            component, submitter, owner, 
                                            description, timestamp)
     if issue != None:
-        issue.create_file('./static/data/%s/ScoutingData' % global_config['this_competition'])
+        competition = global_config['this_competition'] + global_config['this_season']
+        issue.create_file('./static/data/%s/ScoutingData' % competition)
     session.commit()
     
     return '/issue/%s' % issue_id            
@@ -218,7 +219,8 @@ def process_issue_form(global_config, form, issue_id, username):
                                            component, submitter, owner, 
                                            description, timestamp)
     if issue != None:
-        issue.create_file('./static/data/%s/ScoutingData' % global_config['this_competition'])
+        competition = global_config['this_competition'] + global_config['this_season']
+        issue.create_file('./static/data/%s/ScoutingData' % competition)
 
     if comment != '':
         IssueTrackerDataModel.addOrUpdateIssueComment(session, issue_id, 
@@ -456,10 +458,10 @@ def get_platform_issues(global_config, platform_type, status=''):
  
     session = DbSession.open_db_session(global_config['issues_db_name'])
 
-    if status == 'open':
+    if status.lower() == 'open':
         issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Open', 'Working', 
                                                                                  order_by_priority=True)
-    elif status == 'closed':
+    elif status.lower() == 'closed':
         issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Closed', 'Resolved')
     else:
         issues = IssueTrackerDataModel.getIssuesByPlatform(session, platform_type, status)

@@ -19,7 +19,7 @@ allowed = (
 
 logged_out_users = {}
     
-def auth_user(global_config):
+def auth_user(global_config, desired_path='/home'):
     auth = web.ctx.env.get('HTTP_AUTHORIZATION')
     authreq = False
     
@@ -39,7 +39,7 @@ def auth_user(global_config):
                     raise web.seeother('/accountdisabled')
                 #if (username,password) in allowed:
                 if user.check_password(password) == True:
-                    raise web.seeother('/home')
+                    raise web.seeother(desired_path)
         authreq = True
     if authreq:
         web.header('WWW-Authenticate','Basic realm="FRC1073 ScoutingAppCentral"')
@@ -71,7 +71,7 @@ def check_access(global_config, access_level):
     auth = web.ctx.env.get('HTTP_AUTHORIZATION')
     
     if auth is None:
-        raise web.seeother('/login')
+        raise web.seeother('/login?path=%s' % web.ctx.path)
     else:
         auth = re.sub('^Basic ','',auth)
         username,password = base64.decodestring(auth).split(':')

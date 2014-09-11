@@ -8,6 +8,7 @@ import os
 import re
 import web
 
+import ImageFileUtils
 import AttributeDefinitions
 import DbSession
 import DataModel
@@ -51,7 +52,7 @@ def get_datafiles(input_dir, pattern, recursive,logger):
     return file_list
 
 
-def get_team_datafiles_page(global_config, name):
+def get_team_datafiles_page(global_config, name, display_notes=True):
     
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
     session = DbSession.open_db_session(global_config['db_name'])
@@ -68,7 +69,6 @@ def get_team_datafiles_page(global_config, name):
     if team_info:
         page += '<h3>Team Info</h3>'
         page += '<li>Team Nickname: ' + team_info.nickname + '</li>'
-        page += '<li>Motto: ' + team_info.motto + '</li>'
         page += '<li>Affiliation: ' + team_info.fullname + '</li>'
         page += '<li>Location: ' + team_info.location + '</li>'
         page += '<li>Rookie Season: ' + str(team_info.rookie_season) + '</li>'
@@ -77,16 +77,17 @@ def get_team_datafiles_page(global_config, name):
      
     competitions = []
     this_comp = global_config['this_competition']
-    competitions.append(this_comp)
+    season = global_config['this_season']
+    competitions.append(this_comp+season)
     competitions_str = global_config['other_competitions']
     competitions_str = competitions_str.replace(this_comp,'')
     if competitions_str.count(',') > 0:
         other_comps = competitions_str.split(',')
         for other_comp in other_comps:
             if other_comp != '':
-                competitions.append(other_comp)
+                competitions.append(other_comp+season)
     elif competitions_str != '':
-        competitions.append(competitions_str)
+        competitions.append(competitions_str+season)
         
     for comp in competitions:
         if comp != '':
@@ -175,17 +176,19 @@ def get_team_datafiles_page(global_config, name):
                     page += '<li><a href="' + filename.lstrip('.') + '">' + basefile + '</a></li>'
                 page += '</ul>'
             page += '</ul>'
+
+    if display_notes == True:        
+        page += '<hr>'
+        page += '<h3> Notes for Team ' + name + '</h3>'
+        page += '<ul>'
+            
+        comp = global_config['this_competition'] + global_config['this_season']
         
-    page += '<hr>'
-    page += '<h3> Notes for Team ' + name + '</h3>'
-    page += '<ul>'
+        team_notes = DataModel.getTeamNotes(session, name, comp)
+        for note in team_notes:
+            page += '<li>' + note.data + '</li>'
         
-    comp = global_config['this_competition']        
-    team_notes = DataModel.getTeamNotes(session, name, comp)
-    for note in team_notes:
-        page += '<li>' + note.data + '</li>'
-    
-    page += '</ul>'
+        page += '</ul>'
     
     return page
 
@@ -198,7 +201,7 @@ def get_team_server_page(global_config, name):
     web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "attributes": [\n')
-    comp = global_config['this_competition']
+    comp = global_config['this_competition'] + global_config['this_season']
     team_attributes = DataModel.getTeamAttributes(session, name, comp)
     for attribute in team_attributes:
         result.append(attribute.json())
@@ -217,7 +220,7 @@ def get_team_score_page(global_config, name):
     web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "score": [')
-    comp = global_config['this_competition']
+    comp = global_config['this_competition'] + global_config['this_season']
     team_score = DataModel.getTeamScore(session, name, comp)
     for score in team_score:
         result.append(score.json())
@@ -235,7 +238,7 @@ def get_team_notes_page(global_config, name):
     
     #web.header('Content-Type', 'application/json')
     notes_string = ''
-    comp = global_config['this_competition']
+    comp = global_config['this_competition'] + global_config['this_season']
     team_notes = DataModel.getTeamNotes(session, name, comp)
     for note in team_notes:
         notes_string += note.data + '\n'
@@ -252,7 +255,7 @@ def get_team_rankings_page(global_config, comp=None):
     result.append('{ "rankings": [\n')
     
     if comp == None:
-        comp = global_config['this_competition']        
+        comp = global_config['this_competition'] + global_config['this_season']       
         
     team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
@@ -274,7 +277,7 @@ def get_team_rankings_array(global_config):
     web.header('Content-Type', 'application/json')
     result = []
     result.append('[')
-    comp = global_config['this_competition']        
+    comp = global_config['this_competition'] + global_config['this_season']
     team_rankings = DataModel.getTeamsInRankOrder(session, comp)
     for team in team_rankings:
         data_str = '[%d,%d]' % (team.team,int(team.score))
@@ -335,7 +338,7 @@ def get_team_score_breakdown_page(global_config, name, comp=None):
 
     result.append('{ "score_breakdown": [\n')
     if comp == None:
-        comp = global_config['this_competition']        
+        comp = global_config['this_competition'] + global_config['this_season']
     team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
     for attribute in team_attributes:
         attr_def = attr_definitions.get_definition( attribute.attr_name )
@@ -375,7 +378,7 @@ def get_team_attributes_page(global_config):
     web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "attributes": [\n')
-    comp = global_config['this_competition']        
+    comp = global_config['this_competition'] + global_config['this_season']
     team_rankings = DataModel.getTeamsInRankOrder(session, comp)
     for team_entry in team_rankings:
         result.append("{ 'Team': " + str(team_entry.team))
@@ -413,7 +416,6 @@ def get_team_datafile_page(global_config, filename):
     filepath = './static/data/' + comp + '/ScoutingData/' + name
     datafile = open( filepath, "r" )
     
-    team = filename.split('_')[0].lstrip('Team')
     page =''
     page += '<table border="1" cellspacing="5">'    
     page += '<tr>'
@@ -436,3 +438,281 @@ def get_team_datafile_page(global_config, filename):
             
     page += '</table>'
     return page
+
+def get_team_datafile_json(global_config, filename):
+        
+    global_config['logger'].debug( 'GET Team Data File Json: %s', filename )
+        
+    comp, name = filename.split('/', 1)
+    filepath = './static/data/' + comp + '/ScoutingData/' + name
+    datafile = open( filepath, "r" )
+    
+    team = filename.split('_')[0].lstrip('Team')
+
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "competition": "%s",\n' % comp)
+    result.append('  "team": "%s",\n' % team)
+    result.append('  "filename": "%s",\n' % name)
+    result.append('  "scouting_data": [\n')
+    
+    while 1:
+        lines = datafile.readlines(500)
+        if not lines:
+            break
+        for line in lines:
+            line = line.rstrip('\n')
+            name, value = line.split(':')
+
+            result.append('   { "name": "%s", "value": "%s" }' % (name,value))
+            result.append(',\n')
+            
+        if len(lines) > 0:
+            result = result[:-1]
+    result.append('] }\n')
+    return ''.join(result)
+
+
+def get_team_info_json(global_config, name):   
+    global_config['logger'].debug( 'GET Team %s Info', name )
+    session = DbSession.open_db_session(global_config['db_name'])
+
+    team_info = DataModel.getTeamInfo(session, int(name))
+    
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "team": "%s", "team_data" : [\n' % name)
+    result.append('   { "name": "%s", "value": "%s" }' % ('nickname', team_info.nickname))
+    result.append(',\n')
+    result.append('   { "name": "%s", "value": "%s" }' % ('affiliation', team_info.fullname))
+    result.append(',\n')
+    result.append('   { "name": "%s", "value": "%s" }' % ('location', team_info.location))
+    result.append(',\n')
+    result.append('   { "name": "%s", "value": "%s" }' % ('rookie_season', team_info.rookie_season))
+    result.append(',\n')
+    result.append('   { "name": "%s", "value": "%s" }' % ('website', team_info.website))
+    result.append('\n')
+    
+    result.append(' ] }\n')
+    return ''.join(result)
+
+     
+def get_team_score_json(global_config, name, comp):
+        
+    global_config['logger'].debug( 'GET Team %s Score For Competition %s', name, comp )
+    session = DbSession.open_db_session(global_config['db_name'])
+    
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "competition" : "%s", "team" : "%s", ' % (comp,name))
+    team_scores = DataModel.getTeamScore(session, name, comp)
+    if len(team_scores)==1:
+        result.append('"score": "%s" }' % team_scores[0].score)
+    else:
+        result.append('  "score": [')
+        for score in team_scores:
+            result.append(score.json())
+            result.append(',\n')
+        if len(team_scores) > 0:
+            result = result[:-1]
+        result.append(']}')
+    return ''.join(result)
+
+def get_team_scouting_data_summary_json(global_config, comp, name):
+    
+    global_config['logger'].debug( 'GET Team %s Scouting Data For Competition %s', name, comp )
+    session = DbSession.open_db_session(global_config['db_name'])
+
+    if global_config['attr_definitions'] == None:
+        return None
+    
+    attrdef_filename = './config/' + global_config['attr_definitions']
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename)
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
+    result.append('  "scouting_data_summary" : [\n')
+
+    team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
+    if len(team_attributes) > 0:
+        some_attr_added = False
+        for attribute in team_attributes:
+            attr_def = attr_definitions.get_definition( attribute.attr_name )
+            include_attr = False
+            if attr_def:
+                if attr_def.has_key('Include_In_Team_Display') \
+                        and attr_def['Include_In_Team_Display'] == 'Yes':
+                        include_attr = True
+                elif attr_def.has_key('Include_In_Report') \
+                        and attr_def['Include_In_Report'] == 'Yes':
+                    include_attr = True
+                elif attr_def.has_key('Weight') \
+                        and attr_def.has_key('Weight') != '0':
+                    include_attr = True
+
+            if include_attr == True:  
+                some_attr_added = True
+                if attr_def.has_key('Display_Name'):
+                    attr_name = attr_def['Display_Name']
+                else:
+                    attr_name = attr_def['Name']
+                result.append('   { "name": "%s", "matches": "%s", "cumulative_value": "%s", "average_value": "%s", "all_values": "%s" }' % \
+                              (attr_name,str(attribute.num_occurs),str(attribute.cumulative_value),str(attribute.avg_value),attribute.all_values ))
+                result.append(',\n')
+        if some_attr_added:
+            result = result[:-1]
+        
+    result.append(' ] }\n')
+    return ''.join(result)
+
+def get_team_scouting_datafiles_json(global_config, comp, name):
+    
+    global_config['logger'].debug( 'GET Team %s Scouting Datafiles For Competition %s', name, comp )
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
+    result.append('  "scouting_datafiles" : [\n')
+
+    input_dir = './static/data/' + comp + '/ScoutingData/'
+    pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.txt'
+    datafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
+
+    for filename in datafiles:
+        segments = filename.split('/')
+        basefile = segments[-1]
+        
+        result.append('   { "filename": "%s" }' % (basefile))
+        result.append(',\n')
+    
+    if len(datafiles) > 0:         
+        result = result[:-1]
+
+    result.append(' ] }\n')
+    return ''.join(result)
+    
+def get_team_scouting_mediafiles_json(global_config, comp, name):
+    
+    global_config['logger'].debug( 'GET Team %s Scouting Mediafiles For Competition %s', name, comp )
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
+    result.append('  "scouting_mediafiles" : [\n')
+
+    input_dir = './static/data/' + comp + '/ScoutingPictures/'
+    pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.jpg|mp4'
+    mediafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
+
+    for filename in mediafiles:
+        segments = filename.split('/')
+        basefile = segments[-1]
+        
+        result.append('   { "filename": "%s" }' % (basefile))
+        result.append(',\n')
+    
+    if len(mediafiles) > 0:         
+        result = result[:-1]
+        
+    result.append(' ],\n')
+    result.append('  "thumbnailfiles" : [\n')
+
+    ImageFileUtils.create_thumbnails(mediafiles)
+    thumbnail_dir = input_dir + "Thumbnails/"
+    pattern = '[0-9]*x[0-9]*_Team' + name + '_' + '[a-zA-Z0-9_]*.jpg|mp4'
+    thumbnailfiles = get_datafiles(thumbnail_dir, re.compile(pattern), False, global_config['logger'])
+    
+    for filename in thumbnailfiles:
+        segments = filename.split('/')
+        basefile = segments[-1]
+        
+        result.append('   { "filename": "%s" }' % (basefile))
+        result.append(',\n')
+    
+    if len(thumbnailfiles) > 0:         
+        result = result[:-1]
+
+    result.append(' ] }\n')
+    return ''.join(result)
+
+def get_team_scouting_notes_json(global_config, comp, name):
+    
+    global_config['logger'].debug( 'GET Team %s Scouting Notes For Competition %s', name, comp )
+    session = DbSession.open_db_session(global_config['db_name'])
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
+    result.append('  "scouting_notes" : [\n')
+
+    team_notes = DataModel.getTeamNotes(session, name, comp)
+    for note in team_notes:
+        result.append('   { "tag": "%s", "note": "%s" }' % (note.tag,note.data))
+        result.append(',\n')
+        
+    if len(team_notes) > 0:         
+        result = result[:-1]
+
+    result.append(' ] }\n')
+    return ''.join(result)
+
+def get_team_list_json(global_config, comp):
+    global team_info_dict
+    
+    global_config['logger'].debug( 'GET Team List For Competition %s', comp )
+    session = DbSession.open_db_session(global_config['db_name'])
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "teams" : [\n')
+
+    team_list = DataModel.getTeamsInNumericOrder(session, comp)
+    for team in team_list:
+        team_info = None
+        # TODO - Remove this hardcoded number for the valid team number. This check prevents
+        # requesting information for invalid team numbers, which has been known to happen when
+        # tablet operators enter bogus team numbers by mistake
+        if team.team < 10000:
+            team_info = DataModel.getTeamInfo(session, int(team.team))
+            
+        if team_info:
+            result.append('   { "number": "%s", "nickname": "%s" }' % (team.team,team_info.nickname))
+            result.append(',\n')
+        
+    if len(team_list) > 0:         
+        result = result[:-1]
+
+    result.append(' ] }\n')
+    return ''.join(result)
+
+def get_team_rankings_json(global_config, comp=None):
+        
+    global_config['logger'].debug( 'GET Team Rankings Json' )
+    
+    session = DbSession.open_db_session(global_config['db_name'])
+        
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "rankings": [\n')
+    
+    if comp == None:
+        comp = global_config['this_competition'] + global_config['this_season']
+        
+    team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
+    for team in team_rankings:
+        # round the score to an integer value
+        team.score = float(int(team.score))
+        if team.score > 0:
+            result.append(team.json())
+            result.append(',\n')
+    if len(result) > 0:
+        result = result[:-1]
+    result.append(']}')
+    return ''.join(result)

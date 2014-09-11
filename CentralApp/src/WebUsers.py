@@ -5,6 +5,7 @@ Created on Feb 14, 2013
 '''
 
 from web import form
+import web
 from myform import pureform as pureform
 
 import DbSession
@@ -176,6 +177,16 @@ def process_delete_user_form(global_config, form):
 
     return '/users'
 
+def process_delete_user(global_config, username):
+    global_config['logger'].debug( 'Process Delete User' )
+    
+    session = DbSession.open_db_session(global_config['users_db_name'])
+    UsersDataModel.deleteUser(session, username)
+    session.commit()
+    session.close()
+
+    return '/users'
+
 def get_userprofile_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
         
@@ -276,6 +287,7 @@ def insert_users_table(user_list):
         table_str += '<th>Cellphone</th>'
         table_str += '<th>Carrier</th>'
         table_str += '<th>State</th>'
+        table_str += '<th>Delete</th>'
         table_str += '</tr>'
         
         for user in user_list:
@@ -291,6 +303,7 @@ def insert_users_table(user_list):
             table_str += '<td>' + user.cellphone + '</td>'
             table_str += '<td>' + user.carrier + '</td>'
             table_str += '<td>' + user.state + '</td>'
+            table_str += '<td><form action="/deleteuser/' + user.username + '" method="post"><input type="submit" value="X"></form></td>'
             table_str += '</tr>'
         table_str += '</table>'
         table_str += '</ul>'
@@ -312,9 +325,36 @@ def get_user_list_page(global_config):
     result += '<br>'
     result += '<hr>'
     
+    users = UsersDataModel.getUsers(session)
     user_list = UsersDataModel.getUserList(session)
     result += insert_users_table(user_list)
 
     session.close()
     return result
+
+def get_user_list_json(global_config):
+    
+    global_config['logger'].debug( 'GET User List' )
+    session = DbSession.open_db_session(global_config['users_db_name'])
+
+    user_list = UsersDataModel.getUserList(session)
+    session.close()
+    
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{  "users" : [\n')
+
+    for user in user_list:
+        result.append('   { "username": "%s", "email_address": "%s", "display_name": "%s", "nickname": "%s", "access_level": "%s", \
+"role": "%s", "subgroup": "%s", "contact_mode": "%s", "cellphone": "%s", "carrier": "%s", "state": "%s" }' % \
+(user.username,user.email_address,user.display_name,user.altname, user.access_level, user.role, user.subgroup, user.contact_mode, user.cellphone, user.carrier, user.state))
+        
+        result.append(',\n')
+
+    if len(user_list) > 0:         
+        result = result[:-1]
+
+    result.append(' ] }\n')
+    return ''.join(result)
 

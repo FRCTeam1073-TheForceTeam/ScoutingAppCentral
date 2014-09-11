@@ -6,6 +6,7 @@ Created on March 3, 2013
 
 import urllib2
 import json
+import web
 import WebCommonUtils
 
 from BeautifulSoup import BeautifulSoup
@@ -295,3 +296,117 @@ def get_event_results_page(global_config, year, event_code):
         page += '</html>'
                 
         return page
+
+def get_events_json(global_config, year):
+        
+        global_config['logger'].debug( 'GET Event Info Json' )    
+        
+        url_str = 'http://www.thebluealliance.com/api/v1/events/list?year=%s&X-TBA-App-Id=frc1073:scouting-system:v01' % year
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+        except:
+            event_data = ''
+            pass
+        return event_data
+
+def get_event_info_json(global_config, year, event_code):
+        
+        global_config['logger'].debug( 'GET Event Info Json' )
+            
+        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+        except:
+            event_data = ''
+            pass
+        return event_data
+
+def get_event_info_dict(global_config, year, event_code):
+        
+        global_config['logger'].debug( 'GET Event Info Json' )
+            
+        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+            event_data = json.loads(event_data)
+        except:
+            event_data = None
+            pass
+        return event_data
+        
+def get_event_standings_json(global_config, year, event_code):
+        
+    global_config['logger'].debug( 'GET Event Rankings Json' )
+    
+    return get_data_from_first(global_config, year, event_code, 'rankings')
+
+def get_event_matchresults_json(global_config, year, event_code, table_to_parse):
+        
+    global_config['logger'].debug( 'GET Event Results Json' )
+
+    return get_data_from_first(global_config, year, event_code, 'matchresults', table_to_parse)
+
+def need_team_hyperlink(heading):
+    if (heading.find('Team') != -1) or \
+       ((heading.find('Red') != -1) and heading.find('Score') == -1) or \
+       ((heading.find('Blue') != -1) and heading.find('Score') == -1) :
+        need_hyperlink = True
+    else:
+        need_hyperlink = False
+    return need_hyperlink
+
+def get_data_from_first(global_config, year, event_code, query_str, table_to_parse=2):
+
+    web.header('Content-Type', 'application/json')
+    result = []
+
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    try:
+        first_url_str = 'http://www2.usfirst.org/%scomp/events/%s/%s.html' % (year,event_code.upper(),query_str)
+        rank_data = urllib2.urlopen(first_url_str).read()
+                
+        my_parser = RankParser()
+        rankings, _ = my_parser.parse( rank_data, table_to_parse )
+        
+        # derive our competition name from the FIRST event code 
+        competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+        
+        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        
+        headings = rankings[0]
+        result.append('  "columns" : [\n')
+
+        for heading in headings:
+            result.append('    { "sTitle": "%s" }' % heading)
+            result.append(',\n')
+        if len(headings)>0:
+            result = result[:-1]
+        result.append(' ],\n')
+        result.append('  "%s" : [\n' % (query_str))
+        
+        for line in rankings[1:]:
+            result.append('       [ ')
+            for i in range(0,len(headings)):
+                if need_team_hyperlink(headings[i]):
+                    #result.append('"%s"' % (line[i]))
+                    result.append(('"<a href=\\"/teamdata/%s/'% competition)+line[i]+'\\">'+line[i]+'</a>"')
+                else:
+                    #result.append('"%s": "%s"' % (headings[i].title(),line[i]))
+                    result.append('"%s"' % (line[i]))
+                    
+                result.append(', ')
+            if len(line) > 0:         
+                result = result[:-1]
+            result.append(' ],\n')
+                
+        if len(rankings) > 1:         
+            result = result[:-1]
+        result.append(' ]\n')
+    except:
+        pass
+    
+    result.append(' ] }\n')
+    return ''.join(result)
+        

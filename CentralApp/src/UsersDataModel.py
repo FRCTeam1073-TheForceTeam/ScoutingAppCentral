@@ -284,6 +284,10 @@ def getUserList(session):
     users = session.query(User).order_by(User.username).all()
     return users
 
+def getUsers(session):
+    users = session.query(User).all()
+    return users
+
 def getUser(session, username):
     if username == '':
         return None

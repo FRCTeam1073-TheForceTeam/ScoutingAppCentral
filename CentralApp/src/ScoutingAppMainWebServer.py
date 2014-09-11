@@ -44,10 +44,11 @@ import WebCommonUtils
 import WebAttributeDefinitions
 
 
-render = web.template.render('templates/', base='layout', globals={'utils':WebCommonUtils})
+#render = web.template.render('templates/', base='layout', globals={'utils':WebCommonUtils})
+render = web.template.render('templates/', base='bootstrap_layout', globals={'utils':WebCommonUtils})
 
 urls = (
-    '/login',               'Login',
+    '/login(.*)',           'Login',
     '/logout',              'Logout',
     '/accessdenied',        'AccessDenied',
     '/accountdisabled',     'AccountDisabled',
@@ -55,10 +56,8 @@ urls = (
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
-    '/api/scorebreakdown/(.+)',  'TeamScoreBreakdownJson',
     '/scorebreakdown/(.+)',      'TeamScoreBreakdown',
     '/rankchart(.*)',       'TeamRanking',
-    '/api/rankings(.*)',    'TeamRankingJson',
     '/rankings(.*)',        'TeamRankingJson',
     '/attrrankings/(.*)/(.*)',   'TeamAttributeRankings',
     '/rankingsarray',       'TeamRankingsArray',
@@ -72,7 +71,6 @@ urls = (
     '/modifyattr',          'ModifyAttr',
     '/newissue',            'NewIssue',
     '/newissue/(.*)',       'NewPlatformIssue',
-    '/api/issue/(.*)',      'IssueJson',
     '/issue/(.*)',          'Issue',
     '/issueupdate/(.*)',    'IssueUpdate',
     '/issuecomment/(.*)',   'IssueComment',
@@ -80,23 +78,43 @@ urls = (
     '/deletecomment/(.*)/(.+)',  'DeleteComment',
     '/issues',              'IssuesHomePage',
     '/issues/(.*)',         'PlatformIssuesHomePage',
-    '/api/issues/(.*)',     'PlatformIssuesJson',
     '/debrief/(.*)/(.*)',   'DebriefPage',
     '/debriefs/(.*)',       'DebriefsHomePage',
     '/user/(.*)',           'User',
     '/userprofile',         'UserProfile',
     '/newuser',             'NewUser',
     '/deleteuser',          'DeleteUser',
+    '/deleteuser/(.*)',     'DeleteSpecificUser',
     '/users',               'Users',
     '/loadusers',           'LoadUsers',
     '/taskgroup_email/(.*)','TaskGroupEmail',
     '/taskgroup/(.*)',      'TaskGroup',
     '/taskgroups',          'TaskGroups',
     '/events',              'Events',
+    '/event/(.*)',          'EventData',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
     '/setweights',          'SetWeights',
     '/attrrank(.*)',        'AttrRankPage',
+
+    '/api/rankings(.*)',            'TeamRankingJson',
+    '/api/scoutingdata/(.*)',       'TeamDataFileJson',
+    '/api/scorebreakdown/(.+)',     'TeamScoreBreakdownJson',
+    '/api/teamdatasummary/(.+)',    'TeamScoutingDataSummaryJson',
+    '/api/teamscore/(.+)',          'TeamScoreJson',
+    '/api/teams/(.*)',              'TeamListJson',
+    '/api/teaminfo/(.*)',           'TeamInfoJson',
+    '/api/teamdatafiles/(.+)',      'TeamDataFilesJson',
+    '/api/teammediafiles/(.+)',     'TeamMediaFilesJson',
+    '/api/teamnotes/(.+)',          'TeamDataNotesJson',
+    '/api/events',                  'EventsJson',
+    '/api/eventinfo/(.*)',          'EventInfoJson',
+    '/api/eventstandings/(.*)',     'EventStandingsJson',
+    '/api/eventresults/(.+)',       'EventResultsJson',
+    '/api/issue/(.*)',              'IssueJson',
+    '/api/issues/(.*)',             'PlatformIssuesJson',
+    '/api/debriefs/(.*)',           'DebriefsJson',
+    '/api/users',                   'UsersJson',
     
     '/testpage(.*)',        'TestPage',
         
@@ -107,6 +125,7 @@ urls = (
 logger = Logger.init_logger('./config', 'logging.conf', 'scouting.webapp')
 
 global_config = { 'my_team'            : '1073',
+                  'this_season'        : '2014',
                   'this_competition'   : 'Test2014', 
                   'other_competitions' : '', 
                   'db_name'            : 'scouting', 
@@ -118,7 +137,7 @@ global_config = { 'my_team'            : '1073',
                   'team_list'          : '',
                   'event_code'         : '',
                   'issue_types'        : 'Robot,MobileBase',
-                  'logger':logger }
+                  'logger'             : logger }
 
 def read_config(config_dict, config_filename):
     if os.path.exists(config_filename):
@@ -148,8 +167,14 @@ db_name = global_config['db_name'] + '.db'
 webserver_app = web.application(urls, globals())
 
 class Login(object):
-    def GET(self):
-        return WebLogin.auth_user(global_config)
+    def GET(self, param_str):
+        path_param = web.ctx.query
+        path_segments = path_param.split('=')
+        desired_path = '/home'
+        if len(path_segments) > 1:
+            if path_segments[0] == '?path':
+                desired_path = path_segments[1]
+        return WebLogin.auth_user(global_config,desired_path)
     
 class Logout(object):
     def GET(self):
@@ -194,7 +219,7 @@ class AttrRankPage(object):
         username, access_level = WebLogin.check_access(global_config,10)
         params = param_str.split('/')
         numparams = len(params)
-        comp = global_config['this_competition']
+        comp = global_config['this_competition'] + global_config['this_season']
         attr = 'Teleop_Goals'
         if numparams == 3:
             comp = params[1]
@@ -212,13 +237,105 @@ class AdminPage(object):
             team = '1073'
         return render.page('Team %s Administration' % team, result)
     
+''' replaced with the tabbed page just below
 class TeamDataFiles(object):
 
     def GET(self, name):
-        WebLogin.check_access(global_config,10)
-        result = WebTeamData.get_team_datafiles_page(global_config, name)
+        user_info = WebLogin.check_access(global_config,10)
+        access_level = user_info[1]
+        display_notes = False
+        if access_level < 10:
+            display_notes = True
+            
+        result = WebTeamData.get_team_datafiles_page(global_config, name, display_notes)
         return render.page('Team %s Scouting Data Page' % name, result)
+'''
+                              
+class TeamDataFiles(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+        else:
+            comp = global_config['this_competition'] + global_config['this_season']
+            name = params[0]
+
+        return render.teamDataTabbed(comp,name)
                            
+class TeamInfoJson(object):
+
+    def GET(self, name):
+        user_info = WebLogin.check_access(global_config,10)
+        access_level = user_info[1]
+            
+        result = WebTeamData.get_team_info_json(global_config, name)
+        return result
+                           
+class TeamScoutingDataSummaryJson(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+        
+        params = param_str.split('/')
+        numparams = len(params)
+        result = None
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+            result = WebTeamData.get_team_scouting_data_summary_json(global_config,comp,name)
+        return result
+
+class TeamDataFilesJson(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+        
+        params = param_str.split('/')
+        numparams = len(params)
+        result = None
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+            result = WebTeamData.get_team_scouting_datafiles_json(global_config,comp,name)
+        return result
+
+class TeamMediaFilesJson(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+        
+        params = param_str.split('/')
+        numparams = len(params)
+        result = None
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+            result = WebTeamData.get_team_scouting_mediafiles_json(global_config,comp,name)
+        return result
+
+class TeamDataNotesJson(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+        
+        params = param_str.split('/')
+        numparams = len(params)
+        result = None
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+            
+            access_level = user_info[1]
+            # do not return notes for guest accounts, just in case the notes aren't very GP
+            if access_level < 10:
+                result = WebTeamData.get_team_scouting_notes_json(global_config,comp,name)
+        return result
+                               
 class TeamServer(object):
 
     def GET(self, name):
@@ -238,13 +355,42 @@ class TeamScoreBreakdownJson(object):
         params = param_str.split('/')
         numparams = len(params)
         if numparams == 1:
-            comp = global_config['this_competition']
+            comp = global_config['this_competition'] + global_config['this_season']
+            name = params[0]
         elif numparams >= 2:
             comp = params[0]
             name = params[1]
         else:
             return None
         return WebTeamData.get_team_score_breakdown_page(global_config, name, comp)
+
+class TeamScoreJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams == 1:
+            comp = global_config['this_competition'] + global_config['this_season']
+            name = params[0]
+        elif numparams >= 2:
+            comp = params[0]
+            name = params[1]
+        else:
+            return None
+        return WebTeamData.get_team_score_json(global_config, name, comp)
+
+class TeamListJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams == 0:
+            comp = global_config['this_competition'] + global_config['this_season']
+        else:
+            comp = params[0]
+        return WebTeamData.get_team_list_json(global_config, comp)
 
         
 class TeamScoreBreakdown(object):
@@ -254,7 +400,7 @@ class TeamScoreBreakdown(object):
         params = param_str.split('/')
         numparams = len(params)
         if numparams == 1:
-            comp = global_config['this_competition']
+            comp = global_config['this_competition'] + global_config['this_season']
         elif numparams >= 2:
             comp = params[0]
             name = params[1]
@@ -275,10 +421,10 @@ class TeamRankingJson(object):
         params = param_str.split('/')
         numparams = len(params)
         if numparams < 2 or params[1] == '':
-            comp = global_config['this_competition']
+            comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
-        return WebTeamData.get_team_rankings_page(global_config, comp)
+        return WebTeamData.get_team_rankings_json(global_config, comp)
 
 class TeamRanking(object):
 
@@ -287,7 +433,7 @@ class TeamRanking(object):
         params = param_str.split('/')
         numparams = len(params)
         if numparams < 2 or params[1] == '':
-            comp = global_config['this_competition']
+            comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
         return render.scoutingData(comp)
@@ -314,8 +460,18 @@ class TeamDataFile(object):
 
     def GET(self, filename):
         WebLogin.check_access(global_config,10)
-        result = WebTeamData.get_team_datafile_page(global_config, filename)
-        return render.page('Scouting Data File: %s' % filename.split('/', 1)[1], result)
+        params = filename.split('/', 1)
+        
+        return render.dataFile(params[0], params[1])
+        #result = WebTeamData.get_team_datafile_page(global_config, filename)
+        #return render.page('Scouting Data File: %s' % filename.split('/', 1)[1], result)
+
+class TeamDataFileJson(object):
+
+    def GET(self, filename):
+        WebLogin.check_access(global_config,10)
+        result = WebTeamData.get_team_datafile_json(global_config, filename)
+        return result
 
 
 class RecalculateRankings(object):
@@ -325,13 +481,25 @@ class RecalculateRankings(object):
         DataModel.recalculate_scoring(global_config)
         
         raise web.seeother('/rankchart')
-
+                          
 class Events(object):
 
     def GET(self):
+        user_info = WebLogin.check_access(global_config,10)
+        return render.events()
+                           
+class EventsJson(object):
+
+    def GET(self):
         WebLogin.check_access(global_config,10)
-        result = WebEventData.get_events_page(global_config, '2014')
-        return render.page('FIRST Robotics Competition Events', result)
+        result = WebEventData.get_events_json(global_config, '2014')
+        return result
+                           
+class EventData(object):
+
+    def GET(self, event_code):
+        user_info = WebLogin.check_access(global_config,10)
+        return render.eventData(event_code)
                            
 class EventStandings(object):
 
@@ -341,6 +509,43 @@ class EventStandings(object):
         event_code = name[4:]
         result = WebEventData.get_event_standings_page(global_config, year, event_code)
         return render.page('FIRST Robotics Standings Details - %s' % event_code.upper(), result)
+                  
+class EventInfoJson(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        year = name[0:4]
+        event_code = name[4:]
+        result = WebEventData.get_event_info_json(global_config, year, event_code)
+        return result
+                  
+class EventStandingsJson(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        year = name[0:4]
+        event_code = name[4:]
+        result = WebEventData.get_event_standings_json(global_config, year, event_code)
+        return result
+                  
+class EventResultsJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        result = ''
+        params = param_str.split('/')
+        if len(params) == 2:
+            year = params[0][0:4]
+            event_code = params[0][4:]
+            table = params[1]
+            if table == 'qual':
+                table_to_parse = 2
+            elif table == 'elim':
+                table_to_parse = 3
+            else:
+                table_to_parse = 2
+            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, table_to_parse)
+        return result
                            
 class EventResults(object):
 
@@ -506,11 +711,11 @@ class PlatformIssuesHomePage(object):
 
     def GET(self, platform_type):
         username, access_level = WebLogin.check_access(global_config,5)
+        allow_create = False
         if access_level <= 1:
-            result = WebIssueTracker.get_platform_issues_home_page(global_config, platform_type, allow_create=True)
-        else:
-            result = WebIssueTracker.get_platform_issues_home_page(global_config, platform_type)
-        return render.page('Team 1073 %s Issues' % platform_type, result)
+            if global_config['issues_db_master'] == 'Yes':
+                allow_create = True
+        return render.issueTracker(platform_type,allow_create)
 
 class PlatformIssuesJson(object):
 
@@ -528,8 +733,14 @@ class PlatformIssuesJson(object):
 class Users(object):
     def GET(self):
         WebLogin.check_access(global_config,1)
-        result = WebUsers.get_user_list_page(global_config)
-        return render.page('User Administration', result)
+        #result = WebUsers.get_user_list_page(global_config)
+        #return render.page('User Administration', result)
+        return render.users()
+    
+class UsersJson(object):
+    def GET(self):
+        WebLogin.check_access(global_config,1)
+        return WebUsers.get_user_list_json(global_config)
     
 class LoadUsers(object):
     
@@ -591,6 +802,21 @@ class DeleteUser(object):
             except Exception, e:
                 return str(e)
 
+class DeleteSpecificUser(object):
+
+    def POST(self, username):
+        WebLogin.check_access(global_config,1)
+
+        try:
+            WebUsers.process_delete_user(global_config, username)
+            return
+            #result = WebUsers.process_delete_user(global_config, username)
+            #raise web.seeother(result)
+
+        except Exception, e:
+            return str(e)
+        
+
 class NewUser(object):
     
     def GET(self):
@@ -635,8 +861,20 @@ class DebriefsHomePage(object):
 
     def GET(self,competition):
         WebLogin.check_access(global_config,5)
-        result = WebDebrief.get_debriefs_home_page(global_config, competition)
-        return render.page('Team 1073 Match Debriefs', result)
+        return render.debriefsMain(competition)
+
+class DebriefsJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,5)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams == 0:
+            comp = global_config['this_competition'] + global_config['this_season']
+        else:
+            competition = params[0]
+            
+        return WebDebrief.get_competition_debriefs(global_config, competition)
 
 class DebriefPage(object):
 
@@ -780,6 +1018,9 @@ if __name__ == "__main__":
     # load the users file if one is specified
     if options.users_file != '':
         users_file = './config/' + options.users_file
+        
+        if not users_file.endswith('.xlsx'):
+            users_file += '.xlsx'
         logger.debug('Loading Users from file: %s' % users_file)
         UsersDataModel.add_users_from_file(users_session, users_file)
 
@@ -787,7 +1028,11 @@ if __name__ == "__main__":
     if UsersDataModel.getUser( users_session, 'admin' ) is None:
         UsersDataModel.create_admin_user(users_session, 'squirrel!')
 
+    session.close()
+    issues_session.close()
+    debrief_session.close()
     users_session.close()
+    
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
     if global_config['attr_definitions'] != None:
@@ -802,8 +1047,9 @@ if __name__ == "__main__":
 
     # make sure that the required directories exist
     directories = ('ScoutingData', 'ScoutingPictures')
-    for directory in directories:        
-        base_dir = './static/data/' + global_config['this_competition'] + '/' + directory + '/'
+    for directory in directories:
+        competition = global_config['this_competition'] + global_config['this_season']        
+        base_dir = './static/data/' + competition + '/' + directory + '/'
         try: 
             os.makedirs(base_dir)
         except OSError:

@@ -7,6 +7,7 @@ Created on Feb 7, 2013
 from web import form
 from myform import pureform as pureform
 
+import web
 import time
 
 import DbSession
@@ -156,6 +157,28 @@ def get_debriefs_home_page(global_config, competition):
     result += insert_debrief_table(match_debriefs,competition)
     
     return result
+
+def get_competition_debriefs(global_config, competition):
+    global_config['logger'].debug( 'GET match debriefs for competition: %s', competition )
+ 
+    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+
+    debriefs = DebriefDataModel.getDebriefsInNumericOrder(session, competition)
+                    
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "debriefs": [\n')
+    
+    for debrief in debriefs:
+        result.append(debrief.json())
+        result.append(',\n')
+        
+    if len(debriefs) > 0:
+        result = result[:-1]
+        result.append('\n')
+    result.append(']}')
+    
+    return ''.join(result)
 
 def delete_comment(global_config, competition, match_str, tag):
  

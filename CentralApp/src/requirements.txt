@@ -1,3 +1,4 @@
 web.py >= 0.36
 xlrd >= 0.8
 SQLAlchemy >= 0.7.4
+Pillow >= 2.5.3

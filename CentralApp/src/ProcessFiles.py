@@ -142,7 +142,8 @@ def process_file(global_config, session, attr_definitions, data_filename):
     if file_attributes.has_key('Competition'):
         competition = file_attributes['Competition']
     else:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
+
         if competition == None:
             raise Exception( 'Competition Not Specified!')
 
@@ -240,8 +241,10 @@ def process_issue_files(global_config, input_dir, recursive=True):
             issue = IssueTrackerDataModel.addIssueFromAttributes(issues_session, issue_attributes)
             if issue.debrief_key != None:
                 match_str, issue_key = issue.debrief_key.split('_')
+                competition = global_config['this_competition'] + global_config['this_season']
+
                 DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, int(match_str), 
-                                                         global_config['this_competition'],
+                                                         competition,
                                                          issue.issue_id, issue_key)
         except Exception, e:
             # log the exception but continue processing other files
@@ -294,7 +297,8 @@ def process_debrief_files(global_config, input_dir, recursive=True):
             if debrief_attributes.has_key('Competition'):
                 competition = debrief_attributes['Competition']
             else:
-                competition = global_config['this_competition']
+                competition = global_config['this_competition'] + global_config['this_season']
+
                 if competition == None:
                     raise Exception( 'Competition Not Specified!')
     
@@ -430,7 +434,8 @@ if __name__ == "__main__":
             print 'Scanning for new files to process'
             start_time = datetime.datetime.now()
             
-            input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
+            competition = global_config['this_competition'] + global_config['this_season']
+            input_dir = './static/data/' + competition + '/ScoutingData/'
     
             if global_config['attr_definitions'] == None:
                 global_config['logger'].debug( 'No Attribute Definitions, Skipping Process Files' )

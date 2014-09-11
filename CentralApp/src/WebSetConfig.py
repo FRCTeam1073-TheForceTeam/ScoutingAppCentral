@@ -9,6 +9,7 @@ from myform import pureform as pureform
 
 # Form definition and callback class for the application configuration settings
 cfg_this_comp_label = "Competition:"
+cfg_this_comp_season_label = "Competition Season:"
 cfg_this_event_code_label = "Competition Event Code:"
 cfg_attr_defs_label = "Attributes Definitions File:"
 cfg_my_team_label = "My Team Number:"
@@ -26,6 +27,7 @@ cfg_issues_db_master_options = ['Yes', 'No']
 cfgform = pureform( 
     form.Textbox(cfg_my_team_label, size=60),
     form.Textbox(cfg_this_comp_label, size=60),
+    form.Textbox(cfg_this_comp_season_label, size=60),
     form.Textbox(cfg_this_event_code_label, size=60),
     form.Textbox(cfg_other_comp_label, size=60),
     form.Textbox(cfg_issue_types_label, size=60),
@@ -42,6 +44,7 @@ def get_form(global_config):
     form = cfgform()
     form[cfg_my_team_label].value = global_config['my_team']
     form[cfg_this_comp_label].value = global_config['this_competition']
+    form[cfg_this_comp_season_label].value = global_config['this_season']
     form[cfg_this_event_code_label].value = global_config['event_code']
     form[cfg_other_comp_label].value = global_config['other_competitions']
     form[cfg_issue_types_label].value = global_config['issue_types']
@@ -59,6 +62,7 @@ def process_form(global_config, form):
 
     global_config['my_team'] = form[cfg_my_team_label].value
     global_config['this_competition'] = form[cfg_this_comp_label].value
+    global_config['this_season'] = form[cfg_this_comp_season_label].value
     global_config['event_code'] = form[cfg_this_event_code_label].value
     global_config['other_competitions'] = form[cfg_other_comp_label].value
     global_config['attr_definitions'] = form[cfg_attr_defs_label].value
@@ -84,15 +88,21 @@ def write_config(config_dict, config_filename):
 
 def write_tablet_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'w+')
+    competition = 'Test'
+    season = '2014'
     for key, value in config_dict.iteritems():
         
         # write out any of the competition configuration required by the tablets to
         # a separate file that will be downloaded by the tablets
         if key == 'this_competition':
             if value != None and value != 'None':
-                line = 'Competition=%s\n' % value
-                cfg_file.write(line)
-            else:
-                line = 'Competition=%s\n' % 'Test2014'
+                competition = value
+        elif key == 'this_season':
+            if value != None and value != 'None':
+                season = value
+
+            
+    line = 'Competition=%s\n' % competition+season
+    cfg_file.write(line)
 
     cfg_file.close()

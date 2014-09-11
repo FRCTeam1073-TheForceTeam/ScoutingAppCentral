@@ -16,7 +16,7 @@ def get_page(global_config, access_level):
             
     page += '<hr>'
     
-    comp = global_config['this_competition']
+    comp = global_config['this_competition'] + global_config['this_season']
     
     page += '<h3>FIRST FRC Competition Data' + '</h3>'
     page += '<hr>'
@@ -35,9 +35,11 @@ def get_page(global_config, access_level):
     
     page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
     other_competitions = global_config['other_competitions'].split(',')
+    season = global_config['this_season']
+
     for comp in other_competitions:
         if comp and comp != global_config['this_competition']:
-            page += '<li><a href="/static/attr/' + comp + '.csv"> ' + comp + '.csv</a></li>'
+            page += '<li><a href="/static/attr/' + comp + season + '.csv"> ' + comp + season + '.csv</a></li>'
     page += '</ul>'
     page += '<hr>'
     page += '<h3> Team Links' + '</h3>'
@@ -55,7 +57,7 @@ def get_page(global_config, access_level):
             page += '<li><a href="/teamdata/' + team_list_str + '">' + 'Team ' + team_list_str + '</a></li>'
     else:
         comp = global_config['this_competition']
-        team_list = DataModel.getTeamsInNumericOrder(session, comp)
+        team_list = DataModel.getTeamsInNumericOrder(session, comp+season)
         for entry in team_list:
             page += '<li><a href="/teamdata/' + str(entry.team) + '">' + 'Team ' + str(entry.team) + '</a></li>'
     page += '</ul>'

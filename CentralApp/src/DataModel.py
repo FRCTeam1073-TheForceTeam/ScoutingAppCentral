@@ -224,9 +224,12 @@ def getTeamsInNumericOrder(session, comp, max_teams=100):
             all()    
     return teamList
 
-def getTeamScore(session, teamId, comp):
-    return session.query(TeamRank).filter(TeamRank.team==teamId).\
-                                   filter(TeamRank.competition==comp).all()
+def getTeamScore(session, teamId, comp=None):
+    if comp == None:
+        return session.query(TeamRank).filter(TeamRank.team==teamId).all()
+    else:
+        return session.query(TeamRank).filter(TeamRank.team==teamId).\
+                                       filter(TeamRank.competition==comp).all()
         
 def calculateTeamScore(session, teamId, comp, attr_defs):
     attributes = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
@@ -390,10 +393,10 @@ def createOrUpdateMatchDataAttribute(session, team, comp, match, scouter, name, 
         print attr.json()
 
 
-def addOrUpdateTeamInfo(session, team, nickname, fullname, rookie_season, 
+def addOrUpdateTeamInfo(session, team_num, nickname, fullname, rookie_season, 
                         motto, location, website):
     
-    team_list = session.query(TeamInfo).filter(TeamInfo.team==team)
+    team_list = session.query(TeamInfo).filter(TeamInfo.team==team_num)
     
     # should only be one team in the list
     team = team_list.first()
@@ -406,7 +409,7 @@ def addOrUpdateTeamInfo(session, team, nickname, fullname, rookie_season,
         team.location = location
         team.website = website
     else:
-        team = TeamInfo(team=team, nickname=nickname, fullname=fullname,
+        team = TeamInfo(team=team_num, nickname=nickname, fullname=fullname,
                         rookie_season=rookie_season, motto=motto,
                         location=location, website=website)
         session.add(team)
@@ -419,34 +422,33 @@ def getTeamInfo(session, team):
     # should only be one team in the list
     team_info = team_list.first()
     if not team_info:
-        url_str = 'http://thefirstalliance.org/api/api.json.php?action=team-details&team-number=%s' % team
+        url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s?X-TBA-App-Id=frc1073:scouting-system:v02' % team
         try:
             team_data = urllib2.urlopen(url_str).read()
-            team_data_dict = json.loads(team_data)
-            team_data = team_data_dict['data']['data']
+            team_data = json.loads(team_data)
     
-            if team_data.has_key('Team Nickname'):
-                nickname=team_data['Team Nickname']
+            if team_data.has_key('nickname'):
+                nickname=team_data['nickname']
             else:
                 nickname='None'
-            if team_data.has_key('Team Name'):
-                fullname=team_data['Team Name']
+            if team_data.has_key('name'):
+                fullname=team_data['name']
             else:
                 fullname='None'
-            if team_data.has_key('Rookie Season'):
-                rookie_season=int(team_data['Rookie Season'])
+            if team_data.has_key('rookie_year'):
+                rookie_season=int(team_data['rookie_year'])
             else:
-                rookie_season=2013
-            if team_data.has_key('Team Location'):
-                location=team_data['Team Location']
+                rookie_season=2014
+            if team_data.has_key('location'):
+                location=team_data['location']
             else:
                 location='Unknown'
-            if team_data.has_key('Team Motto'):
-                motto=team_data['Team Motto']
+            if team_data.has_key('motto'):
+                motto=team_data['motto']
             else:
                 motto='None'
-            if team_data.has_key('Team Website'):
-                website=team_data['Team Website']
+            if team_data.has_key('website'):
+                website=team_data['website']
             else:
                 website='None'
                 
@@ -520,7 +522,7 @@ def dump_db_tables(my_db):
 
 def recalculate_scoring(global_config, attr_definitions=None):
     session = DbSession.open_db_session(global_config['db_name'])
-    competition = global_config['this_competition']
+    competition = global_config['this_competition'] + global_config['this_season']
     if competition == None or competition == '':
         raise Exception( 'Competition Not Specified!')
 
@@ -545,7 +547,8 @@ def recalculate_scoring(global_config, attr_definitions=None):
 def dump_database_as_csv_file(session, global_config, attr_definitions, competition=None):
     
     if competition == None:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
+
     
     # read in the attribute definitions and sort them in the colum order
     attr_dict = attr_definitions.get_definitions()

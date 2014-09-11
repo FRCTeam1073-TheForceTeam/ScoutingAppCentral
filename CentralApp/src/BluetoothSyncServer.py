@@ -62,12 +62,15 @@ class BluetoothSyncServer(Thread):
                     elif request_type == "GET":
                         
                         fullpath = './static/data/' + request_path
+                        
                         if os.path.isdir(fullpath):
                             file_list = FileSync.get_file_list(fullpath)
                             response_body = ''
                             for file_name in file_list:
                                 response_body += file_name + '\n'
-                            client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n\r\n')
+                            client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
+                            client_sock.send('Content-Length: %d\r\n' % len(response_body))
+                            client_sock.send('\r\n')
                             client_sock.send(response_body + '\r\n')
                         else:
                             response_body = FileSync.get_file(fullpath)

@@ -160,7 +160,7 @@ def get_files(session, db_name, input_dir, pattern, recursive, test_mode):
 def dump_database_as_csv_file(session, attr_definitions, competition=None):
     
     if competition == None:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
     
     # read in the attribute definitions and sort them in the colum order
     attr_dict = attr_definitions.get_definitions()
@@ -263,7 +263,8 @@ def process_file(session, attr_definitions, data_filename):
     if file_attributes.has_key('Competition'):
         competition = file_attributes['Competition']
     else:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
+
         if competition == None:
             raise Exception( 'Competition Not Specified!')
 
@@ -361,8 +362,9 @@ def process_issue_files(global_config, input_dir, recursive, test):
             issue = IssueTrackerDataModel.addIssueFromAttributes(issues_session, issue_attributes)
             if issue.debrief_key != None:
                 match_str, issue_key = issue.debrief_key.split('_')
+                competition = global_config['this_competition'] + global_config['this_season']
                 DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, int(match_str), 
-                                                         global_config['this_competition'],
+                                                         competition,
                                                          issue.issue_id, issue_key)
         except Exception, e:
             # log the exception but continue processing other files
@@ -413,7 +415,7 @@ def process_debrief_files(global_config, input_dir, recursive, test):
             if debrief_attributes.has_key('Competition'):
                 competition = debrief_attributes['Competition']
             else:
-                competition = global_config['this_competition']
+                competition = global_config['this_competition'] + global_config['this_season']
                 if competition == None:
                     raise Exception( 'Competition Not Specified!')
     
@@ -569,15 +571,16 @@ if __name__ == '__main__':
     
     # make sure that the required directories exist
     directories = ('ScoutingData', 'ScoutingPictures')
+    competition = global_config['this_competition'] + global_config['this_season']
     for directory in directories:        
-        base_dir = './static/data/' + global_config['this_competition'] + '/' + directory + '/'
+        base_dir = './static/data/' + competition + '/' + directory + '/'
         try: 
             os.makedirs(base_dir)
         except OSError:
             if not os.path.isdir(base_dir):
                 raise
 
-    input_dir = './static/data/' + global_config['this_competition'] + '/ScoutingData/'
+    input_dir = './static/data/' + competition + '/ScoutingData/'
         
     db_name = global_config['db_name']
     issues_db_name = global_config['issues_db_name']
@@ -598,7 +601,7 @@ if __name__ == '__main__':
     attr_definitions.parse(attrdef_filename)
 
     if options.processfiles:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
         try:
             process_files(session, db_name, attr_definitions, input_dir, options.recursive, options.test)
             dump_database_as_csv_file(session, attr_definitions, competition)
@@ -620,7 +623,7 @@ if __name__ == '__main__':
         
     # recalculate the team scores 
     if options.recalculate:
-        competition = global_config['this_competition']
+        competition = global_config['this_competition'] + global_config['this_season']
         if competition == None:
             raise Exception( 'Competition Not Specified!')
 
