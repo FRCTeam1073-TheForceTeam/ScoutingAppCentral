@@ -99,6 +99,10 @@ public class ScoutingAppActivity extends Activity {
 				
                 if ( token.equalsIgnoreCase("Competition")) {
                 	competition_directory = tokenizer.nextToken();
+                	
+                	// augment the application title with the competition name
+                	String app_title_base = getString(R.string.app_label) + " - ";
+                	ScoutingAppActivity.this.setTitle(app_title_base + competition_directory);
                 }
 			}
     	} catch (Exception e) {
