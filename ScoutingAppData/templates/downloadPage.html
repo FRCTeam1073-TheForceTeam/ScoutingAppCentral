@@ -1,0 +1,29 @@
+$def with (dir_name)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Downloads
+
+$code:
+    filelist = utils.get_file_list(dir_name)
+
+  <div class="article">
+  
+    <div id="title">
+        <h2>Downloads</h2>
+    </div>
+
+    <div class="container-fluid">
+
+        <ul>
+
+        $for file in filelist:
+            <li id="download_$file[1]">
+              <a href="$file[0]">$file[1]</a>
+            </li>
+
+        </ul>
+
+    </div>
+  </div>  
+
