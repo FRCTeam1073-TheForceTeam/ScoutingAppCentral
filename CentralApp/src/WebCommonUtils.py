@@ -98,11 +98,45 @@ def get_attr_list():
                 
     return attr_list
 
+def get_file_list(dir_name):
+    file_list = []    
+
+    # if the directory name starts with a slash, prepend a '.' to make it a relative
+    # path from this point.
+    if dir_name.startswith('/'):
+        dir_name = '.' + dir_name
+                
+    for root, dirs, files in os.walk(dir_name):
+        # strip off any leading '.' in the root path so that the resulting entry
+        # will have an absolute path
+        root = root.lstrip('.')
+        
+        #print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
+        for name in files:
+            # build the path to the file by joining the root with the filename.
+            # note that we will replace any backslash in the resulting path with forward
+            # slashes
+            file_path = os.path.join(root,name).replace('\\','/')
+            
+            # create a tuple with the path and the file name so that a hyperlink can be easily 
+            # generated from the file entry
+            file_entry = (file_path, name)
+            
+            # and append the entry to the list
+            file_list.append(file_entry)
+                
+    return file_list
+
 def get_event_info_str(event_name):
     my_config = ScoutingAppMainWebServer.global_config
     
-    year = event_name[0:4]
-    event_code = event_name[4:]
+    if event_name.startswith('201'):
+        year = event_name[0:4]
+        event_code = event_name[4:]
+    else:
+        year = my_config['this_season']
+        event_code = event_name
+
     event_dict = WebEventData.get_event_info_dict(my_config, year, event_code)
 
     event_info_str=list()

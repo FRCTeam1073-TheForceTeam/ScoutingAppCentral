@@ -96,6 +96,7 @@ urls = (
     '/eventresults/(.*)',   'EventResults',
     '/setweights',          'SetWeights',
     '/attrrank(.*)',        'AttrRankPage',
+    '/downloads',           'DownloadsPage',
 
     '/api/rankings(.*)',            'TeamRankingJson',
     '/api/scoutingdata/(.*)',       'TeamDataFileJson',
@@ -556,6 +557,12 @@ class EventResults(object):
         result = WebEventData.get_event_results_page(global_config, year, event_code)
         return render.page('FIRST Robotics Event Match Results - %s' % event_code.upper(), result)                           
     
+class DownloadsPage(object):
+
+    def GET(self):
+        user_info = WebLogin.check_access(global_config,10)
+        return render.downloadPage('/static/downloads')
+                           
 class GenUi(object):
     
     def GET(self):
