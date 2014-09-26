@@ -1,14 +1,15 @@
-$def with (event_code)
+$def with (season, short_comp)
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
-$var title: FIRST Event Page
+$var title: Competition Central Home Page
 
 $code:
+    comp = short_comp + season
+    event_code = utils.map_comp_to_event_code(comp)
     event_info = utils.get_event_info_str(event_code)
     event_name = event_info[0][1]
     event_key = event_info[1][1]
-    comp = utils.map_event_code_to_comp(event_code)
 
 <style type="text/css">
     #placeholder_scouting_rank
@@ -143,7 +144,7 @@ $$(document).ready(function () {
         }
     })
 
-      var jqxhr_standings = $$.getJSON( "/api/teams/$comp", function(json_data) {
+      var jqxhr_events = $$.getJSON( "/api/teams/$comp", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
@@ -151,6 +152,8 @@ $$(document).ready(function () {
           function drawTable( json_data ) {
             $$('#event_teams').dataTable( {
                 "bAutoWidth": true, // Disable the auto width calculation
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aaData": json_data.teams,
                 "aoColumns": [
                     { "mData": "number", "mRender": function(team) { return '<a href="/teamdata/$comp/'+team+'">'+team+'</a>'; } },
@@ -163,58 +166,32 @@ $$(document).ready(function () {
 
       } );   
 
-      var jqxhr_standings = $$.getJSON( "/api/eventstandings/$event_code", function(json_data) {
+      var jqxhr_events = $$.getJSON( "/api/events", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $$('#event_rankings').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aaData": json_data.rankings,
-                "aoColumns": json_data.columns,
-            } );
+              $$('#events').dataTable( {
+                  "aaData": json_data,
+                  "bAutoWidth": true, // Disable the auto width calculation 
+                  "aoColumns": [
+                      { "mData": "key", "mRender": function(key) { 
+                            short_key = key.substring(4).toUpperCase();
+                            return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
+                      { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
+                      { "mData": "start_date" },
+                      { "mData": "end_date" },
+                      { "mData": "official" }
+                  ],
+                  "order": [[ 3, "asc" ]]
+              } );   
           }
 
           drawTable( json_data );
 
       } );   
 
-      var jqxhr_qualresults = $$.getJSON( "/api/eventresults/$event_code/qual", function(json_data) {
-          console.log( "success" );
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-            $$('#event_qualresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aaData": json_data.matchresults,
-                "aoColumns": json_data.columns,
-                "order": [[ 1, "asc" ]]
-            } );
-          }
-
-          drawTable( json_data );
-
-      } );   
-
-      var jqxhr_elimresults = $$.getJSON( "/api/eventresults/$event_code/elim", function(json_data) {
-          console.log( "success" );
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-            $$('#event_elimresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aaData": json_data.matchresults,
-                "aoColumns": json_data.columns,
-                "order": [[ 2, "asc" ]]
-            } );
-          }
-
-          drawTable( json_data );
-
-      } );   
 
 });
 </script>
@@ -223,19 +200,14 @@ $$(document).ready(function () {
   <div class="article">
   
     <div id="title">
-        <h1>$event_info[0][1] ($event_info[1][1])</h1>
+        <h1>$season Team 1073 Competition Central</h1>
     </div>
 
     <div class="container-fluid">
 
     <div>
         <ul>
-        $for line in event_info[1:]:
-            $if line[2] == 'link':
-                <li>$line[0]:<a href=$line[1]>$line[1]</a></li>
-            $else:
-                <li>$line[0]: $line[1]</li>
-
+          <li>Current Competition: <a href="/event/$season$event_code">$short_comp</a></li>
         </ul>
 
         <hr>
@@ -243,23 +215,15 @@ $$(document).ready(function () {
 
     <div class="tabbable">
       <ul class="nav nav-tabs">
-          <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rank Summary</a></li>
-          <li><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
-          <li><a href="#pane_rankings"    data-toggle="tab">Match Rankings</a></li>
-          <li><a href="#pane_qualresults" data-toggle="tab">Qualification Match Results</a></li>
-          <li><a href="#pane_elimresults" data-toggle="tab">Elimination Match Results</a></li>
+          <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">$short_comp Rank Summary</a></li>
+          <li><a href="#pane_teams"    data-toggle="tab">$short_comp Teams</a></li>
+          <li><a href="#pane_events"    data-toggle="tab">FIRST Events</a></li>
       </ul>
  
       <div class="tab-content">
           <div id="pane_scouting_rank" class="tab-pane active">
           <br>
-          $code:
-              csv_file = comp + '.csv'
-
           <ul>
-            <a href="/static/attr/$csv_file" role="button" class="btn btn-primary">Download $csv_file</a>
-            <a href="/recalculaterankings/$event_code" role="button" class="btn btn-primary">Recalculate Scouting Rankings</a>
-            <br>
             <div id="placeholder_scouting_rank"></div>
           </ul>
           </div>
@@ -279,32 +243,17 @@ $$(document).ready(function () {
           </ul>
           </div>
 
-          <div id="pane_rankings" class="tab-pane">
+          <div id="pane_events" class="tab-pane">
           <ul>
-          <table id="event_rankings" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+          <table id="events" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
               <thead>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-          <div id="pane_qualresults" class="tab-pane">
-          <ul>
-          <table id="event_qualresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-          <div id="pane_elimresults" class="tab-pane">
-          <ul>
-          <table id="event_elimresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
+                  <tr role="row">
+			          <th>Event Code</th>
+			          <th>Event Name</th>
+			          <th>Start Date</th>
+			          <th>End Date</th>
+			          <th>Official Event</th>
+                  </tr>
               </thead>
               <tbody>
               </tbody>

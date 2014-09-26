@@ -169,7 +169,7 @@ def map_event_code_to_comp(event_name):
             
     return comp        
 
-def map_comp_to_event_code_to_comp(comp):
+def map_comp_to_event_code(comp):
     my_config = ScoutingAppMainWebServer.global_config
     season = my_config['this_season']
     

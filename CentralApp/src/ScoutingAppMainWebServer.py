@@ -52,7 +52,7 @@ urls = (
     '/logout',              'Logout',
     '/accessdenied',        'AccessDenied',
     '/accountdisabled',     'AccountDisabled',
-    '/home',                'HomePage',
+    '/home',                'HomePage2',
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
@@ -61,7 +61,7 @@ urls = (
     '/rankings(.*)',        'TeamRankingJson',
     '/attrrankings/(.*)/(.*)',   'TeamAttributeRankings',
     '/rankingsarray',       'TeamRankingsArray',
-    '/recalculaterankings', 'RecalculateRankings',
+    '/recalculaterankings/(.*)', 'RecalculateRankings',
     '/test',                'TeamAttributes',
     '/teamdata/(.*)',       'TeamDataFiles',
     '/ScoutingData/(.*)',   'TeamDataFile',
@@ -200,6 +200,14 @@ class HomePage(object):
             team = '1073'
         return render.page('Team %s Competition Central' % team, result)
 
+    
+class HomePage2(object):
+
+    def GET(self):
+        username, access_level = WebLogin.check_access(global_config,10)
+        season = global_config['this_season']
+        competition = global_config['this_competition']
+        return render.homePage(season,competition)
     
 class TestPage(object):
 
@@ -477,11 +485,12 @@ class TeamDataFileJson(object):
 
 class RecalculateRankings(object):
 
-    def GET(self):
+    def GET(self, event_code):
         WebLogin.check_access(global_config,4)
-        DataModel.recalculate_scoring(global_config)
+        comp = WebCommonUtils.map_event_code_to_comp(event_code)
+        DataModel.recalculate_scoring(global_config, comp)
         
-        raise web.seeother('/rankchart')
+        raise web.seeother('/event/%s' % event_code)
                           
 class Events(object):
 
@@ -1108,3 +1117,4 @@ if __name__ == "__main__":
 
     if process_file_timer != None:
         process_file_timer.stop()
+
