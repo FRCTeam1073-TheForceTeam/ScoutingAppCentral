@@ -13,6 +13,7 @@ cfg_this_comp_season_label = "Competition Season:"
 cfg_this_event_code_label = "Competition Event Code:"
 cfg_attr_defs_label = "Attributes Definitions File:"
 cfg_my_team_label = "My Team Number:"
+cfg_my_district_label = "My District:"
 cfg_other_comp_label = "Other Competitions:"
 cfg_scouting_db_name_label = "Scouting Database Name:"
 cfg_debrief_db_name_label = "Debrief Database Name:"
@@ -26,6 +27,7 @@ cfg_issues_db_master_options = ['Yes', 'No']
 
 cfgform = pureform( 
     form.Textbox(cfg_my_team_label, size=60),
+    form.Textbox(cfg_my_district_label, size=60),
     form.Textbox(cfg_this_comp_label, size=60),
     form.Textbox(cfg_this_comp_season_label, size=60),
     form.Textbox(cfg_this_event_code_label, size=60),
@@ -43,6 +45,7 @@ def get_form(global_config):
     
     form = cfgform()
     form[cfg_my_team_label].value = global_config['my_team']
+    form[cfg_my_district_label].value = global_config['my_district']
     form[cfg_this_comp_label].value = global_config['this_competition']
     form[cfg_this_comp_season_label].value = global_config['this_season']
     form[cfg_this_event_code_label].value = global_config['event_code']
@@ -61,6 +64,7 @@ def process_form(global_config, form):
     global_config['logger'].debug( 'Process Set Configuration Form' )
 
     global_config['my_team'] = form[cfg_my_team_label].value
+    global_config['my_district'] = form[cfg_my_district_label].value
     global_config['this_competition'] = form[cfg_this_comp_label].value
     global_config['this_season'] = form[cfg_this_comp_season_label].value
     global_config['event_code'] = form[cfg_this_event_code_label].value

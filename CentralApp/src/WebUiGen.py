@@ -10,6 +10,7 @@ from myform import pureform as pureform
 
 import UiGenerator
 import AppGenerator
+import FileUtils
 
 # Form definition and callback class for the user interface code generator
 base_root_dir_label = "Base Project Root:"
@@ -51,7 +52,8 @@ def process_form(global_config, form):
     base_project_path = os.path.join(base_root_dir, form[base_dir_label].value)
     base_projectname = form[base_project_label].value
     dest_root_dir = form[dest_root_dir_label].value
-    dest_project_path = os.path.join(dest_root_dir, form[dest_dir_label].value)
+    dest_project_dir = form[dest_dir_label].value
+    dest_project_path = os.path.join(dest_root_dir, dest_project_dir)
     dest_projectname = form[dest_project_label].value
     dest_activity_prefix = form[sheet_type_label].value
     dest_app_label = form[app_name_label].value
@@ -69,6 +71,8 @@ def process_form(global_config, form):
 
     AppGenerator.update_generated_java_code(base_projectname, dest_project_path, dest_activity_prefix, generated_code_fragments)
 
+    FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
+    
     return "User Interface Generated!\n\tSource Directory: %s\n\tDestination Directory: %s\n\tSheet Type: %s\n\tAttribute Definitions File: %s\n\tGenerate Action: %s" % \
         (form[base_dir_label].value, \
          form[dest_dir_label].value, \

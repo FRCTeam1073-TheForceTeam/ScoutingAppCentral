@@ -7,11 +7,13 @@ Created on Feb 7, 2013
 import os
 import re
 import web
+import urllib2
 
 import ImageFileUtils
 import AttributeDefinitions
 import DbSession
 import DataModel
+import WebCommonUtils
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -683,15 +685,40 @@ def get_team_list_json(global_config, comp):
             team_info = DataModel.getTeamInfo(session, int(team.team))
             
         if team_info:
-            result.append('   { "number": "%s", "nickname": "%s" }' % (team.team,team_info.nickname))
+            result.append('   { "team_number": "%s", "nickname": "%s" }' % (team.team,team_info.nickname))
             result.append(',\n')
         
     if len(team_list) > 0:         
         result = result[:-1]
 
-    result.append(' ] }\n')
-    return ''.join(result)
+        result.append(' ] }\n')
+        return ''.join(result)
+    else:
+        return get_team_list_json_from_tba(global_config, comp)
 
+def get_team_list_json_from_tba(global_config, comp):
+    
+    global_config['logger'].debug( 'GET Team List For Competition From TBA %s', comp )
+
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{ "teams" : ')
+    
+    event_code = WebCommonUtils.map_comp_to_event_code(comp)
+    season = WebCommonUtils.map_comp_to_season(comp)
+    
+    url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s/teams?X-TBA-App-Id=frc1073:scouting-system:v01' % (season,event_code)
+    event_data = ''
+    try:
+        event_data = urllib2.urlopen(url_str).read()
+    except:
+        event_data = '[ ]'
+        pass
+
+    result.append( event_data )
+    result.append('  }\n')
+    return ''.join(result)
+    
 def get_team_rankings_json(global_config, comp=None):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )

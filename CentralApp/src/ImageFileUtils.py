@@ -8,7 +8,25 @@ import os
 
 
 #sizes = [(120,120), (720,720), (1600,1600)]
-sizes = [(240,240)]
+sizes = [(100,100),(240,240)]
+
+def create_thumbnails_by_directory(dir_name):
+    
+    # if the directory name starts with a slash, prepend a '.' to make it a relative
+    # path from this point.
+    if dir_name.startswith('/'):
+        dir_name = '.' + dir_name
+                
+    for root, dirs, files in os.walk(dir_name):
+        # strip off any leading '.' in the root path so that the resulting entry
+        # will have an absolute path
+        #root = root.lstrip('.')
+        
+        for name in files:
+            file_path = os.path.join(root,name).replace('\\','/')
+            create_thumbnails_from_image(file_path)
+            
+    return
 
 def create_thumbnails(imagefiles):
     for imagefile in imagefiles:

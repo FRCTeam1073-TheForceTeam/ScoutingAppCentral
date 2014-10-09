@@ -122,12 +122,15 @@ $$(document).ready(function () {
           function insertThumbnails( json_data ) {
           console.log( "adding thumbnails" );
             $$.each( json_data.thumbnailfiles, function(i, thumbnail) {
-                 var full_imagename = thumbnail.filename.substring(8);
-                 $$('#thumbnails_$comp').append( 
-                         '<div class="col-xs-6 col-md-3">' +
-                         '<a href="/static/data/$comp/ScoutingPictures/' + full_imagename + '" class="thumbnail">' +
-                         '<img src="/static/data/$comp/ScoutingPictures/Thumbnails/' + thumbnail.filename + '"></a>' +
-                         '</div>' );
+                 if ( thumbnail.filename.search("240x240") != -1 )
+                 {
+                     var full_imagename = thumbnail.filename.substring(8);
+                     $$('#thumbnails_$comp').append( 
+                             '<div class="col-xs-6 col-md-3">' +
+                             '<a href="/static/data/$comp/ScoutingPictures/' + full_imagename + '" class="thumbnail">' +
+                             '<img src="/static/data/$comp/ScoutingPictures/Thumbnails/' + thumbnail.filename + '"></a>' +
+                             '</div>' );
+                 }
             });
           }
 
@@ -267,6 +270,29 @@ $$(document).ready(function () {
             <h4>Weighted Scoring Breakdown</h4>
             <div id="placeholder_$comp"></div>
 
+            <h4>Pictures and Video Files</h4>
+            <!-- commented out the table of picture files, replacing it with a thumbnail strip
+
+            <ul>
+            <table id="mediafiles_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+                <thead>
+                    <tr role="row">
+                        <th>Fileame</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+	        </table>
+            </ul>
+
+            end of commented out table -->
+
+            <ul>
+                <div class="row">
+                     <div id="thumbnails_$comp"></div>
+                </div>
+            </ul>
+
             <br>
             <h4>Scouting Data Summary</h4>
             <ul>
@@ -296,29 +322,6 @@ $$(document).ready(function () {
                 <tbody>
                 </tbody>
 	        </table>
-            </ul>
-
-            <h4>Pictures and Video Files</h4>
-            <!-- commented out the table of picture files, replacing it with a thumbnail strip
-
-            <ul>
-            <table id="mediafiles_$comp" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-                <thead>
-                    <tr role="row">
-                        <th>Fileame</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-	        </table>
-            </ul>
-
-            end of commented out table -->
-
-            <ul>
-                <div class="row">
-                     <div id="thumbnails_$comp"></div>
-                </div>
             </ul>
 
             <h4>Scouting Notes</h4>

@@ -9,6 +9,7 @@ $code:
     event_name = event_info[0][1]
     event_key = event_info[1][1]
     comp = utils.map_event_code_to_comp(event_code)
+    season = utils.map_event_code_to_season(event_code)
 
 <style type="text/css">
     #placeholder_scouting_rank
@@ -151,10 +152,12 @@ $$(document).ready(function () {
           function drawTable( json_data ) {
             $$('#event_teams').dataTable( {
                 "bAutoWidth": true, // Disable the auto width calculation
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aaData": json_data.teams,
                 "aoColumns": [
-                    { "mData": "number", "mRender": function(team) { return '<a href="/teamdata/$comp/'+team+'">'+team+'</a>'; } },
-                    { "mData": "name", "mRender": function(data,type,row) { return '<a href="/teamdata/$comp/'+row.number+'">'+row.nickname+'</a>'; } }
+                    { "mData": "number", "mRender": function(data,type,row) { return '<a href="/teamdata/$comp/'+row.team_number+'">'+row.team_number+'</a>'; } },
+                    { "mData": "name", "mRender": function(data,type,row) { return '<a href="/teamdata/$comp/'+row.team_number+'">'+row.nickname+'</a>'; } }
                 ]
             } );
           }
@@ -171,6 +174,8 @@ $$(document).ready(function () {
           function drawTable( json_data ) {
             $$('#event_rankings').dataTable( {
                 "bAutoWidth": true, // Disable the auto width calculation
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aaData": json_data.rankings,
                 "aoColumns": json_data.columns,
             } );
@@ -188,6 +193,8 @@ $$(document).ready(function () {
           function drawTable( json_data ) {
             $$('#event_qualresults').dataTable( {
                 "bAutoWidth": true, // Disable the auto width calculation
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
                 "order": [[ 1, "asc" ]]
@@ -206,6 +213,8 @@ $$(document).ready(function () {
           function drawTable( json_data ) {
             $$('#event_elimresults').dataTable( {
                 "bAutoWidth": true, // Disable the auto width calculation
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
                 "order": [[ 2, "asc" ]]
@@ -243,15 +252,15 @@ $$(document).ready(function () {
 
     <div class="tabbable">
       <ul class="nav nav-tabs">
-          <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rank Summary</a></li>
-          <li><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
+          <li><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rank Summary</a></li>
+          <li class="active"><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
           <li><a href="#pane_rankings"    data-toggle="tab">Match Rankings</a></li>
           <li><a href="#pane_qualresults" data-toggle="tab">Qualification Match Results</a></li>
           <li><a href="#pane_elimresults" data-toggle="tab">Elimination Match Results</a></li>
       </ul>
  
       <div class="tab-content">
-          <div id="pane_scouting_rank" class="tab-pane active">
+          <div id="pane_scouting_rank" class="tab-pane">
           <br>
           $code:
               csv_file = comp + '.csv'
@@ -264,7 +273,7 @@ $$(document).ready(function () {
           </ul>
           </div>
 
-          <div id="pane_teams" class="tab-pane">
+          <div id="pane_teams" class="tab-pane active">
           <ul>
           <table id="event_teams" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
               <thead>

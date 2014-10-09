@@ -297,13 +297,57 @@ def get_event_results_page(global_config, year, event_code):
                 
         return page
 
-def get_events_json(global_config, year):
+def get_district_events_json(global_config, year, type):
+        
+        global_config['logger'].debug( 'GET District Event Info Json' )    
+        
+        url_str = 'http://www.thebluealliance.com/api/v2/district/%s/%s/events?X-TBA-App-Id=frc1073:scouting-system:v02' % (type.lower(),year)
+        try:
+            event_data = urllib2.urlopen(url_str).read()
+            if type != None:
+                event_json = json.loads(event_data)
+                result = []
+                result.append('[')
+                for event in event_json:
+                    result.append(json.dumps(event))
+                    result.append(',')
+                if result[-1] == ',':
+                    result = result[:-1]
+                result.append(']\n')
+                event_data = ''.join(result)
+        except:
+            event_data = ''
+            pass
+        return event_data
+
+def get_events_json(global_config, year, type=None):
         
         global_config['logger'].debug( 'GET Event Info Json' )    
         
         url_str = 'http://www.thebluealliance.com/api/v1/events/list?year=%s&X-TBA-App-Id=frc1073:scouting-system:v01' % year
         try:
             event_data = urllib2.urlopen(url_str).read()
+            if type != None:
+                event_json = json.loads(event_data)
+                result = []
+                result.append('[')
+                for event in event_json:
+                    event_name = event['name']
+                    event_type_words = type.split(' ')
+                    type_match = False
+                    for word in event_type_words:
+                        if event_name.find(word) != -1:
+                            type_match = True
+                        else:
+                            type_match = False
+                            break
+                    if type_match == True:
+                        result.append(json.dumps(event))
+                        result.append(',')
+                if result[-1] == ',':
+                    result = result[:-1]
+                result.append(']\n')
+                event_data = ''.join(result)
         except:
             event_data = ''
             pass

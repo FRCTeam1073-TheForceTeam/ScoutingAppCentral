@@ -41,6 +41,23 @@ def get_comp_list():
 
     return complist
 
+def get_short_comp_list(season=None):
+    
+    my_config = ScoutingAppMainWebServer.global_config
+    complist = list()
+    if season == None:
+        season = my_config['this_season']
+    this_comp = my_config['this_competition']
+    complist.append(this_comp)
+    
+    other_competitions = my_config['other_competitions'].split(',')
+
+    for comp in other_competitions:
+        if comp and comp != my_config['this_competition']:
+            complist.append(comp)
+
+    return complist
+
 # retrieve the list of competitions that the specified team has been scouted, including this competition
 def get_team_comp_list(this_comp, team):
     
@@ -98,7 +115,7 @@ def get_attr_list():
                 
     return attr_list
 
-def get_file_list(dir_name):
+def get_file_list(dir_name,thumbnail_size=None):
     file_list = []    
 
     # if the directory name starts with a slash, prepend a '.' to make it a relative
@@ -117,24 +134,31 @@ def get_file_list(dir_name):
             # note that we will replace any backslash in the resulting path with forward
             # slashes
             file_path = os.path.join(root,name).replace('\\','/')
-            
-            # create a tuple with the path and the file name so that a hyperlink can be easily 
-            # generated from the file entry
-            file_entry = (file_path, name)
+            if thumbnail_size != None:
+                thumbnail_name = thumbnail_size + '_' + name
+                thumbnail_path = os.path.join(root+'/Thumbnails/', thumbnail_name).replace('\\','/')
+                file_entry = (file_path, name,thumbnail_path)
+            else:
+                # create a tuple with the path and the file name so that a hyperlink can be easily 
+                # generated from the file entry
+                file_entry = (file_path, name)
             
             # and append the entry to the list
             file_list.append(file_entry)
                 
     return file_list
 
-def get_event_info_str(event_name):
+def get_event_info_str(event_name, season=None):
     my_config = ScoutingAppMainWebServer.global_config
     
     if event_name.startswith('201'):
         year = event_name[0:4]
         event_code = event_name[4:]
     else:
-        year = my_config['this_season']
+        if season == None:
+            year = my_config['this_season']
+        else:
+            year = season
         event_code = event_name
 
     event_dict = WebEventData.get_event_info_dict(my_config, year, event_code)
@@ -148,14 +172,19 @@ def get_event_info_str(event_name):
         event_info_str.append(('End Date',event_dict['end_date'],'string'))
     return event_info_str
 
-def map_event_code_to_comp(event_name):
+def map_event_code_to_comp(event_name, season=None):
     my_config = ScoutingAppMainWebServer.global_config
-    season = my_config['this_season']
+    
+    if season == None:
+        if event_name.startswith('201'):
+            season = event_name[0:4]
+        else:
+            season = my_config['this_season']
     
     #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
     #       We may also just want to adopt the FIRST short event codes, too, though they
     #       aren't all that obvious what they refer to.
-    comp = event_name[4:]
+    comp = event_name[4:] + season
     if comp == 'mabos':
         comp = 'NU' + season
     elif comp == 'nhdur':
@@ -169,25 +198,86 @@ def map_event_code_to_comp(event_name):
             
     return comp        
 
-def map_comp_to_event_code(comp):
+def map_event_code_to_short_comp(event_name, season=None):
     my_config = ScoutingAppMainWebServer.global_config
-    season = my_config['this_season']
+    
+    if season == None:
+        if event_name.startswith('201'):
+            season = event_name[0:4]
+        else:
+            season = my_config['this_season']
     
     #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
     #       We may also just want to adopt the FIRST short event codes, too, though they
     #       aren't all that obvious what they refer to.
-    event_code = comp.replace(season,'')
-    if event_code == 'NU':
-        event_code = 'mabos'
-    elif event_code == 'UNH':
-        event_code = 'nhdur'
-    elif event_code == 'RI':
-        event_code = 'rismi'
-    elif event_code == 'NECMP':
-        event_code = 'necmp'
+    comp = event_name[4:]
+    if comp == 'mabos':
+        comp = 'NU'
+    elif comp == 'nhdur':
+        comp = 'UNH'
+    elif comp == 'rismi':
+        comp = 'RI'
+    elif comp == 'necmp':
+        comp = 'NECMP'
     else:
         pass
             
+    return comp        
+
+def map_event_code_to_season(event_name):
+    my_config = ScoutingAppMainWebServer.global_config
+    if event_name.startswith('201'):
+        season = event_name[0:4]
+    else:
+        season = my_config['this_season']
+                
+    return season        
+
+def map_comp_to_event_code(comp):
+    my_config = ScoutingAppMainWebServer.global_config
+    
+    #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
+    #       We may also just want to adopt the FIRST short event codes, too, though they
+    #       aren't all that obvious what they refer to.
+    if len(comp) > 4:
+        season_str = comp[-4:]
+        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+            comp = comp[0:-4]
+            
+    comp = comp.lower()
+    if comp == 'nu':
+        event_code = 'mabos'
+    elif comp == 'unh':
+        event_code = 'nhdur'
+    elif comp == 'ri':
+        event_code = 'rismi'
+    elif comp == 'necmp':
+        event_code = 'necmp'
+    else:
+        event_code = comp
+            
     return event_code        
     
+def map_comp_to_season(comp):
+    my_config = ScoutingAppMainWebServer.global_config
     
+    season = my_config['this_season']
+    
+    # now overwrite the season if the competition string has an embedded year
+    if len(comp) > 4:
+        season_str = comp[-4:]
+        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+            season = season_str
+    
+    return season
+
+def get_district_string():
+    
+    my_config = ScoutingAppMainWebServer.global_config
+    
+    try:
+        district_string = my_config['my_district']
+    except:
+        district_string = 'District'
+        
+    return district_string

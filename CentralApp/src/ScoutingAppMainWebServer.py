@@ -22,9 +22,11 @@ import AttributeDefinitions
 from optparse import OptionParser
 
 import BluetoothSyncServer
+#import BluetoothWebProxyServer
 import ConfigUtils
 import FileSync
 import DataModel
+import ImageFileUtils
 import Logger
 import ProcessFiles
 import TimerThread
@@ -52,7 +54,7 @@ urls = (
     '/logout',              'Logout',
     '/accessdenied',        'AccessDenied',
     '/accountdisabled',     'AccountDisabled',
-    '/home',                'HomePage2',
+    '/home(.*)',            'HomePage',
     '/admin',               'AdminPage',    
     '/team/(.*)',           'TeamServer',
     '/score/(.*)',          'TeamScore',
@@ -97,6 +99,9 @@ urls = (
     '/setweights',          'SetWeights',
     '/attrrank(.*)',        'AttrRankPage',
     '/downloads',           'DownloadsPage',
+    '/upload/',             'Upload',
+    '/eventgallery/(.*)',   'EventGallery',
+    
 
     '/api/rankings(.*)',            'TeamRankingJson',
     '/api/scoutingdata/(.*)',       'TeamDataFileJson',
@@ -108,10 +113,10 @@ urls = (
     '/api/teamdatafiles/(.+)',      'TeamDataFilesJson',
     '/api/teammediafiles/(.+)',     'TeamMediaFilesJson',
     '/api/teamnotes/(.+)',          'TeamDataNotesJson',
-    '/api/events',                  'EventsJson',
     '/api/eventinfo/(.*)',          'EventInfoJson',
     '/api/eventstandings/(.*)',     'EventStandingsJson',
     '/api/eventresults/(.+)',       'EventResultsJson',
+    '/api/events',                  'EventsJson',
     '/api/issue/(.*)',              'IssueJson',
     '/api/issues/(.*)',             'PlatformIssuesJson',
     '/api/debriefs/(.*)',           'DebriefsJson',
@@ -126,6 +131,7 @@ urls = (
 logger = Logger.init_logger('./config', 'logging.conf', 'scouting.webapp')
 
 global_config = { 'my_team'            : '1073',
+                  'my_district'        : 'District',
                   'this_season'        : '2014',
                   'this_competition'   : 'Test2014', 
                   'other_competitions' : '', 
@@ -188,26 +194,23 @@ class AccessDenied(object):
 class AccountDisabled(object):
     def GET(self):
         return WebLogin.do_account_disabled(global_config)
-
+    
 class HomePage(object):
 
-    def GET(self):
-        username, access_level = WebLogin.check_access(global_config,10)
-        result = WebHomePage.get_page(global_config, access_level)
-        if global_config.has_key('my_team'):
-            team = global_config['my_team']
-        else:
-            team = '1073'
-        return render.page('Team %s Competition Central' % team, result)
-
-    
-class HomePage2(object):
-
-    def GET(self):
+    def GET(self, param_str):
         username, access_level = WebLogin.check_access(global_config,10)
         season = global_config['this_season']
         competition = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
         return render.homePage(season,competition)
+    
     
 class TestPage(object):
 
@@ -398,7 +401,7 @@ class TeamListJson(object):
         if numparams == 0:
             comp = global_config['this_competition'] + global_config['this_season']
         else:
-            comp = params[0]
+            comp = params[0].lower()
         return WebTeamData.get_team_list_json(global_config, comp)
 
         
@@ -502,7 +505,23 @@ class EventsJson(object):
 
     def GET(self):
         WebLogin.check_access(global_config,10)
-        result = WebEventData.get_events_json(global_config, '2014')
+        request_data = web.input()
+        
+        try:
+            season = request_data.Year
+        except:
+            season = global_config['this_season']
+            
+        try:
+            event_type = request_data.Type
+            event_type = 'NE'
+        except:
+            event_type = None
+            
+        if event_type != None:
+            result = WebEventData.get_district_events_json(global_config, season, event_type)
+        else:
+            result = WebEventData.get_events_json(global_config, season, event_type)
         return result
                            
 class EventData(object):
@@ -510,6 +529,12 @@ class EventData(object):
     def GET(self, event_code):
         user_info = WebLogin.check_access(global_config,10)
         return render.eventData(event_code)
+                           
+class EventGallery(object):
+
+    def GET(self, event_code):
+        user_info = WebLogin.check_access(global_config,10)
+        return render.eventGallery(event_code)
                            
 class EventStandings(object):
 
@@ -959,6 +984,45 @@ class SetWeights(object):
             result = WebAttributeDefinitions.process_attr_def_form(global_config, form)
             raise web.seeother(result)
 
+class Upload(object):
+    def GET(self):
+        return
+    
+    def POST(self):
+        x = web.input(files={})
+        
+        if 'files' in x: 
+            filename="./static/uploadedfiles/" + x.files.filename
+            fout = open( filename,'wb+') 
+            fout.write(x.files.file.read())
+            fout.close()
+            ImageFileUtils.create_thumbnails_from_image(filename)
+
+            web.header('Content-Type', 'application/json')
+            result = []
+
+            result.append('{ "files" : [\n')
+            result.append('{\n')
+            
+            result.append('"name": "%s"' % x.files.filename)
+            result.append(',\n')
+            result.append('"url": "/static/uploadedfiles/%s"' % x.files.filename)
+            result.append(',\n')
+            result.append('"thumbnail": "/static/uploadedfiles/%s"' % x.files.filename)
+            result.append(',\n')
+            result.append('"type": "%s"' % x.files.type)
+            result.append(',\n')
+            result.append('"size": %d' % os.path.getsize(filename))
+            
+            result.append('}\n')
+            
+            result.append(' ] }\n')
+    
+            return ''.join(result) 
+        else:
+            return "No file uploaded"
+        
+        
     
      
 '''    
@@ -1001,7 +1065,10 @@ if __name__ == "__main__":
         help='Process Team Files')
     parser.add_option(
         "-b","--bluetooth",action="store_true", dest="bluetoothServer", default=False,
-        help='Run Bluetooth Server')
+        help='Run Bluetooth Sync Server')
+    parser.add_option(
+        "-w","--bluetoothweb",action="store_true", dest="bluetoothWebServer", default=False,
+        help='Run Bluetooth Web Server')
    
     # Parse the command line arguments
     (options,args) = parser.parse_args()
@@ -1063,8 +1130,8 @@ if __name__ == "__main__":
 
     # make sure that the required directories exist
     directories = ('ScoutingData', 'ScoutingPictures')
+    competition = global_config['this_competition'] + global_config['this_season']        
     for directory in directories:
-        competition = global_config['this_competition'] + global_config['this_season']        
         base_dir = './static/data/' + competition + '/' + directory + '/'
         try: 
             os.makedirs(base_dir)
@@ -1072,6 +1139,9 @@ if __name__ == "__main__":
             if not os.path.isdir(base_dir):
                 raise
     
+    #ImageFileUtils.create_thumbnails_by_directory('./static/data/%s/ScoutingPictures' % competition)
+
+
     # also create the configuration directory used to provide data to the tablets
     base_dir = './static/data/ScoutingConfig'
     try: 
@@ -1096,6 +1166,17 @@ if __name__ == "__main__":
         bluetooth_sync_server = BluetoothSyncServer.BluetoothSyncServer()
         bluetooth_sync_server.start()
 
+    '''
+    bluetooth_web_server = None
+    if options.bluetoothWebServer:
+        if len(sys.argv) == 2:
+            web_server_port = int(sys.argv[1])
+        else :
+            web_server_port = 8080
+        bluetooth_web_server = BluetoothWebProxyServer.BluetoothWebProxyServer( web_server_port )
+        bluetooth_web_server.start()
+    '''
+
     try:
         webserver_app.run()
 
@@ -1115,6 +1196,12 @@ if __name__ == "__main__":
         bluetooth_sync_server.terminate()
         bluetooth_sync_server.join()
 
+    '''
+    if bluetooth_web_server != None:
+        bluetooth_web_server.terminate()
+        bluetooth_web_server.join()
+    '''
+    
     if process_file_timer != None:
         process_file_timer.stop()
 
