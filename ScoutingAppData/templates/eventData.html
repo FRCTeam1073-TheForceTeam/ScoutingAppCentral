@@ -5,9 +5,6 @@ $def with (event_code)
 $var title: FIRST Event Page
 
 $code:
-    event_info = utils.get_event_info_str(event_code)
-    event_name = event_info[0][1]
-    event_key = event_info[1][1]
     comp = utils.map_event_code_to_comp(event_code)
     season = utils.map_event_code_to_season(event_code)
 

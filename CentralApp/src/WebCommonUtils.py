@@ -170,6 +170,9 @@ def get_event_info_str(event_name, season=None):
         event_info_str.append(('Location',event_dict['location'],'string'))
         event_info_str.append(('Start Date',event_dict['start_date'],'string'))
         event_info_str.append(('End Date',event_dict['end_date'],'string'))
+    else:
+        event_info_str = None
+
     return event_info_str
 
 def map_event_code_to_comp(event_name, season=None):

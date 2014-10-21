@@ -7,10 +7,6 @@ $var title: Competition Central Home Page
 $code:
     district = utils.get_district_string()
     comp = short_comp + season
-    event_code = utils.map_comp_to_event_code(short_comp)
-    event_info = utils.get_event_info_str(event_code, season)
-    event_name = event_info[0][1]
-    event_key = event_info[1][1]
     comp_list = utils.get_short_comp_list(season)
 
 <style type="text/css">
