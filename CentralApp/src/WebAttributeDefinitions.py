@@ -63,8 +63,11 @@ def process_attr_def_form(global_config, form):
                 attr_def['Weight'] = form[key].value
                             
             attr_definitions.write_attr_overrides();
+            competition = global_config['this_competition'] + global_config['this_season']
+            if competition == None:
+                raise Exception( 'Competition Not Specified!')
             
-            DataModel.recalculate_scoring(global_config, attr_definitions)
+            DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
 
 
