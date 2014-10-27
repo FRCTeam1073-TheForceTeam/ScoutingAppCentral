@@ -9,6 +9,7 @@ import os
 import datetime
 from sqlalchemy import create_engine
 from sqlalchemy import schema
+from sqlalchemy import func
 from sqlalchemy import Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
@@ -157,7 +158,7 @@ def addNotesEntry(session, teamnum, comp, notes, notestag):
     
 def modifyNotesEntry(session, teamnum, comp, old_notes, new_notes, notestag):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamnum).\
-                                      filter(NotesEntry.competition==comp).\
+                                      filter(func.lower(NotesEntry.competition)==func.lower(comp)).\
                                       filter(NotesEntry.data==old_notes)
     if notes:
         notes.data = new_notes
@@ -165,33 +166,33 @@ def modifyNotesEntry(session, teamnum, comp, old_notes, new_notes, notestag):
     
 def getTeamNotes(session, teamId, comp):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
-                                      filter(NotesEntry.competition==comp).all()
+                                      filter(func.lower(NotesEntry.competition)==func.lower(comp)).all()
     print str(notes)
     return notes
         
 def getTeamAttributes(session, teamId, comp):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
-                                      filter(TeamAttribute.competition==comp).all()
+                                      filter(func.lower(TeamAttribute.competition)==func.lower(comp)).all()
     print str(attrList)
     return attrList
 
 def getTeamAttributesInOrder(session, teamId, comp):
     attrList = session.query(TeamAttribute).\
             filter(TeamAttribute.team==teamId).\
-            filter(TeamAttribute.competition==comp).\
+            filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
             order_by(TeamAttribute.attr_name).all()
     return attrList
 
 def getTeamAttributesInRankOrder(session, comp, name, descending_order=True, max_teams=100):
     if descending_order == True:
         teamList = session.query(TeamAttribute).\
-                filter(TeamAttribute.competition==comp).\
+                filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
                 filter(TeamAttribute.attr_name==name).\
                 order_by(TeamAttribute.cumulative_value.desc()).\
                 all()    
     else:
         teamList = session.query(TeamAttribute).\
-                filter(TeamAttribute.competition==comp).\
+                filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
                 filter(TeamAttribute.attr_name==name).\
                 order_by(TeamAttribute.cumulative_value).\
                 all()    
@@ -199,19 +200,19 @@ def getTeamAttributesInRankOrder(session, comp, name, descending_order=True, max
 
 def getTeamAttribute(session, team, comp, name):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
-                                            filter(TeamAttribute.competition==comp).\
+                                            filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
                                             filter(TeamAttribute.attr_name==name)
     return attrList.first()
 
 def getTeamsInRankOrder(session, comp, descending_order=True, max_teams=100):
     if descending_order == True:
         teamList = session.query(TeamRank).\
-            filter(TeamRank.competition==comp).\
+            filter(func.lower(TeamRank.competition)==func.lower(comp)).\
             order_by(TeamRank.score.desc()).\
             all()
     else:
         teamList = session.query(TeamRank).\
-            filter(TeamRank.competition==comp).\
+            filter(func.lower(TeamRank.competition)==func.lower(comp)).\
             order_by(TeamRank.score).\
             all()    
 
@@ -219,7 +220,7 @@ def getTeamsInRankOrder(session, comp, descending_order=True, max_teams=100):
 
 def getTeamsInNumericOrder(session, comp, max_teams=100):
     teamList = session.query(TeamRank).\
-            filter(TeamRank.competition==comp).\
+            filter(func.lower(TeamRank.competition)==func.lower(comp)).\
             order_by(TeamRank.team).\
             all()    
     return teamList
@@ -229,11 +230,11 @@ def getTeamScore(session, teamId, comp=None):
         return session.query(TeamRank).filter(TeamRank.team==teamId).all()
     else:
         return session.query(TeamRank).filter(TeamRank.team==teamId).\
-                                       filter(TeamRank.competition==comp).all()
+                                       filter(func.lower(TeamRank.competition)==func.lower(comp)).all()
         
 def calculateTeamScore(session, teamId, comp, attr_defs):
     attributes = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
-                                              filter(TeamAttribute.competition==comp).all()
+                                              filter(func.lower(TeamAttribute.competition)==func.lower(comp)).all()
     total = 0.0
     for item in attributes:
         item_def = attr_defs.get_definition(item.attr_name)
@@ -251,7 +252,7 @@ def calculateTeamScore(session, teamId, comp, attr_defs):
     
 def setTeamScore(session, teamId, comp, score):
     teamList = session.query(TeamRank).filter(TeamRank.team==teamId).\
-                                       filter(TeamRank.competition==comp).all()    
+                                       filter(func.lower(TeamRank.competition)==func.lower(comp)).all()    
     if len(teamList)>0:
         team = teamList[0]
         team.team=teamId
@@ -308,7 +309,7 @@ def mapValueToString(value, all_values, attr_def, need_quote=False):
         
 def createOrUpdateAttribute(session, team, comp, category, name, value, attribute_def):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
-                                            filter(TeamAttribute.competition==comp).\
+                                            filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
                                             filter(TeamAttribute.attr_name==name)
     attr = attrList.first()
     attr_type = attribute_def['Type']
@@ -348,7 +349,7 @@ def createOrUpdateAttribute(session, team, comp, category, name, value, attribut
 
 def modifyAttributeValue(session, team, comp, name, old_value, new_value, attribute_def):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
-                                            filter(TeamAttribute.competition==comp).\
+                                            filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
                                             filter(TeamAttribute.attr_name==name)
     attr = attrList.first()
     attr_type = attribute_def['Type']
@@ -377,7 +378,7 @@ def modifyAttributeValue(session, team, comp, name, old_value, new_value, attrib
 
 def createOrUpdateMatchDataAttribute(session, team, comp, match, scouter, name, value):
     attrList = session.query(MatchData).filter(MatchData.team==team).\
-                                        filter(MatchData.competition==comp).\
+                                        filter(func.lower(MatchData.competition)==func.lower(comp)).\
                                         filter(MatchData.match==match).\
                                         filter(MatchData.attr_name==name)
     attr = attrList.first()    
