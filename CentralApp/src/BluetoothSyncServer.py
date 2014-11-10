@@ -53,9 +53,16 @@ class BluetoothSyncServer(Thread):
                     
                     print "Request Type: %s" % request_type
                     print "Request Path: %s" % request_path
-                    
+
+                    request_complete = False
+                                        
                     if request_type == "PUT":
                         fullpath = './static/data/' + request_path
+                        
+                        # make sure that the destination directory exists
+                        if not os.path.exists(os.path.dirname(fullpath)):
+                            os.makedirs(os.path.dirname(fullpath))
+                            
                         response_code = FileSync.put_file(fullpath, content_type, msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\r\n')
                         files_received += 1
@@ -63,24 +70,41 @@ class BluetoothSyncServer(Thread):
                         
                         fullpath = './static/data/' + request_path
                         
-                        if os.path.isdir(fullpath):
-                            file_list = FileSync.get_file_list(fullpath)
-                            response_body = ''
-                            for file_name in file_list:
-                                response_body += file_name + '\n'
-                            client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
-                            client_sock.send('Content-Length: %d\r\n' % len(response_body))
-                            client_sock.send('\r\n')
-                            client_sock.send(response_body + '\r\n')
-                        else:
-                            response_body = FileSync.get_file(fullpath)
-                            if response_body != '':
+                        # check to see if the requested path exists. We may need to handle that
+                        # condition separately, treating non-existent directories as empty (as
+                        # opposed to sending a 404 not found.
+                        # TODO: update the client side to handle the 404 not found as an empty directory
+                        #       and then update this block to send the 404 in all cases.
+                        if not os.path.exists(fullpath):
+                            if request_path[-1] == '/':
+                                # if the requested path refers to a directory, let's return an empty
+                                # response indicating that there are no files in that directory
+                                client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
+                                client_sock.send('Content-Length: 0\r\n')
+                                client_sock.send('\r\n\r\n')
+                            else:
+                                client_sock.send('HTTP/1.1 ' + '404 Not Found' + '\r\n\r\n')
+                            request_complete = True
+                                
+                        if not request_complete:
+                            if os.path.isdir(fullpath):
+                                file_list = FileSync.get_file_list(fullpath)
+                                response_body = ''
+                                for file_name in file_list:
+                                    response_body += file_name + '\n'
                                 client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
                                 client_sock.send('Content-Length: %d\r\n' % len(response_body))
                                 client_sock.send('\r\n')
                                 client_sock.send(response_body + '\r\n')
                             else:
-                                client_sock.send('HTTP/1.1 ' + '404 Not Found' + '\r\n\r\n')
+                                response_body = FileSync.get_file(fullpath)
+                                if response_body != '':
+                                    client_sock.send('HTTP/1.1 ' + '200 OK' + '\r\n')
+                                    client_sock.send('Content-Length: %d\r\n' % len(response_body))
+                                    client_sock.send('\r\n')
+                                    client_sock.send(response_body + '\r\n')
+                                else:
+                                    client_sock.send('HTTP/1.1 ' + '404 Not Found' + '\r\n\r\n')
                                     
                     print "Request Complete\n"
          
