@@ -171,7 +171,8 @@ def get_event_info_str(event_name, season=None):
         event_info_str.append(('Start Date',event_dict['start_date'],'string'))
         event_info_str.append(('End Date',event_dict['end_date'],'string'))
     else:
-        event_info_str = None
+        event_info_str.append(('Name', 'Unknown','string'))
+        event_info_str.append(('Code', 'NONE','string'))
 
     return event_info_str
 
@@ -256,6 +257,8 @@ def map_comp_to_event_code(comp):
         event_code = 'rismi'
     elif comp == 'necmp':
         event_code = 'necmp'
+    elif comp == 'bob':
+        event_code = 'nhbb'
     else:
         event_code = comp
             
