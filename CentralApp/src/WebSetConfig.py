@@ -106,7 +106,7 @@ def write_tablet_config(config_dict, config_filename):
                 season = value
 
             
-    line = 'Competition=%s\n' % competition+season
+    line = 'Competition=%s\n' % (competition+season)
     cfg_file.write(line)
 
     cfg_file.close()
