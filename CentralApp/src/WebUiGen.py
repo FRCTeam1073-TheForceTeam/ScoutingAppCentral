@@ -71,7 +71,7 @@ def process_form(global_config, form):
 
     AppGenerator.update_generated_java_code(base_projectname, dest_project_path, dest_activity_prefix, generated_code_fragments)
 
-    FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
+    #FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
     
     return "User Interface Generated!\n\tSource Directory: %s\n\tDestination Directory: %s\n\tSheet Type: %s\n\tAttribute Definitions File: %s\n\tGenerate Action: %s" % \
         (form[base_dir_label].value, \
