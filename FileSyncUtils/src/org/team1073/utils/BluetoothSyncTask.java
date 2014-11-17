@@ -45,7 +45,7 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 
     	// establish a connection to an available bluetooth server
     	while (connectionEstablished != true && retries < 10 ){
-    		connectionEstablished = connectToBluetoothServer();
+    		connectionEstablished = connectToBluetoothServer("00001073-0000-1000-8000-00805F9B34F7");
     		if ( connectionEstablished != true ) {
 	    		retries++;
                 publishProgress( "Retrying Connection" );
@@ -58,7 +58,7 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
     		}
     	}
 */
-    	connectionEstablished = connectToBluetoothServer();
+    	connectionEstablished = connectToBluetoothServer("00001073-0000-1000-8000-00805F9B34F7");
     	if ( connectionEstablished == true ) {
     		
         	try {
@@ -123,9 +123,9 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
         Toast.makeText(activity, progressString[0], Toast.LENGTH_SHORT).show();
     }
     
-    private boolean connectToBluetoothServer() {
+    private boolean connectToBluetoothServer(String serviceUuidStr) {
     	final int REQUEST_ENABLE_BT = 2;
-    	final UUID SYNC_SERVICE_ID = UUID.fromString("00001073-0000-1000-8000-00805F9B34F7");
+    	final UUID SYNC_SERVICE_ID = UUID.fromString(serviceUuidStr);
     	boolean connected = false;
     	
 		if (!bluetoothAdapter.isEnabled()) {
@@ -140,17 +140,23 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		bluetoothAdapter.cancelDiscovery();
 
 		// Client discovers the MAC address of server, if one exists
-		if (pairedDevices.size() > 0) {
-            publishProgress( "Connecting To Bluetooth Server" );
-
-         // Loop through paired devices
-            for (BluetoothDevice device : pairedDevices)
+		if (pairedDevices.size() == 0) {
+            publishProgress( "No Paired Devices" );
+		}
+		else {
+            // Loop through paired devices
+            for (BluetoothDevice device : pairedDevices) {
+            	publishProgress( "Connecting to " + device.getName() );
 				try {
 					socket = device.createRfcommSocketToServiceRecord(SYNC_SERVICE_ID);
 					socket.connect();
 					connected = true;
+	            	publishProgress( "Connected to " + device.getName() );
 					break;
-				} catch (Exception e) {}
+				} catch (Exception e) {
+	            	publishProgress( "Error connecting to " + device.getName() + " Msg: " + e.getMessage() );					
+				}
+            }
 		}
 		
 		return connected;
