@@ -57,7 +57,7 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
         	
     		if ( syncControl.equalsIgnoreCase("Download_Updates")) {
                	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
-        		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
+        		numFilesRetrieved += retrieveFilesFromServer( paths[i], filesToRetrieve);
     		} else {
         		HashSet<String> fileSetToRetrieve = new HashSet<String>();
         		List<String> filesToSend = new ArrayList<String>();
@@ -108,7 +108,10 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 				filesOnServer.add(line);
 	        }
 	        
-		} catch(Exception e) {}
+		} catch(Exception e) {
+	        publishProgress( "Could Not Connect To Server" );
+			
+		}
     }
     
 	private Integer sendFilesToServer( String path, List<String> filesToSend) {

@@ -58,7 +58,7 @@ public class FileSyncUtils {
     	DataOutputStream outStream = new DataOutputStream(mOutStream);
     	
 		try {	
-	        String cmdString = "GET " + path + EOL;
+	        String cmdString = "GET " + "/" + path + EOL;
 	    	cmdString += "From: " + mDeviceName + EOL + EOL;
 			outStream.writeBytes(cmdString);
 			
@@ -181,7 +181,7 @@ public class FileSyncUtils {
 			byte[] fileContents = readFileIntoBuffer(inputFile);				
 
 			// format the request and send to the server
-			String cmdString = "PUT " + filepath + EOL;
+			String cmdString = "PUT " + "/" + filepath + EOL;
 			cmdString += "From: " + mDeviceName + EOL;
 			cmdString += "Content-Length: " + fileContents.length + EOL;
 			cmdString += "Content-Type: " + HttpURLConnection.guessContentTypeFromName(filepath) + EOL;
@@ -304,7 +304,7 @@ public class FileSyncUtils {
 		
 		// Retrieve the file from the server using an HTTP formatted request
 		try {
-			String cmdString = "GET " + filepath + EOL;
+			String cmdString = "GET " + "/" + filepath + EOL;
 			cmdString += "From: " + mDeviceName + EOL;
 			cmdString += EOL;
 			DataOutputStream outStream = new DataOutputStream(mOutStream);

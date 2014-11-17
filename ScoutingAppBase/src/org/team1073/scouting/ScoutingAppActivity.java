@@ -72,10 +72,10 @@ public class ScoutingAppActivity extends Activity {
 		String download_control = "Download_Updates";
 		if (sync_method.equalsIgnoreCase("Bluetooth")) {
     		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, download_control).execute(
-    				"/ScoutingConfig/");
+    				"ScoutingConfig/");
 		} else {
     		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, download_control).execute(
-    				"/ScoutingConfig/");
+    				"ScoutingConfig/");
 		}
     
 	}
