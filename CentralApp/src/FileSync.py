@@ -39,7 +39,7 @@ def get_file(path):
     return file_data
     
 def get(global_config, path):
-    fullpath = './static/' + path
+    fullpath = './static/data/' + path
     # if the path refers to a directory, then return the list of files in the directory
     # otherwise, return the contents of the file
     if os.path.isdir(fullpath):
@@ -52,7 +52,7 @@ def get(global_config, path):
     return response_body
 
 def put(global_config, path, content_type, msg_body):
-    fullpath = './static/' + path
+    fullpath = './static/data/' + path
     put_file(fullpath, content_type, msg_body)
 
 
