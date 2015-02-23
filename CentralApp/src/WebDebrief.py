@@ -30,7 +30,7 @@ def get_match_comment_form(global_config, competition, match_str):
 def process_match_comment_form(global_config, form, competition, match_str, username):
     global_config['logger'].debug( 'Process Match Comment Form: %s:%s', (competition,match_str) )
     
-    session = DbSession.open_db_session(global_config['debriefs_db_name'])                   
+    session = DbSession.open_db_session(global_config['debriefs_db_name'] + global_config['this_season'])                   
     comment = form[match_comment_label].value
     timestamp = str(int(time.time()))
     
@@ -44,10 +44,10 @@ def process_match_comment_form(global_config, form, competition, match_str, user
 
 def get_debrief_page(global_config, competition, match_str, allow_update=False):
     
-    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+    session = DbSession.open_db_session(global_config['debriefs_db_name'] + global_config['this_season'])
     debrief = DebriefDataModel.getDebrief(session, competition, int(match_str))
     debrief_issues = DebriefDataModel.getDebriefIssues(session, competition, int(match_str))
-    issues_session = DbSession.open_db_session(global_config['issues_db_name'])
+    issues_session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     
     if debrief != None:
         result = ''
@@ -148,7 +148,7 @@ def insert_debrief_table(debriefs,competition):
 
 def get_debriefs_home_page(global_config, competition):
  
-    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+    session = DbSession.open_db_session(global_config['debriefs_db_name'] + global_config['this_season'])
 
     result = ''
     result += '<hr>'
@@ -161,7 +161,7 @@ def get_debriefs_home_page(global_config, competition):
 def get_competition_debriefs(global_config, competition):
     global_config['logger'].debug( 'GET match debriefs for competition: %s', competition )
  
-    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+    session = DbSession.open_db_session(global_config['debriefs_db_name'] + global_config['this_season'])
 
     debriefs = DebriefDataModel.getDebriefsInNumericOrder(session, competition)
                     
@@ -182,7 +182,7 @@ def get_competition_debriefs(global_config, competition):
 
 def delete_comment(global_config, competition, match_str, tag):
  
-    session = DbSession.open_db_session(global_config['debriefs_db_name'])
+    session = DbSession.open_db_session(global_config['debriefs_db_name'] + global_config['this_season'])
     
     DebriefDataModel.deleteDebriefCommentsByTag(session, competition, match_str, tag)
     session.commit()

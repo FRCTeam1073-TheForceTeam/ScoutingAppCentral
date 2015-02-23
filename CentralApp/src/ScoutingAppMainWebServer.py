@@ -24,16 +24,14 @@ from optparse import OptionParser
 import BluetoothSyncServer
 #import BluetoothWebProxyServer
 import ConfigUtils
+import CompAlias
 import FileSync
-import DataModel
 import ImageFileUtils
 import Logger
 import ProcessFiles
 import TimerThread
-import WebHomePage
 import WebAdminPage
 import WebTeamData
-import WebGenExtJsStoreFiles
 import WebUiGen
 import WebSetConfig
 import WebModifyAttr
@@ -102,8 +100,12 @@ urls = (
     '/upload/',             'Upload',
     '/eventgallery/(.*)',   'EventGallery',
     
+    '/eventdata/(.*)',      'JsonEventFile',
+    '/teamdata2/(.*)',      'JsonTeamFile',
 
     '/api/rankings(.*)',            'TeamRankingJson',
+    '/api/picklist(.*)',            'TeamPicklistJson',
+    '/api/updatepicklist(.*)',      'TeamUpdatePicklistJson',
     '/api/scoutingdata/(.*)',       'TeamDataFileJson',
     '/api/scorebreakdown/(.+)',     'TeamScoreBreakdownJson',
     '/api/teamdatasummary/(.+)',    'TeamScoutingDataSummaryJson',
@@ -116,6 +118,7 @@ urls = (
     '/api/eventinfo/(.*)',          'EventInfoJson',
     '/api/eventstandings/(.*)',     'EventStandingsJson',
     '/api/eventresults/(.+)',       'EventResultsJson',
+    '/api/eventschedule/(.+)',      'MatchScheduleJson',
     '/api/events',                  'EventsJson',
     '/api/issue/(.*)',              'IssueJson',
     '/api/issues/(.*)',             'PlatformIssuesJson',
@@ -281,11 +284,19 @@ class TeamDataFiles(object):
                            
 class TeamInfoJson(object):
 
-    def GET(self, name):
+    def GET(self, param_str):
         user_info = WebLogin.check_access(global_config,10)
-        access_level = user_info[1]
+
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams >= 2:
+            comp = params[0]
+            name = params[1]
+        else:
+            comp = global_config['this_competition'] + global_config['this_season']
+            name = params[0]
             
-        result = WebTeamData.get_team_info_json(global_config, name)
+        result = WebTeamData.get_team_info_json(global_config, comp, name)
         return result
                            
 class TeamScoutingDataSummaryJson(object):
@@ -374,7 +385,7 @@ class TeamScoreBreakdownJson(object):
             name = params[1]
         else:
             return None
-        return WebTeamData.get_team_score_breakdown_page(global_config, name, comp)
+        return WebTeamData.get_team_score_breakdown_json(global_config, name, comp)
 
 class TeamScoreJson(object):
 
@@ -390,6 +401,8 @@ class TeamScoreJson(object):
             name = params[1]
         else:
             return None
+
+        web.header('Content-Type', 'application/json')
         return WebTeamData.get_team_score_json(global_config, name, comp)
 
 class TeamListJson(object):
@@ -402,6 +415,8 @@ class TeamListJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[0].lower()
+            
+        web.header('Content-Type', 'application/json')
         return WebTeamData.get_team_list_json(global_config, comp)
 
         
@@ -436,7 +451,44 @@ class TeamRankingJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
+            
+        web.header('Content-Type', 'application/json')
         return WebTeamData.get_team_rankings_json(global_config, comp)
+
+class TeamPicklistJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams < 2 or params[1] == '':
+            comp = global_config['this_competition'] + global_config['this_season']
+        else:
+            comp = params[1]
+            
+        web.header('Content-Type', 'application/json')
+        return WebTeamData.create_picklist_json(global_config, comp, store_json_file=True)
+
+    def POST(self, param_str):
+        WebLogin.check_access(global_config,10)
+        query_data = web.input()
+        
+        comp = global_config['this_competition'] + global_config['this_season']
+            
+        web.header('Content-Type', 'application/json')
+        return WebTeamData.create_picklist_json(global_config, comp, store_json_file=True)
+
+
+class TeamUpdatePicklistJson(object):
+
+    def POST(self, param_str):
+        WebLogin.check_access(global_config,10)
+        query_data = web.input()
+        
+        comp = global_config['this_competition'] + global_config['this_season']
+            
+        web.header('Content-Type', 'application/json')
+        return WebTeamData.update_picklist_json(global_config, int(query_data.fromPosition), int(query_data.toPosition), comp, store_json_file=True)
 
 class TeamRanking(object):
 
@@ -482,6 +534,8 @@ class TeamDataFileJson(object):
 
     def GET(self, filename):
         WebLogin.check_access(global_config,10)
+            
+        web.header('Content-Type', 'application/json')
         result = WebTeamData.get_team_datafile_json(global_config, filename)
         return result
 
@@ -522,6 +576,8 @@ class EventsJson(object):
             result = WebEventData.get_district_events_json(global_config, season, event_type)
         else:
             result = WebEventData.get_events_json(global_config, season, event_type)
+            
+        web.header('Content-Type', 'application/json')
         return result
                            
 class EventData(object):
@@ -552,6 +608,8 @@ class EventInfoJson(object):
         year = name[0:4]
         event_code = name[4:]
         result = WebEventData.get_event_info_json(global_config, year, event_code)
+            
+        web.header('Content-Type', 'application/json')
         return result
                   
 class EventStandingsJson(object):
@@ -561,7 +619,13 @@ class EventStandingsJson(object):
         year = name[0:4]
         event_code = name[4:]
         result = WebEventData.get_event_standings_json(global_config, year, event_code)
+            
+        web.header('Content-Type', 'application/json')
         return result
+    
+    def POST(self, name):
+        return
+        
                   
 class EventResultsJson(object):
 
@@ -579,7 +643,10 @@ class EventResultsJson(object):
                 table_to_parse = 3
             else:
                 table_to_parse = 2
-            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, table_to_parse)
+            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, table, table_to_parse)
+            
+            web.header('Content-Type', 'application/json')
+            
         return result
                            
 class EventResults(object):
@@ -591,6 +658,22 @@ class EventResults(object):
         result = WebEventData.get_event_results_page(global_config, year, event_code)
         return render.page('FIRST Robotics Event Match Results - %s' % event_code.upper(), result)                           
     
+class MatchScheduleJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        result = ''
+        params = param_str.split('/')
+        if len(params) == 2:
+            year = params[0][0:4]
+            event_code = params[0][4:]
+            which_round = params[1]
+            result = WebEventData.get_event_matchschedule_json(global_config, year, event_code, which_round)
+            
+            web.header('Content-Type', 'application/json')
+
+        return result
+                           
 class DownloadsPage(object):
 
     def GET(self):
@@ -719,7 +802,8 @@ class Issue(object):
         
 class IssueJson(object):
     
-    def GET(self, issue_id):
+    def GET(self, issue_id):           
+        web.header('Content-Type', 'application/json')
         return WebIssueTracker.get_issue_json(global_config, issue_id)
         
 class DeleteComment(object):
@@ -769,6 +853,8 @@ class PlatformIssuesJson(object):
             status = params[1]
         else:
             status = ''     
+            
+        web.header('Content-Type', 'application/json')
         return WebIssueTracker.get_platform_issues(global_config, platform_type, status)
 
 class Users(object):
@@ -781,6 +867,8 @@ class Users(object):
 class UsersJson(object):
     def GET(self):
         WebLogin.check_access(global_config,1)
+            
+        web.header('Content-Type', 'application/json')
         return WebUsers.get_user_list_json(global_config)
     
 class LoadUsers(object):
@@ -915,6 +1003,7 @@ class DebriefsJson(object):
         else:
             competition = params[0]
             
+        web.header('Content-Type', 'application/json')
         return WebDebrief.get_competition_debriefs(global_config, competition)
 
 class DebriefPage(object):
@@ -961,14 +1050,85 @@ class TaskGroups(object):
 
 class Sync(object):
     def GET(self, request_path):
-        response_body = FileSync.get(global_config, request_path)
+        request_path = request_path.lstrip('/')
+        query_str = web.input(checksum=None)
+
+        if query_str.checksum is None:
+            response_body = FileSync.get(global_config, request_path)
+        else:
+            response_body = FileSync.get(global_config, request_path, with_checksum=True)
+
         return response_body
         
     def PUT(self, request_path):
+        request_path = request_path.lstrip('/')
         content_type = web.ctx.env['CONTENT_TYPE']
         FileSync.put(global_config, request_path, content_type, web.data())
         return
 
+    def POST(self, request_path):
+        request_path = request_path.lstrip('/')
+        result = False
+        path_elems = request_path.split('/')
+        if len(path_elems) >= 2:
+            comp_season_list = WebCommonUtils.split_comp_str(path_elems[0])
+            if comp_season_list != None:
+                directory = path_elems[1]
+                                
+                result = WebEventData.update_event_data_files( global_config,  
+                                                               comp_season_list[1], 
+                                                               comp_season_list[0],
+                                                               directory )
+                
+                if result == True:
+                    result = WebTeamData.update_team_event_files( global_config,  
+                                                               comp_season_list[1], 
+                                                               comp_season_list[0], 
+                                                               directory )
+                    
+                    
+                if result == True:
+                    result = WebTeamData.update_team_data_files( global_config,  
+                                                               comp_season_list[1], 
+                                                               comp_season_list[0], 
+                                                               directory )
+                
+        if result == False:
+            raise web.BadRequest
+        
+        return
+
+class JsonEventFile(object):
+    
+    def GET(self, request_path):
+        request_path = request_path.lstrip('/')
+        query_str = web.input(season=global_config['this_season'],event=global_config['this_competition'])
+        file_path = query_str.event + query_str.season +  '/EventData/' + request_path + '.json'
+        response_body = FileSync.get(global_config, file_path)
+            
+        web.header('Content-Type', 'application/json')
+        return response_body
+    
+    def POST(self, request_path):    
+        request_path = request_path.lstrip('/')
+        query_str = web.input(season=global_config['this_season'],event=global_config['this_competition'])
+        file_path = query_str.event + query_str.season + '/EventData/' + request_path + '.json'
+        response_body = FileSync.get(global_config, file_path)
+        #TODO: add update of the picklist based on the posted change...
+        return
+            
+    
+class JsonTeamFile(object):
+    
+    def GET(self, request_path):
+        request_path = request_path.lstrip('/')
+        query_str = web.input(season=global_config['this_season'],event=global_config['this_competition'])
+        file_path = query_str.event + query_str.season +  '/TeamData/' + request_path + '.json'
+        response_body = FileSync.get(global_config, file_path)
+            
+        web.header('Content-Type', 'application/json')
+        return response_body    
+    
 class SetWeights(object):
     def GET(self):
         WebLogin.check_access(global_config,7)
@@ -1063,6 +1223,9 @@ if __name__ == "__main__":
     parser.add_option(
         "-l","--processloop",dest="processloop", default='0',
         help='Process Team Files')
+    parser.add_option(    
+        "-a","--aliases",dest="comp_alias_file",default='ScoutingAppEventAliases.txt',
+        help="Competition Alias Configuration File")
     parser.add_option(
         "-b","--bluetooth",action="store_true", dest="bluetoothServer", default=False,
         help='Run Bluetooth Sync Server')
@@ -1074,11 +1237,12 @@ if __name__ == "__main__":
     (options,args) = parser.parse_args()
 
     logger.debug("Running the Scouting App Web Server")
-
-    db_name          = global_config['db_name']
-    issues_db_name   = global_config['issues_db_name']
-    debriefs_db_name = global_config['debriefs_db_name']
-    users_db_name    = global_config['users_db_name']
+    
+    season = global_config['this_season']
+    db_name          = global_config['db_name'] + season
+    issues_db_name   = global_config['issues_db_name'] + season
+    debriefs_db_name = global_config['debriefs_db_name'] + season
+    users_db_name    = global_config['users_db_name'] + season
     
 
     session          = DbSession.open_db_session(db_name, DataModel)
@@ -1106,6 +1270,12 @@ if __name__ == "__main__":
             users_file += '.xlsx'
         logger.debug('Loading Users from file: %s' % users_file)
         UsersDataModel.add_users_from_file(users_session, users_file)
+
+    # load the competition alias file if one is specified
+    if options.comp_alias_file != '':
+        comp_alias_file = './config/' + options.comp_alias_file        
+        logger.debug('Loading Competition Alias file: %s' % comp_alias_file)
+        CompAlias.read_comp_alias_config(comp_alias_file)
 
     # make sure that there is a default admin user. If no admin user exists, then create one
     if UsersDataModel.getUser( users_session, 'admin' ) is None:
@@ -1141,7 +1311,6 @@ if __name__ == "__main__":
     
     #ImageFileUtils.create_thumbnails_by_directory('./static/data/%s/ScoutingPictures' % competition)
 
-
     # also create the configuration directory used to provide data to the tablets
     base_dir = './static/data/ScoutingConfig'
     try: 
@@ -1163,7 +1332,7 @@ if __name__ == "__main__":
     
     bluetooth_sync_server = None
     if options.bluetoothServer:
-        bluetooth_sync_server = BluetoothSyncServer.BluetoothSyncServer()
+        bluetooth_sync_server = BluetoothSyncServer.BluetoothSyncServer(global_config)
         bluetooth_sync_server.start()
 
     '''
@@ -1201,7 +1370,7 @@ if __name__ == "__main__":
         bluetooth_web_server.terminate()
         bluetooth_web_server.join()
     '''
-    
+        
     if process_file_timer != None:
         process_file_timer.stop()
 

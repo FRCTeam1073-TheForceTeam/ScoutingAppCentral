@@ -43,11 +43,11 @@ Returns:
     A list of files.
 '''
 def isFileProcessed(global_config, session, db_name, filepath):
-    if db_name == global_config['db_name']:
+    if db_name == (global_config['db_name'] + global_config['this_season']):
         is_processed = DataModel.isFileProcessed(session, filepath)
-    elif db_name == global_config['issues_db_name']:
+    elif db_name == (global_config['issues_db_name'] + global_config['this_season']):
         is_processed = IssueTrackerDataModel.isFileProcessed(session, filepath)
-    elif db_name == global_config['debriefs_db_name']:
+    elif db_name == (global_config['debriefs_db_name'] + global_config['this_season']):
         is_processed = DebriefDataModel.isFileProcessed(session, filepath)
         
     return is_processed
@@ -82,7 +82,7 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
     start_time = datetime.datetime.now()
     
     # Initialize the database session connection
-    db_name  = global_config['db_name']
+    db_name  = global_config['db_name'] + global_config['this_season']
     session  = DbSession.open_db_session(db_name)
  
     some_files_processed = False
@@ -212,8 +212,8 @@ def process_file(global_config, session, attr_definitions, data_filename):
 def process_issue_files(global_config, input_dir, recursive=True):
 
     # Initialize the database session connection
-    issues_db_name  = global_config['issues_db_name']
-    debrief_db_name = global_config['debriefs_db_name']
+    issues_db_name  = global_config['issues_db_name'] + global_config['this_season']
+    debrief_db_name = global_config['debriefs_db_name'] + global_config['this_season']
     debrief_session = DbSession.open_db_session(debrief_db_name)
     issues_session  = DbSession.open_db_session(issues_db_name)
 
@@ -263,8 +263,8 @@ def process_issue_files(global_config, input_dir, recursive=True):
 def process_debrief_files(global_config, input_dir, recursive=True):
 
     # Initialize the database session connections
-    issues_db_name  = global_config['issues_db_name']
-    debrief_db_name = global_config['debriefs_db_name']
+    issues_db_name  = global_config['issues_db_name'] + global_config['this_season']
+    debrief_db_name = global_config['debriefs_db_name'] + global_config['this_season']
     debrief_session = DbSession.open_db_session(debrief_db_name)
     issues_session  = DbSession.open_db_session(issues_db_name)
     
@@ -423,7 +423,7 @@ if __name__ == "__main__":
     logger = Logger.get_logger('./config', 'logging.conf', 'scouting.fileproc')
     global_config['logger'] = logger
 
-    session = DbSession.open_db_session(global_config['db_name'], DataModel)
+    session = DbSession.open_db_session((global_config['db_name'] + global_config['this_season']), DataModel)
 
     counter = 0
     done = False

@@ -4,10 +4,6 @@ Created on Feb 02, 2013
 @author: ksthilaire
 '''
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import UsersDataModel
-import os
 import csv
 import xlrd
 
@@ -69,47 +65,5 @@ class UserDefinitions:
     def __repr__(self):
         return self._userdefinitions.__repr__()            
 
-    
-    
-if __name__ == '__main__':
-     
+         
         
-    myfile = './config/Users-2013.xlsx'
-    user_definitions = UserDefinitions()
-    # create the user definition dictionary from the csv file
-    user_definitions.parse(myfile)
-    print user_definitions
-        
-    db_name = 'Issues2013'
-    db_connect='sqlite:///%s'%(db_name)
-    my_db = create_engine(db_connect)
-    Session = sessionmaker(bind=my_db)
-    session = Session()
-
-    # Create the database if it doesn't already exist
-    if not os.path.exists('./' + db_name):    
-        UsersDataModel.create_db_tables(my_db)
-
-    users = user_definitions.get_definitions()
-    for user, definition in users.iteritems():
-        UsersDataModel.addUserFromAttributes(session, definition)
-    
-    session.commit()
-    
-    taskgroups = UsersDataModel.getTaskgroupList(session)
-    print taskgroups
-    for group in taskgroups:
-        print group
-        members = UsersDataModel.getTaskgroupMembers(session,group)
-        print members
-    
-    subgroups = UsersDataModel.getSubgroupList(session)
-    print subgroups
-    
-    users = UsersDataModel.getUserList(session)
-    print users
-    
-    users = UsersDataModel.getDisplayNameList(session)
-    print users
-    
-    

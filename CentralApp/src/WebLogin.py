@@ -32,7 +32,7 @@ def auth_user(global_config, desired_path='/home'):
         if logged_out_users.has_key(username):
             del logged_out_users[username]
         else:
-            session = DbSession.open_db_session(global_config['users_db_name'])
+            session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
             user = UsersDataModel.getUser(session, username)
             if user:
                 if user.state == 'Disabled':
@@ -78,7 +78,7 @@ def check_access(global_config, access_level):
         
         # here is where we need to do a lookup in the user database and see if the
         # user is authorized to access this page.
-        session = DbSession.open_db_session(global_config['users_db_name'])
+        session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
         user = UsersDataModel.getUser(session, username)
         if user:
             if user.check_access_level(access_level) == True:

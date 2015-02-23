@@ -74,7 +74,7 @@ load_users_form = pureform(
 def get_user_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
         
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     user = UsersDataModel.getUser(session, username)
     form = userform()
@@ -106,7 +106,7 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
         
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
                                 
     email_address = form[user_emailaddress_label].value
     cellphone = form[user_cellphone_label].value
@@ -152,7 +152,7 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
 def get_delete_user_form(global_config):
     global_config['logger'].debug( 'GET Delete User Form' )
         
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     form = deleteuserform()
 
@@ -169,7 +169,7 @@ def get_delete_user_form(global_config):
 def process_delete_user_form(global_config, form):
     global_config['logger'].debug( 'Process Delete User' )
     
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
     username = form[user_username_label].value
     UsersDataModel.deleteUser(session, username)
     session.commit()
@@ -180,7 +180,7 @@ def process_delete_user_form(global_config, form):
 def process_delete_user(global_config, username):
     global_config['logger'].debug( 'Process Delete User' )
     
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
     UsersDataModel.deleteUser(session, username)
     session.commit()
     session.close()
@@ -190,7 +190,7 @@ def process_delete_user(global_config, username):
 def get_userprofile_form(global_config, username):
     global_config['logger'].debug( 'GET User Form For: %s', username )
         
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     user = UsersDataModel.getUser(session, username)
     
@@ -212,7 +212,7 @@ def get_userprofile_form(global_config, username):
 def process_userprofile_form(global_config, form, username):
     global_config['logger'].debug( 'Process User Profile For: %s', username )
     
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
                                 
     email_address = form[user_emailaddress_label].value
     cellphone = form[user_cellphone_label].value
@@ -263,7 +263,7 @@ def process_load_user_form(global_config, form):
     users_file = './config/' + form[user_file_label].value
     global_config['logger'].debug('Loading Users from file: %s' % users_file)
     
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     UsersDataModel.add_users_from_file(session, users_file)
     
@@ -311,7 +311,7 @@ def insert_users_table(user_list):
 
 def get_user_list_page(global_config):
  
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     result = ''
     result += '<hr>'
@@ -335,7 +335,7 @@ def get_user_list_page(global_config):
 def get_user_list_json(global_config):
     
     global_config['logger'].debug( 'GET User List' )
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     user_list = UsersDataModel.getUserList(session)
     session.close()

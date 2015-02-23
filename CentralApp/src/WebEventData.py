@@ -4,10 +4,12 @@ Created on March 3, 2013
 @author: ksthilaire
 '''
 
+import time
 import urllib2
 import json
 import web
 import WebCommonUtils
+import FileSync
 
 from BeautifulSoup import BeautifulSoup
 import re
@@ -88,7 +90,7 @@ def get_events_page(global_config, year):
         page += '    } );\n'
         page += '</script>\n'
         
-        url_str = 'http://www.thebluealliance.com/api/v1/events/list?year=%s&X-TBA-App-Id=frc1073:scouting-system:v01' % year
+        url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
         try:
             events = urllib2.urlopen(url_str).read()
             event_data_list = json.loads(events)
@@ -137,7 +139,7 @@ def get_event_standings_page(global_config, year, event_code):
 
         page = ''
             
-        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
             event_data = urllib2.urlopen(url_str).read()
             event_data = json.loads(event_data)
@@ -259,7 +261,7 @@ def get_event_results_page(global_config, year, event_code):
 
         page = ''
             
-        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
             event_data = urllib2.urlopen(url_str).read()
             event_data = json.loads(event_data)
@@ -324,7 +326,7 @@ def get_events_json(global_config, year, type=None):
         
         global_config['logger'].debug( 'GET Event Info Json' )    
         
-        url_str = 'http://www.thebluealliance.com/api/v1/events/list?year=%s&X-TBA-App-Id=frc1073:scouting-system:v01' % year
+        url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
         try:
             event_data = urllib2.urlopen(url_str).read()
             if type != None:
@@ -357,7 +359,7 @@ def get_event_info_json(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
             
-        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
             event_data = urllib2.urlopen(url_str).read()
         except:
@@ -368,8 +370,8 @@ def get_event_info_json(global_config, year, event_code):
 def get_event_info_dict(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
-            
-        url_str = 'http://www.thebluealliance.com/api/v1/event/details?event=%s%s&X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+                    
+        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
             event_data = urllib2.urlopen(url_str).read()
             event_data = json.loads(event_data)
@@ -384,11 +386,17 @@ def get_event_standings_json(global_config, year, event_code):
     
     return get_data_from_first(global_config, year, event_code, 'rankings')
 
-def get_event_matchresults_json(global_config, year, event_code, table_to_parse):
+def get_event_matchresults_json(global_config, year, event_code, round_str, table_to_parse):
         
     global_config['logger'].debug( 'GET Event Results Json' )
 
-    return get_data_from_first(global_config, year, event_code, 'matchresults', table_to_parse)
+    return get_data_from_first(global_config, year, event_code, 'matchresults', round_str, table_to_parse)
+
+def get_event_matchschedule_json(global_config, year, event_code, round_str):
+        
+    global_config['logger'].debug( 'GET Event Results Json - %s' % round_str )
+
+    return get_data_from_first(global_config, year, event_code, 'schedule%s' % round_str )
 
 def need_team_hyperlink(heading):
     if (heading.find('Team') != -1) or \
@@ -399,26 +407,28 @@ def need_team_hyperlink(heading):
         need_hyperlink = False
     return need_hyperlink
 
-def get_data_from_first(global_config, year, event_code, query_str, table_to_parse=2):
+def get_data_from_first(global_config, year, event_code, query_str, round_str = '', table_to_parse=2):
 
-    web.header('Content-Type', 'application/json')
     result = []
+    store_data_to_file = False
 
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+        
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
     try:
         first_url_str = 'http://www2.usfirst.org/%scomp/events/%s/%s.html' % (year,event_code.upper(),query_str)
+        print 'GET - %s' % first_url_str
         rank_data = urllib2.urlopen(first_url_str).read()
                 
         my_parser = RankParser()
         rankings, _ = my_parser.parse( rank_data, table_to_parse )
         
-        # derive our competition name from the FIRST event code 
-        competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
-        
         # rankings is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response
         
+        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
         headings = rankings[0]
         result.append('  "columns" : [\n')
 
@@ -448,9 +458,40 @@ def get_data_from_first(global_config, year, event_code, query_str, table_to_par
         if len(rankings) > 1:         
             result = result[:-1]
         result.append(' ]\n')
+        store_data_to_file = True
     except:
-        pass
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/%s%s.json' % (competition,query_str,round_str) )
+        if stored_file_data != '':
+            return stored_file_data
     
     result.append(' ] }\n')
-    return ''.join(result)
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s%s.json' % (competition,query_str,round_str), 'text', json_str)
+        except:
+            raise
+    return json_str
+        
+def update_event_data_files( global_config, year, event, directory ):
+    
+    result = False
+    
+    # for now, we only support updating files in the EventData directory, so only continue if that's the 
+    # directory that was specified.
+    if directory.upper() == 'EVENTDATA':
+        # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
+        # will also store the json payload to the EventData directory completing the desired 
+        # operation
+        get_event_standings_json( global_config, year, event )
+        get_event_matchresults_json(global_config, year, event, 'qual', 2)
+        get_event_matchresults_json(global_config, year, event, 'elim', 3)
+        get_event_matchschedule_json(global_config, year, event, 'qual')
+        get_event_matchschedule_json(global_config, year, event, 'elim')
+        
+        result = True
+        
+    return result
         

@@ -79,7 +79,7 @@ def init_issue_tracker():
 def get_new_issue_form(global_config, platform_type=None):
     global_config['logger'].debug( 'GET New Issue Form' )
         
-    users_session = DbSession.open_db_session(global_config['users_db_name'])
+    users_session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     form = new_issueform()
 
@@ -102,7 +102,7 @@ def get_new_issue_form(global_config, platform_type=None):
 def process_new_issue_form(global_config, form):
     global_config['logger'].debug( 'Process New Issue Form' )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
                     
     # TODO: need to come up with a way to generate the next available issue number
     platform = form[issue_platform_label].value
@@ -152,8 +152,8 @@ def process_new_issue_form(global_config, form):
 def get_issue_form(global_config, issue_id):
     global_config['logger'].debug( 'GET Issue Form, Issue: %s', issue_id )
         
-    session = DbSession.open_db_session(global_config['issues_db_name'])
-    users_session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
+    users_session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     issue_id = issue_id
     platform = issue_id.split('-')[0]
@@ -187,7 +187,7 @@ def get_issue_form(global_config, issue_id):
 def process_issue_form(global_config, form, issue_id, username):
     global_config['logger'].debug( 'Process Issue Form Issue: %s', issue_id )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
                     
     platform = issue_id.split('-')[0]
     summary = form[issue_summary_label].value
@@ -241,7 +241,7 @@ def get_issue_comment_form(global_config, issue_id):
 def process_issue_comment_form(global_config, form, issue_id, username):
     global_config['logger'].debug( 'Process Issue Comment Form: %s', issue_id )
     
-    session = DbSession.open_db_session(global_config['issues_db_name'])                   
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])                   
     comment = form[issue_comment_label].value
     timestamp = str(int(time.time()))
 
@@ -253,7 +253,7 @@ def process_issue_comment_form(global_config, form, issue_id, username):
     return '/issue/%s' % issue_id            
 
 def get_issue_page(global_config, issue_id, allow_update=False):
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
         result = ''
@@ -356,7 +356,7 @@ def get_issue_page(global_config, issue_id, allow_update=False):
         return None
     
 def get_issue_json(global_config, issue_id, allow_update=False):
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
     if issue:
         return issue.json()
@@ -410,7 +410,7 @@ def insert_issues_table(heading, issues):
 
 def get_issues_home_page(global_config, allow_create=False):
  
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
 
     result = ''
     result += '<h3> Platforms' + '</h3>'
@@ -430,7 +430,7 @@ def get_issues_home_page(global_config, allow_create=False):
 
 def get_platform_issues_home_page(global_config, platform_type, allow_create=False):
  
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
 
     result = ''
     if global_config['issues_db_master'] == 'Yes' and allow_create == True:
@@ -456,7 +456,7 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
 def get_platform_issues(global_config, platform_type, status=''):
     global_config['logger'].debug( 'GET Issues for platform: %s', platform_type )
  
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
 
     if status.lower() == 'open':
         issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Open', 'Working', 
@@ -483,7 +483,7 @@ def get_platform_issues(global_config, platform_type, status=''):
 
 def delete_comment(global_config, issue_id, tag):
  
-    session = DbSession.open_db_session(global_config['issues_db_name'])
+    session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     
     IssueTrackerDataModel.deleteIssueCommentsByTag(session, issue_id, tag)
     session.commit()

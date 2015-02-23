@@ -11,7 +11,7 @@ import WebCommonUtils
 def get_page(global_config, access_level):
     global_config['logger'].debug( 'GET Admin Page' )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
             
     page = ''
     page += '<hr>'

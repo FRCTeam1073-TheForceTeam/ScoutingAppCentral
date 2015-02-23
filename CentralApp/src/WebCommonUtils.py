@@ -2,6 +2,7 @@ import os
 import AttributeDefinitions
 import DbSession
 import DataModel
+import CompAlias
 import WebEventData
 
 def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
@@ -33,7 +34,7 @@ def get_comp_list():
     this_comp = my_config['this_competition']
     complist.append(this_comp+season)
     
-    other_competitions = my_config['other_competitions'].split(',')
+    other_competitions = CompAlias.get_comp_alias_list()
 
     for comp in other_competitions:
         if comp and comp != my_config['this_competition']:
@@ -50,8 +51,8 @@ def get_short_comp_list(season=None):
     this_comp = my_config['this_competition']
     complist.append(this_comp)
     
-    other_competitions = my_config['other_competitions'].split(',')
-
+    other_competitions = CompAlias.get_comp_alias_list()
+    
     for comp in other_competitions:
         if comp and comp != my_config['this_competition']:
             complist.append(comp)
@@ -69,10 +70,10 @@ def get_team_comp_list(this_comp, team):
         
     complist.append(this_comp)
     
-    session = DbSession.open_db_session(my_config['db_name'])
+    session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
     team_scores = DataModel.getTeamScore(session, team)
     for score in team_scores:
-        comp = score.competition
+        comp = score.competition.upper()
         # currently, the competition season is stored in the database
         # as part of the competition. So, we need to add it for the comparison,
         # but not as we define the complist itself
@@ -84,7 +85,7 @@ def get_team_comp_list(this_comp, team):
 def get_team_info_str(team):
     
     my_config = ScoutingAppMainWebServer.global_config
-    session = DbSession.open_db_session(my_config['db_name'])
+    session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
 
     team_info_str=list()
     team_info = DataModel.getTeamInfo(session, int(team))
@@ -185,22 +186,12 @@ def map_event_code_to_comp(event_name, season=None):
         else:
             season = my_config['this_season']
     
-    #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
-    #       We may also just want to adopt the FIRST short event codes, too, though they
-    #       aren't all that obvious what they refer to.
-    comp = event_name[4:] + season
-    if comp == 'mabos':
-        comp = 'NU' + season
-    elif comp == 'nhdur':
-        comp = 'UNH' + season
-    elif comp == 'rismi':
-        comp = 'RI' + season
-    elif comp == 'necmp':
-        comp = 'NECMP' + season
-    else:
-        pass
-            
-    return comp        
+    comp = event_name[4:]
+    event_info = CompAlias.get_event_by_code(comp)
+    if event_info != None:
+        comp = event_info.event_alias
+           
+    return comp + season        
 
 def map_event_code_to_short_comp(event_name, season=None):
     my_config = ScoutingAppMainWebServer.global_config
@@ -211,21 +202,11 @@ def map_event_code_to_short_comp(event_name, season=None):
         else:
             season = my_config['this_season']
     
-    #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
-    #       We may also just want to adopt the FIRST short event codes, too, though they
-    #       aren't all that obvious what they refer to.
     comp = event_name[4:]
-    if comp == 'mabos':
-        comp = 'NU'
-    elif comp == 'nhdur':
-        comp = 'UNH'
-    elif comp == 'rismi':
-        comp = 'RI'
-    elif comp == 'necmp':
-        comp = 'NECMP'
-    else:
-        pass
-            
+    event_info = CompAlias.get_event_by_code(comp)
+    if event_info != None:
+        comp = event_info.event_alias
+    
     return comp        
 
 def map_event_code_to_season(event_name):
@@ -240,29 +221,16 @@ def map_event_code_to_season(event_name):
 def map_comp_to_event_code(comp):
     my_config = ScoutingAppMainWebServer.global_config
     
-    #TODO: Need to replace this hardcoded behavior with something more dynamic/configurable
-    #       We may also just want to adopt the FIRST short event codes, too, though they
-    #       aren't all that obvious what they refer to.
     if len(comp) > 4:
         season_str = comp[-4:]
         if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
             comp = comp[0:-4]
             
-    comp = comp.lower()
-    if comp == 'nu':
-        event_code = 'mabos'
-    elif comp == 'unh':
-        event_code = 'nhdur'
-    elif comp == 'ri':
-        event_code = 'rismi'
-    elif comp == 'necmp':
-        event_code = 'necmp'
-    elif comp == 'bob':
-        event_code = 'nhbb'
-    else:
-        event_code = comp
+    event_info = CompAlias.get_event_by_alias(comp)
+    if event_info != None:
+        comp = event_info.event_code
             
-    return event_code        
+    return comp
     
 def map_comp_to_season(comp):
     my_config = ScoutingAppMainWebServer.global_config
@@ -276,6 +244,19 @@ def map_comp_to_season(comp):
             season = season_str
     
     return season
+
+def split_comp_str(comp):
+    valid_season = False
+
+    if len(comp) > 4:
+        comp_str = comp[0:(len(comp)-4)]
+        season_str = comp[-4:]
+        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+            valid_season = True
+    if valid_season:
+        return (comp_str, season_str)
+    else:
+        return None
 
 def get_district_string():
     

@@ -167,7 +167,6 @@ def modifyNotesEntry(session, teamnum, comp, old_notes, new_notes, notestag):
 def getTeamNotes(session, teamId, comp):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
                                       filter(func.lower(NotesEntry.competition)==func.lower(comp)).all()
-    print str(notes)
     return notes
         
 def getTeamAttributes(session, teamId, comp):
@@ -522,7 +521,7 @@ def dump_db_tables(my_db):
     meta.drop_all()
 
 def recalculate_scoring(global_config, competition=None, attr_definitions=None):
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     if competition is None:
         competition = global_config['this_competition'] + global_config['this_season']

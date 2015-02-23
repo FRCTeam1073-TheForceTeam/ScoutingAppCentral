@@ -259,7 +259,7 @@ def getTaskgroupEmailList(session, taskgroup):
     return email_list_str
             
 def getTaskgroupEmailLists(global_config, name):
-    session = DbSession.open_db_session(global_config['users_db_name'])
+    session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
     email_list_str = ''
     
     if name == 'all':

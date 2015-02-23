@@ -13,6 +13,7 @@ import ImageFileUtils
 import AttributeDefinitions
 import DbSession
 import DataModel
+import FileSync
 import WebCommonUtils
 
 def get_datafiles(input_dir, pattern, recursive,logger):
@@ -57,7 +58,7 @@ def get_datafiles(input_dir, pattern, recursive,logger):
 def get_team_datafiles_page(global_config, name, display_notes=True):
     
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
 
     if global_config['attr_definitions'] == None:
         return None
@@ -198,7 +199,7 @@ def get_team_server_page(global_config, name):
         
     global_config['logger'].debug( 'GET Team Server: %s', name )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     web.header('Content-Type', 'application/json')
     result = []
@@ -217,7 +218,7 @@ def get_team_score_page(global_config, name):
         
     global_config['logger'].debug( 'GET Team Score: %s', name )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     web.header('Content-Type', 'application/json')
     result = []
@@ -236,7 +237,7 @@ def get_team_notes_page(global_config, name):
         
     global_config['logger'].debug( 'GET Team Notes: %s', name )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     #web.header('Content-Type', 'application/json')
     notes_string = ''
@@ -250,7 +251,7 @@ def get_team_rankings_page(global_config, comp=None):
         
     global_config['logger'].debug( 'GET Team Rankings' )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
         
     web.header('Content-Type', 'application/json')
     result = []
@@ -274,7 +275,7 @@ def get_team_rankings_array(global_config):
         
     global_config['logger'].debug( 'GET Team Rankings Array' )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
         
     web.header('Content-Type', 'application/json')
     result = []
@@ -295,7 +296,7 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
         
     global_config['logger'].debug( 'GET Team Attribute Rankings' )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
         
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
@@ -325,11 +326,16 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
     result.append(']}')
     return ''.join(result)
 
-def get_team_score_breakdown_page(global_config, name, comp=None):
+def get_team_score_breakdown_json(global_config, name, comp=None, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Score Breakdown: %s', name )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    if comp == None:
+        comp = global_config['this_competition'] + global_config['this_season']
+        season = global_config['this_season']
+    else:
+        season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
     
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
@@ -339,8 +345,7 @@ def get_team_score_breakdown_page(global_config, name, comp=None):
     result = []
 
     result.append('{ "score_breakdown": [\n')
-    if comp == None:
-        comp = global_config['this_competition'] + global_config['this_season']
+
     team_attributes = DataModel.getTeamAttributesInOrder(session, name, comp)
     for attribute in team_attributes:
         attr_def = attr_definitions.get_definition( attribute.attr_name )
@@ -364,14 +369,22 @@ def get_team_score_breakdown_page(global_config, name, comp=None):
         result.append('\n')
     result.append(']}')
     
-    return ''.join(result)
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_scorebreakdown.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
 
 def get_team_attributes_page(global_config):
         
     global_config['logger'].debug( 'GET Team Attributes' )
     
-    session = DbSession.open_db_session(global_config['db_name'])
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions()
@@ -441,21 +454,20 @@ def get_team_datafile_page(global_config, filename):
     page += '</table>'
     return page
 
-def get_team_datafile_json(global_config, filename):
+def get_team_datafile_json(global_config, filename, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Data File Json: %s', filename )
         
-    comp, name = filename.split('/', 1)
-    filepath = './static/data/' + comp + '/ScoutingData/' + name
+    comp, fname = filename.split('/', 1)
+    filepath = './static/data/' + comp + '/ScoutingData/' + fname
     datafile = open( filepath, "r" )
     
-    team = filename.split('_')[0].lstrip('Team')
+    team = fname.split('_')[0].lstrip('Team')
 
-    web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "competition": "%s",\n' % comp)
     result.append('  "team": "%s",\n' % team)
-    result.append('  "filename": "%s",\n' % name)
+    result.append('  "filename": "%s",\n' % fname)
     result.append('  "scouting_data": [\n')
     
     while 1:
@@ -464,7 +476,10 @@ def get_team_datafile_json(global_config, filename):
             break
         for line in lines:
             line = line.rstrip('\n')
-            name, value = line.split(':')
+            try:
+                name, value = line.split(':',1)
+            except:
+                pass
 
             result.append('   { "name": "%s", "value": "%s" }' % (name,value))
             result.append(',\n')
@@ -472,13 +487,25 @@ def get_team_datafile_json(global_config, filename):
         if len(lines) > 0:
             result = result[:-1]
     result.append('] }\n')
-    return ''.join(result)
+    
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            short_fname = fname.replace('.txt','')
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_file_%s.json' % (comp,team,short_fname), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
 
-def get_team_info_json(global_config, name):   
+def get_team_info_json(global_config, comp, name, store_json_file=False):   
     global_config['logger'].debug( 'GET Team %s Info', name )
-    session = DbSession.open_db_session(global_config['db_name'])
-
+    
+    season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+    
     team_info = DataModel.getTeamInfo(session, int(name))
     
     web.header('Content-Type', 'application/json')
@@ -496,15 +523,25 @@ def get_team_info_json(global_config, name):
     result.append('\n')
     
     result.append(' ] }\n')
-    return ''.join(result)
+    
+    json_str = ''.join(result)
+
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_teaminfo.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
      
-def get_team_score_json(global_config, name, comp):
+def get_team_score_json(global_config, name, comp, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team %s Score For Competition %s', name, comp )
-    session = DbSession.open_db_session(global_config['db_name'])
     
-    web.header('Content-Type', 'application/json')
+    season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+    
     result = []
     result.append('{ "competition" : "%s", "team" : "%s", ' % (comp,name))
     team_scores = DataModel.getTeamScore(session, name, comp)
@@ -518,12 +555,23 @@ def get_team_score_json(global_config, name, comp):
         if len(team_scores) > 0:
             result = result[:-1]
         result.append(']}')
-    return ''.join(result)
+        
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_score.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
-def get_team_scouting_data_summary_json(global_config, comp, name):
+def get_team_scouting_data_summary_json(global_config, comp, name, store_json_file=False):
     
     global_config['logger'].debug( 'GET Team %s Scouting Data For Competition %s', name, comp )
-    session = DbSession.open_db_session(global_config['db_name'])
+    
+    season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
 
     if global_config['attr_definitions'] == None:
         return None
@@ -532,7 +580,6 @@ def get_team_scouting_data_summary_json(global_config, comp, name):
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
 
-    web.header('Content-Type', 'application/json')
     result = []
 
     result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
@@ -568,13 +615,20 @@ def get_team_scouting_data_summary_json(global_config, comp, name):
             result = result[:-1]
         
     result.append(' ] }\n')
-    return ''.join(result)
+    json_str = ''.join(result)
+    
+    if store_json_file is True:   
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_data_summary.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
-def get_team_scouting_datafiles_json(global_config, comp, name):
+def get_team_scouting_datafiles_json(global_config, comp, name, store_json_file=False):
     
     global_config['logger'].debug( 'GET Team %s Scouting Datafiles For Competition %s', name, comp )
 
-    web.header('Content-Type', 'application/json')
     result = []
 
     result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
@@ -590,18 +644,28 @@ def get_team_scouting_datafiles_json(global_config, comp, name):
         
         result.append('   { "filename": "%s" }' % (basefile))
         result.append(',\n')
+        
+        if store_json_file is True:
+            get_team_datafile_json( global_config, comp + '/' + basefile, store_json_file )
     
     if len(datafiles) > 0:         
         result = result[:-1]
 
     result.append(' ] }\n')
-    return ''.join(result)
+    json_str = ''.join(result)
     
-def get_team_scouting_mediafiles_json(global_config, comp, name):
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_datafiles.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+    
+def get_team_scouting_mediafiles_json(global_config, comp, name, store_json_file=False):
     
     global_config['logger'].debug( 'GET Team %s Scouting Mediafiles For Competition %s', name, comp )
 
-    web.header('Content-Type', 'application/json')
     result = []
 
     result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
@@ -640,14 +704,23 @@ def get_team_scouting_mediafiles_json(global_config, comp, name):
         result = result[:-1]
 
     result.append(' ] }\n')
-    return ''.join(result)
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_mediafiles.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
-def get_team_scouting_notes_json(global_config, comp, name):
+def get_team_scouting_notes_json(global_config, comp, name, store_json_file=False):
     
     global_config['logger'].debug( 'GET Team %s Scouting Notes For Competition %s', name, comp )
-    session = DbSession.open_db_session(global_config['db_name'])
+    
+    season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
 
-    web.header('Content-Type', 'application/json')
     result = []
 
     result.append('{ "competition" : "%s", "team" : "%s",\n' % (comp,name))
@@ -662,15 +735,25 @@ def get_team_scouting_notes_json(global_config, comp, name):
         result = result[:-1]
 
     result.append(' ] }\n')
-    return ''.join(result)
+    
+    json_str = ''.join(result)
 
-def get_team_list_json(global_config, comp):
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/team%s_scouting_notes.json' % (comp,name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+
+def get_team_list_json(global_config, comp, store_json_file=False):
     global team_info_dict
     
     global_config['logger'].debug( 'GET Team List For Competition %s', comp )
-    session = DbSession.open_db_session(global_config['db_name'])
 
-    web.header('Content-Type', 'application/json')
+    season = WebCommonUtils.map_comp_to_season(comp)
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+
     result = []
 
     result.append('{ "teams" : [\n')
@@ -690,24 +773,30 @@ def get_team_list_json(global_config, comp):
         
     if len(team_list) > 0:         
         result = result[:-1]
-
         result.append(' ] }\n')
-        return ''.join(result)
+        json_str = ''.join(result)
     else:
-        return get_team_list_json_from_tba(global_config, comp)
+        json_str = get_team_list_json_from_tba(global_config, comp)
+
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,'teams'), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
 
 def get_team_list_json_from_tba(global_config, comp):
     
     global_config['logger'].debug( 'GET Team List For Competition From TBA %s', comp )
 
-    web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "teams" : ')
     
     event_code = WebCommonUtils.map_comp_to_event_code(comp)
     season = WebCommonUtils.map_comp_to_season(comp)
     
-    url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s/teams?X-TBA-App-Id=frc1073:scouting-system:v01' % (season,event_code)
+    url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s/teams?X-TBA-App-Id=frc1073:scouting-system:v01' % (season,event_code.lower())
     event_data = ''
     try:
         event_data = urllib2.urlopen(url_str).read()
@@ -719,18 +808,22 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None):
+def get_team_rankings_json(global_config, comp=None, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
-    
-    session = DbSession.open_db_session(global_config['db_name'])
-        
-    web.header('Content-Type', 'application/json')
-    result = []
-    result.append('{ "rankings": [\n')
+    store_data_to_file = False
     
     if comp == None:
         comp = global_config['this_competition'] + global_config['this_season']
+        season = global_config['this_season']
+    else:
+        season = WebCommonUtils.map_comp_to_season(comp)
+
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+
+    result = []
+    result.append('{ "rankings": [\n')
+    
         
     team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
     for team in team_rankings:
@@ -741,5 +834,150 @@ def get_team_rankings_json(global_config, comp=None):
             result.append(',\n')
     if len(result) > 0:
         result = result[:-1]
+
     result.append(']}')
-    return ''.join(result)
+    
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,'scoutingrankings'), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+
+local_picklist = None
+def create_picklist_json(global_config, comp=None, store_json_file=False):
+        
+    global_config['logger'].debug( 'Create Picklist Json' )
+    
+    global local_picklist
+    store_data_to_file = False
+    
+    if comp == None:
+        comp = global_config['this_competition'] + global_config['this_season']
+        season = global_config['this_season']
+    else:
+        season = WebCommonUtils.map_comp_to_season(comp)
+
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+    
+    result = []
+    result.append('{ "picklist": [\n')
+            
+    local_picklist = DataModel.getTeamsInRankOrder(session, comp, True)
+    rank = 1
+    for team in local_picklist:
+        # round the score to an integer value
+        team.score = float(int(team.score))
+        if team.score > 0:
+            row = '{ "rank" : %d, "team" : %d, "score" : %d, "competition" : "%s" }' % (rank, team.team, int(team.score), team.competition)
+            result.append(row)
+            result.append(',\n')
+            rank += 1
+    if len(result) > 0:
+        result = result[:-1]
+
+    result.append(']}')
+    
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,'picklist'), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+    
+def update_picklist_json(global_config, from_position, to_position, comp=None, store_json_file=True):
+        
+    global_config['logger'].debug( 'Create Picklist Json' )
+
+    global local_picklist
+    
+    if local_picklist is None:
+        create_picklist_json(global_config, comp, store_json_file=True)
+                
+    result = []
+    result.append('{ "picklist": [\n')
+    
+    if comp == None:
+        comp = global_config['this_competition'] + global_config['this_season']
+    
+    item_to_update = local_picklist.pop( from_position-1 )
+    local_picklist.insert(to_position-1, item_to_update)    
+    rank = 1
+    for team in local_picklist:
+        # round the score to an integer value
+        team.score = float(int(team.score))
+        if team.score > 0:
+            row = '{ "rank" : %d, "team" : %d, "score" : %d, "competition" : "%s" }' % (rank, team.team, int(team.score), team.competition)
+            result.append(row)
+            result.append(',\n')
+            rank += 1
+    if len(result) > 0:
+        result = result[:-1]
+
+    result.append(']}')
+    
+    json_str = ''.join(result)
+    
+    if store_json_file is True:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,'picklist'), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+
+def update_team_event_files( global_config, year, event, directory ):
+    
+    result = False
+    
+    # for now, we only support updating files in the EventData directory, so only continue if that's the 
+    # directory that was specified.
+    if directory.upper() == 'EVENTDATA':
+        # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
+        # will also store the json payload to the EventData directory completing the desired 
+        # operation
+        get_team_rankings_json( global_config, event+year, store_json_file=True )
+        get_team_list_json( global_config, event+year, store_json_file=True )
+       
+        result = True
+        
+    return result
+
+def update_team_data_files( global_config, year, event, directory, team=None ):
+    
+    global_config['logger'].debug( 'Updating Team DataFiles' )
+
+    session = DbSession.open_db_session(global_config['db_name'] + year)
+    comp = event+year
+
+    result = False
+    team_list = []
+    if team == None or team == '':
+        team_list = DataModel.getTeamsInNumericOrder(session, comp)
+    else:
+        team_list.append(team)
+        
+    # for now, we only support updating files in the TeamData directory, so only continue if that's the 
+    # directory that was specified.
+    if directory.upper() == 'TEAMDATA' or directory.upper() == 'EVENTDATA':
+        for team_entry in team_list:
+            
+            # TODO: added a special test here to skip teams with a number greater than 10000. Some data
+            # was erroneously entered with team numbers really high...
+            if team_entry.team < 10000:
+                get_team_info_json(global_config, comp, team_entry.team, store_json_file=True)
+                get_team_score_json(global_config, team_entry.team, comp, store_json_file=True)
+                get_team_score_breakdown_json(global_config, team_entry.team, comp, store_json_file=True)
+                get_team_scouting_notes_json(global_config, comp, team_entry.team, store_json_file=True)           
+                get_team_scouting_mediafiles_json(global_config, comp, str(team_entry.team), store_json_file=True)
+                get_team_scouting_datafiles_json(global_config, comp, str(team_entry.team), store_json_file=True)
+                get_team_scouting_data_summary_json(global_config, comp, team_entry.team, store_json_file=True)
+        result = True
+        
+    return result

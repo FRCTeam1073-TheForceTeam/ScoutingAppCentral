@@ -41,7 +41,7 @@ def process_form(global_config, form):
     new_value = form[attr_modify_new_value_label].value
     
     # Initialize the database session connection
-    db_name  = global_config['db_name']
+    db_name  = global_config['db_name'] + global_config['this_season']
     session  = DbSession.open_db_session(db_name)
     
     if global_config['attr_definitions'] != None:
