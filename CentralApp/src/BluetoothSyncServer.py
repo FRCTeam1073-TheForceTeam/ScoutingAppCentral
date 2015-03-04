@@ -7,11 +7,15 @@ Created on Feb 5, 2014
 from threading import Thread
 from bluetooth import *
 import FileSync
+import WebCommonUtils
+import WebEventData
+import WebTeamData
 
 class BluetoothSyncServer(Thread):
-    def __init__(self):
+    def __init__(self, global_config):
         Thread.__init__(self)
         self.shutdown = False
+        self.global_config = global_config
     
     def terminate(self):
         self.shutdown = True
@@ -55,9 +59,25 @@ class BluetoothSyncServer(Thread):
                     print "Request Path: %s" % request_path
 
                     request_complete = False
+                    
+                    # retrieve any params attached to the requested entity
+                    params_offset = request_path.find('?')
+                    if params_offset != -1:
+                        request_params = request_path[params_offset:]
+                        request_params = request_params.lstrip('?')
+                        request_path = request_path[0:params_offset]
+                    
+                    request_path = request_path.lstrip('/')
+
+                    # if the requested path starts with 'static', then let's assume that
+                    # the request knows the full path that it's looking for, otherwise, 
+                    # we will prepend the path with the path to the data directory
+                    if request_path.startswith('static'):
+                        fullpath = './' + request_path
+                    else:                                        
+                        fullpath = './static/data/' + request_path
                                         
                     if request_type == "PUT":
-                        fullpath = './static/data/' + request_path
                         
                         # make sure that the destination directory exists
                         if not os.path.exists(os.path.dirname(fullpath)):
@@ -66,10 +86,44 @@ class BluetoothSyncServer(Thread):
                         response_code = FileSync.put_file(fullpath, content_type, msg_body)
                         client_sock.send('HTTP/1.1 ' + response_code + '\r\n')
                         files_received += 1
+                        
+                    elif request_type == "POST":
+                            
+                        response_code = "400 Bad Request"
+                        path_elems = request_path.split('/')
+                        if len(path_elems) >= 2:
+                            comp_season_list = WebCommonUtils.split_comp_str(path_elems[0])
+                            if comp_season_list != None:
+                                directory = path_elems[1]
+                                
+                                if directory == 'EventData':
+                                    result = WebEventData.update_event_data_files( self.global_config,  
+                                                                                   comp_season_list[1], 
+                                                                                   comp_season_list[0], 
+                                                                                   directory )
+                                    if result == True:
+                                        result = WebTeamData.update_team_event_files( self.global_config,  
+                                                                                   comp_season_list[1], 
+                                                                                   comp_season_list[0], 
+                                                                                   directory )
+                                        
+                                elif directory == 'TeamData':
+                                    try:
+                                        team = path_elems[2]
+                                    except:
+                                        team = None
+                                        
+                                    result = WebTeamData.update_team_data_files( self.global_config,  
+                                                                               comp_season_list[1], 
+                                                                               comp_season_list[0], 
+                                                                               directory, team )
+                                if result == True:
+                                    response_code = "200 OK"
+
+                        client_sock.send('HTTP/1.1 ' + response_code + '\r\n')
+                        
                     elif request_type == "GET":
-                        
-                        fullpath = './static/data/' + request_path
-                        
+                                                
                         # check to see if the requested path exists. We may need to handle that
                         # condition separately, treating non-existent directories as empty (as
                         # opposed to sending a 404 not found.
