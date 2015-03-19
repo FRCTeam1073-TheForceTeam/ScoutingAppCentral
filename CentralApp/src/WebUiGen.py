@@ -33,7 +33,7 @@ myform = pureform(
     form.Textbox(dest_project_label, size=60),
     form.Textbox(app_name_label, size=60),
     form.Textbox(app_title_label, size=60),
-    form.Dropdown(sheet_type_label, ['Pit', 'Match', 'Issue', 'Debrief', 'Demo']), 
+    form.Dropdown(sheet_type_label, ['Pit', 'Match', 'Issue', 'Debrief', 'Demo']),
     form.Textbox(attr_defs_label,form.notnull,form.regexp('[\w_-]+\.xlsx', 'Must be .xlsx file'),size=60),
     form.Dropdown(gen_action_label, ['Complete App', 'UI Components', 'Base App']))
 
@@ -60,22 +60,25 @@ def process_form(global_config, form):
     dest_app_name = form[app_title_label].value
     attr_defs_file = './config/' + form[attr_defs_label].value
     
-    generated_code_fragments = UiGenerator.gen_ui(attr_defs_file, \
-                                                  dest_activity_prefix, \
-                                                  create_fragment_file=True)
+    try:
+        generated_code_fragments = UiGenerator.gen_ui(attr_defs_file, \
+                                                      dest_activity_prefix, \
+                                                      create_fragment_file=True)
+        
+        AppGenerator.prepare_destination_project( base_project_path, base_projectname, dest_project_path, dest_projectname, \
+                             dest_activity_prefix, dest_app_name, dest_app_label )
     
-    AppGenerator.prepare_destination_project( base_project_path, base_projectname, dest_project_path, dest_projectname, \
-                         dest_activity_prefix, dest_app_name, dest_app_label )
-
-    AppGenerator.update_generated_xml_code(dest_project_path, generated_code_fragments)
-
-    AppGenerator.update_generated_java_code(base_projectname, dest_project_path, dest_activity_prefix, generated_code_fragments)
-
-    #FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
+        AppGenerator.update_generated_xml_code(dest_project_path, generated_code_fragments)
     
-    return "User Interface Generated!\n\tSource Directory: %s\n\tDestination Directory: %s\n\tSheet Type: %s\n\tAttribute Definitions File: %s\n\tGenerate Action: %s" % \
-        (form[base_dir_label].value, \
-         form[dest_dir_label].value, \
-         form[sheet_type_label].value, \
-         form[attr_defs_label].value, \
-         form[gen_action_label].value)    
+        AppGenerator.update_generated_java_code(base_projectname, dest_project_path, dest_activity_prefix, generated_code_fragments)
+    
+        #FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
+        
+        return "User Interface Generated!\n\tSource Directory: %s\n\tDestination Directory: %s\n\tSheet Type: %s\n\tAttribute Definitions File: %s\n\tGenerate Action: %s" % \
+            (form[base_dir_label].value, \
+             form[dest_dir_label].value, \
+             form[sheet_type_label].value, \
+             form[attr_defs_label].value, \
+             form[gen_action_label].value)    
+    except Exception, err_str:
+        return str(err_str)
