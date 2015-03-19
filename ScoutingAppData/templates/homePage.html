@@ -8,6 +8,7 @@ $code:
     district = utils.get_district_string()
     comp = short_comp + season
     comp_list = utils.get_short_comp_list(season)
+    event_code = utils.map_comp_to_event_code(comp).lower() 
 
 <style type="text/css">
     #placeholder_scouting_rank
@@ -261,6 +262,7 @@ $$(document).ready(function () {
       <ul class="nav nav-tabs">
           <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">$short_comp Rank Summary</a></li>
           <li><a href="#pane_teams"    data-toggle="tab">$short_comp Teams</a></li>
+          <li><a href="/event/$season$event_code">$short_comp Event Page</a></li>
           <li><a href="#pane_district_events"    data-toggle="tab">$district Events</a></li>
           <li><a href="#pane_events"    data-toggle="tab">FIRST Events</a></li>
       </ul>

@@ -296,6 +296,8 @@ class TeamInfoJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
             name = params[0]
             
+        web.header('Content-Type', 'application/json')
+
         result = WebTeamData.get_team_info_json(global_config, comp, name)
         return result
                            
@@ -636,14 +638,8 @@ class EventResultsJson(object):
         if len(params) == 2:
             year = params[0][0:4]
             event_code = params[0][4:]
-            table = params[1]
-            if table == 'qual':
-                table_to_parse = 2
-            elif table == 'elim':
-                table_to_parse = 3
-            else:
-                table_to_parse = 2
-            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, table, table_to_parse)
+            round_str = params[1]
+            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, round_str)
             
             web.header('Content-Type', 'application/json')
             
@@ -1131,7 +1127,7 @@ class JsonTeamFile(object):
     
 class SetWeights(object):
     def GET(self):
-        WebLogin.check_access(global_config,7)
+        WebLogin.check_access(global_config,10)
         form = WebAttributeDefinitions.get_attr_def_form(global_config)
         return render.default_form(form)
            

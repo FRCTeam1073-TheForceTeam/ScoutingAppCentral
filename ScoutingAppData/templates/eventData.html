@@ -6,7 +6,9 @@ $var title: FIRST Event Page
 
 $code:
     comp = utils.map_event_code_to_comp(event_code)
+    short_comp = utils.split_comp_str(comp)[0]
     season = utils.map_event_code_to_season(event_code)
+    comp_list = utils.get_comp_and_eventcode_list(season)
     event_info = utils.get_event_info_str(event_code)
 
 <style type="text/css">
@@ -193,19 +195,19 @@ $$(document).ready(function () {
 
       } );   
 
-      var jqxhr_qualresults = $$.getJSON( "/api/eventresults/$event_code/qual", function(json_data) {
+      var jqxhr_qualmatches = $$.getJSON( "/api/eventresults/$event_code/qual", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $$('#event_qualresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+            $$('#event_qualmatches').dataTable( {
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 1, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -213,19 +215,19 @@ $$(document).ready(function () {
 
       } );   
 
-      var jqxhr_elimresults = $$.getJSON( "/api/eventresults/$event_code/elim", function(json_data) {
+      var jqxhr_quarterfinal_matches = $$.getJSON( "/api/eventresults/$event_code/quarters", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $$('#event_elimresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                "iDisplayLength": 100,
+            $$('#event_quarterfinal_matches').dataTable( {
+                "bAutoWidth": false,
+                "iDisplayLength": 8,
+                "bPaginate": false,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 2, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -233,19 +235,19 @@ $$(document).ready(function () {
 
       } );   
 
-      var jqxhr_qualschedule = $$.getJSON( "/api/eventschedule/$event_code/qual", function(json_data) {
+      var jqxhr_semifinal_matches = $$.getJSON( "/api/eventresults/$event_code/semis", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $$('#event_qualschedule').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                "iDisplayLength": 100,
-                "aaData": json_data.schedulequal,
+            $$('#event_semifinal_matches').dataTable( {
+                "bAutoWidth": false, 
+                "iDisplayLength": 6,
+                "bPaginate": false,
+                "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 1, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -253,25 +255,26 @@ $$(document).ready(function () {
 
       } );   
 
-      var jqxhr_elimschedule = $$.getJSON( "/api/eventschedule/$event_code/elim", function(json_data) {
+      var jqxhr_final_matches = $$.getJSON( "/api/eventresults/$event_code/finals", function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $$('#event_elimschedule').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                "iDisplayLength": 100,
-                "aaData": json_data.scheduleelim,
+            $$('#event_final_matches').dataTable( {
+                "bAutoWidth": false, 
+                "iDisplayLength": 3,
+                "bPaginate": false,
+                "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 2, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
           drawTable( json_data );
 
       } );   
+
 
 });
 </script>
@@ -281,6 +284,29 @@ $$(document).ready(function () {
   
     <div id="title">
         <h1>$event_info[0][1] ($event_info[1][1])</h1>
+    </div>
+
+    <!-- provide a dropdown to select the season to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $season
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+            <li><a href="/event/$event_code">$season</a></li>
+        </ul>
+    </div>
+
+    <!-- provide a dropdown to select the competition to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $short_comp
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for comp_entry in comp_list:
+            <li><a href="/event/$season$comp_entry[1]">$comp_entry[0]</a></li>
+        </ul>
     </div>
 
     <div class="container-fluid">
@@ -301,12 +327,10 @@ $$(document).ready(function () {
     <div class="tabbable">
       <ul class="nav nav-tabs">
           <li class="active"><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
-          <li><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rankings</a></li>
-          <li><a href="#pane_rankings"    data-toggle="tab">Match Rankings</a></li>
-          <li><a href="#pane_qualschedule" data-toggle="tab">Qual Schedule</a></li>
-          <li><a href="#pane_qualresults" data-toggle="tab">Qual Results</a></li>
-          <li><a href="#pane_elimschedule" data-toggle="tab">Elim Schedule</a></li>
-          <li><a href="#pane_elimresults" data-toggle="tab">Elim Results</a></li>
+          <li><a href="#pane_scouting_rank"  data-toggle="tab">Scouting Rankings</a></li>
+          <li><a href="#pane_rankings"       data-toggle="tab">Match Rankings</a></li>
+          <li><a href="#pane_qualmatches"    data-toggle="tab">Qual Round</a></li>
+          <li><a href="#pane_playoffmatches" data-toggle="tab">Playoff Round</a></li>
       </ul>
  
       <div class="tab-content">
@@ -349,49 +373,43 @@ $$(document).ready(function () {
           </ul>
           </div>
 
-          <div id="pane_qualschedule" class="tab-pane">
+          <div id="pane_qualmatches" class="tab-pane">
           <ul>
-          <table id="event_qualschedule" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
+          <h3>Qualification Maches</h3>
+          <br>
+          <table id="event_qualmatches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
 	      </table>
           </ul>
           </div>
 
-          <div id="pane_qualresults" class="tab-pane">
+          <div id="pane_playoffmatches" class="tab-pane">
           <ul>
-          <table id="event_qualresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
+          <h3>Quarter Final Maches</h3>
+          <table id="event_quarterfinal_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+          <br>
+          <ul>
+          <h3>Semi Final Maches</h3>
+          <table id="event_semifinal_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+          <br>
+          <ul>
+          <h3>Final Maches</h3>
+          <table id="event_final_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
 	      </table>
           </ul>
           </div>
 
-          <div id="pane_elimresults" class="tab-pane">
-          <ul>
-          <table id="event_elimresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-          <div id="pane_elimschedule" class="tab-pane">
-          <ul>
-          <table id="event_elimschedule" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
 
       </div>
     </div>

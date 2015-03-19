@@ -7,6 +7,7 @@ Created on March 3, 2013
 import time
 import urllib2
 import json
+import datetime
 import web
 import WebCommonUtils
 import FileSync
@@ -355,48 +356,220 @@ def get_events_json(global_config, year, type=None):
             pass
         return event_data
 
+def get_event_data_from_tba( query_str ):
+    
+    url_str = 'http://www.thebluealliance.com/api/v2/event/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (query_str)
+    try:
+        event_data = urllib2.urlopen(url_str).read()
+    except:
+        event_data = ''
+        pass
+    return event_data
+
 def get_event_info_json(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
             
-        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
-        try:
-            event_data = urllib2.urlopen(url_str).read()
-        except:
-            event_data = ''
-            pass
-        return event_data
+        return get_event_data_from_tba( '%s%s' % (year,event_code.lower()) )
 
 def get_event_info_dict(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
                     
-        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
-        try:
-            event_data = urllib2.urlopen(url_str).read()
+        event_data = get_event_data_from_tba( '%s%s' % (year,event_code.lower()) )
+        if event_data != '':
             event_data = json.loads(event_data)
-        except:
+        else:
             event_data = None
-            pass
         return event_data
         
 def get_event_standings_json(global_config, year, event_code):
         
     global_config['logger'].debug( 'GET Event Rankings Json' )
     
-    return get_data_from_first(global_config, year, event_code, 'rankings')
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
 
-def get_event_matchresults_json(global_config, year, event_code, round_str, table_to_parse):
+    #return get_data_from_first(global_config, year, event_code, 'rankings')
+    store_data_to_file = False
+    result = []
+    
+    rankings = ''
+    json_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
+    if json_data != '':
+        rankings = json.loads(json_data)
+
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    if rankings:
+        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+        headings = rankings[0]
+        result.append('  "columns" : [\n')
+
+        for heading in headings:
+            result.append('    { "sTitle": "%s" }' % heading)
+            result.append(',\n')
+        if len(headings)>0:
+            result = result[:-1]
+        result.append(' ],\n')
+        result.append('  "rankings" : [\n')
+        
+        for line in rankings[1:]:
+            result.append('       [ ')
+            for i in range(0,len(headings)):
+                if need_team_hyperlink(headings[i]):
+                    #result.append('"%s"' % (line[i]))
+                    result.append(('"<a href=\\"/teamdata/%s/'% competition)+str(line[i])+'\\">'+str(line[i])+'</a>"')
+                else:
+                    #result.append('"%s": "%s"' % (headings[i].title(),line[i]))
+                    result.append('"%s"' % (str(line[i])))
+                    
+                result.append(', ')
+            if len(line) > 0:         
+                result = result[:-1]
+            result.append(' ],\n')
+                
+        if len(rankings) > 1:         
+            result = result[:-1]
+        result.append(' ]\n')
+        store_data_to_file = True
+        result.append(' ]\n')        
+    else:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/rankings.json' % (competition) )
+        if stored_file_data != '':
+            return stored_file_data
+        else:
+            # no stored data either, so let's just return a formatted, but empty payload
+            result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+            result.append('  "columns" : [],\n')
+            result.append('  "rankings" : []\n')        
+
+    result.append(' }\n')
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/rankings.json' % (competition), 'text', json_str)
+        except:
+            raise
+    return json_str
+              
+def get_event_matchresults_json(global_config, year, event_code, round_str):
         
     global_config['logger'].debug( 'GET Event Results Json' )
 
-    return get_data_from_first(global_config, year, event_code, 'matchresults', round_str, table_to_parse)
+    if round_str == 'qual':
+        match_selector = 'qm'
+    elif round_str == 'quarters':
+        match_selector = 'qf'
+    elif round_str == 'semis':
+        match_selector = 'sf'
+    elif round_str == 'finals':
+        match_selector = 'f'
+        
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+
+    store_data_to_file = False
+    result = []
+    
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    event_matches = ''
+    json_data = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+    if json_data != '':
+        event_matches = json.loads(json_data)
+
+        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+        headings = [ 'Match', 'Start Time', 'Red 1', 'Red 2', 'Red 3', 'Blue 1', 'Blue 2', 'Blue 3', 'Red Score', 'Blue Score' ]
+        
+        result.append('  "columns" : [\n')
+
+        for heading in headings:
+            result.append('    { "sTitle": "%s" }' % heading)
+            result.append(',\n')
+        if len(headings)>0:
+            result = result[:-1]
+        result.append(' ],\n')
+        result.append('  "matchresults" : [\n')
+    
+        # the entire match set is returned from TBA, filter out the matches for the desired round
+        for match in event_matches:
+            
+            if str(match['comp_level']) == match_selector:
+                result.append('       [ ')
+                
+                # Match number
+                result.append( '"%s", ' % str(match['match_number']) )
+
+                # Match start time
+                match_epoch_time = int(match['time'])
+                time_format_str = '%a %b %d - %I:%M %p'
+                match_time_str = datetime.datetime.fromtimestamp(match_epoch_time).strftime(time_format_str)
+                result.append( '"%s", ' % match_time_str )
+                
+                # Red alliance teams
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][0]).lstrip('frc') ) )
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][1]).lstrip('frc') ) )
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][2]).lstrip('frc') ) )
+                
+                # Blue alliance teams
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][0]).lstrip('frc') ) )
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][1]).lstrip('frc') ) )
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][2]).lstrip('frc') ) )
+                
+                # Red alliance score
+                result.append( '"%s", ' % str(match['alliances']['red']['score'] ) )
+                
+                # Blue alliance score
+                result.append( '"%s"' % str(match['alliances']['blue']['score'] ) )
+                
+                result.append(' ],\n')
+                store_data_to_file = True
+
+        if store_data_to_file is True:
+            result = result[:-1]
+            result.append(' ]\n')
+            
+        result.append(' ]\n')
+
+    else:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/matchresults_%s.json' % (competition,round_str) )
+        if stored_file_data != '':
+            return stored_file_data
+    
+    result.append(' }\n')
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/matchresults_%s.json' % (competition,round_str), 'text', json_str)
+        except:
+            raise
+    return json_str    
+    #return get_data_from_first(global_config, year, event_code, 'matchresults', round_str, table_to_parse)
+
+def get_team_hyperlink( competition, team ):
+    team_hyperlink = '<a href=\\"/teamdata/%s/%s\\">%s</a>' % (competition,team,team)
+    return team_hyperlink
 
 def get_event_matchschedule_json(global_config, year, event_code, round_str):
         
     global_config['logger'].debug( 'GET Event Results Json - %s' % round_str )
+    
+    if round_str == 'qual':
+        round_str = 'qualifications'
+    elif round_str == 'elim':
+        round_str = 'playoffs'
 
-    return get_data_from_first(global_config, year, event_code, 'schedule%s' % round_str )
+    #return get_data_from_first(global_config, year, event_code, round_str )
+    return ''
 
 def need_team_hyperlink(heading):
     if (heading.find('Team') != -1) or \
@@ -418,6 +591,86 @@ def get_data_from_first(global_config, year, event_code, query_str, round_str = 
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
     try:
+        
+        opener = urllib2.build_opener()
+        opener.addheaders = [('Authorization', 'Basic a3N0aGlsYWlyZTozMDMyRTUxRS1CNkFBLTQ2QzgtOEY5Qy05QzdGM0EzM0Q4RjI='),('Accept','application/json')]
+                
+        #first_url_str = 'http://frc-events.usfirst.org/%s/%s/%s' % (year,event_code.upper(),query_str)
+        first_url_str = 'https://frc-api.usfirst.org/api/v1.0/rankings/%s/%s' % (year,event_code.upper())
+        
+        print 'GET - %s' % first_url_str
+        rank_data = opener.open(first_url_str)
+                
+        my_parser = RankParser()
+        rankings, _ = my_parser.parse( rank_data, table_to_parse )
+        
+        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        
+        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+        headings = rankings[0]
+        result.append('  "columns" : [\n')
+
+        for heading in headings:
+            result.append('    { "sTitle": "%s" }' % heading)
+            result.append(',\n')
+        if len(headings)>0:
+            result = result[:-1]
+        result.append(' ],\n')
+        result.append('  "%s" : [\n' % (query_str))
+        
+        for line in rankings[1:]:
+            result.append('       [ ')
+            for i in range(0,len(headings)):
+                if need_team_hyperlink(headings[i]):
+                    #result.append('"%s"' % (line[i]))
+                    result.append(('"<a href=\\"/teamdata/%s/'% competition)+line[i]+'\\">'+line[i]+'</a>"')
+                else:
+                    #result.append('"%s": "%s"' % (headings[i].title(),line[i]))
+                    result.append('"%s"' % (line[i]))
+                    
+                result.append(', ')
+            if len(line) > 0:         
+                result = result[:-1]
+            result.append(' ],\n')
+                
+        if len(rankings) > 1:         
+            result = result[:-1]
+        result.append(' ]\n')
+        store_data_to_file = True
+    except Exception, err:
+        print 'Caught exception:', err
+    except:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/%s%s.json' % (competition,query_str,round_str) )
+        if stored_file_data != '':
+            return stored_file_data
+    
+    result.append(' ] }\n')
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/%s%s.json' % (competition,query_str,round_str), 'text', json_str)
+        except:
+            raise
+    return json_str
+
+'''
+def get_data_from_first(global_config, year, event_code, query_str, round_str = '', table_to_parse=2):
+
+    result = []
+    store_data_to_file = False
+
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+        
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    try:
+        
+        'http://frc-events.usfirst.org/2015/NHNAS/qualifications'
+        
         first_url_str = 'http://www2.usfirst.org/%scomp/events/%s/%s.html' % (year,event_code.upper(),query_str)
         print 'GET - %s' % first_url_str
         rank_data = urllib2.urlopen(first_url_str).read()
@@ -474,6 +727,7 @@ def get_data_from_first(global_config, year, event_code, query_str, round_str = 
         except:
             raise
     return json_str
+'''
         
 def update_event_data_files( global_config, year, event, directory ):
     

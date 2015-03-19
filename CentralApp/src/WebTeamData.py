@@ -508,7 +508,6 @@ def get_team_info_json(global_config, comp, name, store_json_file=False):
     
     team_info = DataModel.getTeamInfo(session, int(name))
     
-    web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "team": "%s", "team_data" : [\n' % name)
     result.append('   { "name": "%s", "value": "%s" }' % ('nickname', team_info.nickname))
