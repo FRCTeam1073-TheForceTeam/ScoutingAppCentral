@@ -7,6 +7,7 @@ $var title: Score Breakdown Chart
 $code:
     complist = utils.get_team_comp_list(this_comp,team)
     team_info = utils.get_team_info_str(team)
+    season = utils.map_comp_to_season(this_comp)
 
 <style type="text/css">
        $for comp in complist:
@@ -246,6 +247,7 @@ $$(document).ready(function () {
                 <li>$line[0]:<a href=$line[1]>$line[1]</a></li>
             $else:
                 <li>$line[0]: $line[1]</li>
+        <li><a href="http://www.thebluealliance.com/team/$team/$season">The Blue Alliance $team Team Page</a></li>
         </ul>
         <br>
     </div>
