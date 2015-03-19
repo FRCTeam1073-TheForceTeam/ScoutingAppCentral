@@ -584,27 +584,32 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
     
     # Get the list of teams in rank order, then loop through teams and dump their stored
     # attribute values
+    error_logged = False
     team_rankings = getTeamsInRankOrder(session, competition)
     for team_entry in team_rankings:
         mystring = str(team_entry.team) + ',' + str(team_entry.score)
         # retrieve each attribute from the database in the proper order
         for attr_def in attr_order:
-            if attr_def['Database_Store'] == 'Yes':
-                attribute = getTeamAttribute(session, team_entry.team, competition, attr_def['Name'])
-                # if the attribute doesn't exist, just put in an empty field so that the columns
-                # stay aligned
-                if attribute == None:
-                    mystring += ','
-                elif ( attr_def['Statistic_Type'] == 'Total'):
-                    #mystring += ',' + str(attribute.cumulative_value)
-                    mystring += ',' + mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def)
-                elif ( attr_def['Statistic_Type'] == 'Average'):
-                    #mystring += ',' + str(attribute.avg_value)
-                    mystring += ',' + mapValueToString(attribute.avg_value, attribute.all_values, attr_def)
-                else:
-                    #mystring += ',' + str(attribute.attr_value)
-                    mystring += ',' + mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
-
+            try:
+                if attr_def['Database_Store'] == 'Yes':
+                    attribute = getTeamAttribute(session, team_entry.team, competition, attr_def['Name'])
+                    # if the attribute doesn't exist, just put in an empty field so that the columns
+                    # stay aligned
+                    if attribute == None:
+                        mystring += ','
+                    elif ( attr_def['Statistic_Type'] == 'Total'):
+                        #mystring += ',' + str(attribute.cumulative_value)
+                        mystring += ',' + mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def)
+                    elif ( attr_def['Statistic_Type'] == 'Average'):
+                        #mystring += ',' + str(attribute.avg_value)
+                        mystring += ',' + mapValueToString(attribute.avg_value, attribute.all_values, attr_def)
+                    else:
+                        #mystring += ',' + str(attribute.attr_value)
+                        mystring += ',' + mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
+            except KeyError:
+                if error_logged is False:
+                    print( 'Unexpected row - check for gaps in the Column_Order within the spreadsheet')
+                    error_logged = True
         mystring += '\n'
         fo.write( mystring )
     fo.close()
