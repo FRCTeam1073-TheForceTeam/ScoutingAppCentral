@@ -11,6 +11,17 @@ class RadioButtonUiGenControl( UiGenControl ):
 
     def __init__(self, attr_def):
         self.attr_def = attr_def
+        self.config = { 'Lines':'1', 'Items':'4' }
+        option_str = attr_def['Options']
+        if option_str != '':
+            options = option_str.split(':')
+            for option in options:
+                if option.find('=') != -1:
+                    option_name, option_value = option.split('=')
+                    self.config[option_name] = option_value
+                else:
+                    # option with no value is treated as a boolean, set to True string
+                    self.config[option] = 'True'
 
     def gen_xml_string(self, above_name):
     

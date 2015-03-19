@@ -59,63 +59,70 @@ def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
                                  sheet_type + '", "" );\n'
     
     above_name = 'TeamLabel'
-    for item in attr_order:
-        ctrl_gen = None
-        if item['Order'] != '' and int(float(item['Order'])) != 0:
-            if item['Control'] == 'Text':
-                ctrl_gen = TextFieldUiGenControl(item)
-            elif item['Control'] == 'Radio':
-                ctrl_gen = RadioButtonUiGenControl(item)
-            elif item['Control'] == 'Checkbox':
-                ctrl_gen = CheckboxUiGenControl(item)
-            elif item['Control'] == 'Scoring_Matrix':
-                ctrl_gen = ScoringMatrixUiGenControl(item)
-            elif item['Control'] == 'Line_Separator':
-                ctrl_gen = LineSeparatorUiGenControl(item)
-            elif item['Control'] == 'Button':
-                ctrl_gen = ButtonUiGenControl(item)
-
-            xml_string += ctrl_gen.gen_xml_string(above_name)
-            xml_string = xml_string.replace('ABOVELabel', above_name)
-            xml_string = xml_string.replace('NAME', item['Name'])
-
-            java_declarations += ctrl_gen.gen_java_declarations_string()
-            java_declarations = java_declarations.replace('NAME', item['Name'])
-
-            java_var_init_strings += ctrl_gen.gen_java_init_string()
-            java_var_init_strings = java_var_init_strings.replace('NAME', item['Name'])
-
-            java_button_handlers += ctrl_gen.gen_java_button_handler()
-            java_button_handlers = java_button_handlers.replace('NAME', item['Name'])
-
-            java_discard_handlers += ctrl_gen.gen_java_discard_handler()
-            java_discard_handlers = java_discard_handlers.replace('NAME', item['Name'])
-
-            java_save_handlers += ctrl_gen.gen_java_save_handler()
-            java_save_handlers = java_save_handlers.replace('NAME', item['Name'])
-
-            java_reload_handlers += ctrl_gen.gen_java_reload_handler()
-            java_reload_handlers = java_reload_handlers.replace('NAME', item['Name'])
-            
-            if (item['Control'] == 'Scoring_Matrix'):
-                above_name = ctrl_gen.get_last_label()
-            elif item['Control'] == 'Text': 
-                above_name = item['Name'] + 'Entry'
-            else:
-                above_name = item['Name'] + 'Label'
+    
+    try:
+        for item in attr_order:
+            ctrl_gen = None
+            if item['Order'] != '' and int(float(item['Order'])) != 0:
+                if item['Control'] == 'Text':
+                    ctrl_gen = TextFieldUiGenControl(item)
+                elif item['Control'] == 'Radio':
+                    ctrl_gen = RadioButtonUiGenControl(item)
+                elif item['Control'] == 'Checkbox':
+                    ctrl_gen = CheckboxUiGenControl(item)
+                elif item['Control'] == 'Scoring_Matrix':
+                    ctrl_gen = ScoringMatrixUiGenControl(item)
+                elif item['Control'] == 'Line_Separator':
+                    ctrl_gen = LineSeparatorUiGenControl(item)
+                elif item['Control'] == 'Button':
+                    ctrl_gen = ButtonUiGenControl(item)
+    
+                xml_string += ctrl_gen.gen_xml_string(above_name)
+                xml_string = xml_string.replace('ABOVELabel', above_name)
+                xml_string = xml_string.replace('NAME', item['Name'])
+    
+                java_declarations += ctrl_gen.gen_java_declarations_string()
+                java_declarations = java_declarations.replace('NAME', item['Name'])
+    
+                java_var_init_strings += ctrl_gen.gen_java_init_string()
+                java_var_init_strings = java_var_init_strings.replace('NAME', item['Name'])
+    
+                java_button_handlers += ctrl_gen.gen_java_button_handler()
+                java_button_handlers = java_button_handlers.replace('NAME', item['Name'])
+    
+                java_discard_handlers += ctrl_gen.gen_java_discard_handler()
+                java_discard_handlers = java_discard_handlers.replace('NAME', item['Name'])
+    
+                java_save_handlers += ctrl_gen.gen_java_save_handler()
+                java_save_handlers = java_save_handlers.replace('NAME', item['Name'])
+    
+                java_reload_handlers += ctrl_gen.gen_java_reload_handler()
+                java_reload_handlers = java_reload_handlers.replace('NAME', item['Name'])
                 
-            if sheet_type == 'Match' and java_build_filename_string_rewritten == False:
-                java_build_filename_string_rewritten = True
-                java_build_filename_string = '                    final String filename = buildFilename( TeamEntry, "' + \
-                                             sheet_type + '", MatchEntry.getText().toString() );\n'
-            elif sheet_type == 'Debrief' and java_build_filename_string_rewritten == False:
-                java_build_filename_string_rewritten = True
-                java_build_filename_string = '                    final String filename = buildDebriefFilename( "' + \
-                                             sheet_type + '", "Match", MatchEntry.getText().toString() );\n'
-            elif sheet_type == 'Issue' and java_build_filename_string_rewritten == False:
-                java_build_filename_string_rewritten = True
-                java_build_filename_string = '                    final String filename = buildIssueFilename( IdEntry, "' + \
-                                             sheet_type + '");\n'
+                if (item['Control'] == 'Scoring_Matrix'):
+                    above_name = ctrl_gen.get_last_label()
+                elif item['Control'] == 'Text': 
+                    above_name = item['Name'] + 'Entry'
+                else:
+                    above_name = item['Name'] + 'Label'
+                    
+                if sheet_type == 'Match' and java_build_filename_string_rewritten == False:
+                    java_build_filename_string_rewritten = True
+                    java_build_filename_string = '                    final String filename = buildFilename( TeamEntry, "' + \
+                                                 sheet_type + '", MatchEntry.getText().toString() );\n'
+                elif sheet_type == 'Debrief' and java_build_filename_string_rewritten == False:
+                    java_build_filename_string_rewritten = True
+                    java_build_filename_string = '                    final String filename = buildDebriefFilename( "' + \
+                                                 sheet_type + '", "Match", MatchEntry.getText().toString() );\n'
+                elif sheet_type == 'Issue' and java_build_filename_string_rewritten == False:
+                    java_build_filename_string_rewritten = True
+                    java_build_filename_string = '                    final String filename = buildIssueFilename( IdEntry, "' + \
+                                                 sheet_type + '");\n'
+    except:
+        err_str = 'Error generating %s control: %s, check Map_Values string "%s" or Options string "%s" for proper formatting' % \
+                  (item['Control'],item['Name'],item['Map_Values'],item['Options'])
+        raise Exception(err_str)
+        
          
     if create_fragment_file == True:
         # write out the xml file fragment
