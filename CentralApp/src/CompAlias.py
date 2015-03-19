@@ -35,6 +35,16 @@ def get_event_by_alias( event_alias ):
         
     return event_info
 
+def get_eventcode_by_alias( event_alias ):
+    try:
+        event_info = event_alias_table[event_alias.upper()]
+        event_code = event_info.event_code
+    except:
+        event_info = None
+        event_code = 'Unknown'
+        
+    return event_code
+
 def get_comp_alias_list():
     comp_list = []
 
@@ -51,6 +61,14 @@ def get_comp_eventcode_list():
 
     return comp_list
         
+def get_comp_and_eventcode_list():
+    comp_list = []
+
+    for alias in event_alias_table:
+        comp_list.append((alias,event_alias_table[alias].event_code))
+
+    return comp_list
+
 def read_comp_alias_config(config_filename):
     if os.path.exists(config_filename):
         cfg_file = open(config_filename, 'r')
