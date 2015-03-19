@@ -1,0 +1,14 @@
+week0,WEEK0,Week Zero
+nhbb,Bob,Battle Of The Bay
+mabos,NU,Northeastern District
+nhdur,UNH,UNH District
+rismi,RI,Rhode Island District
+marea,READING,Reading District
+nhnas,NASHUA,Nashua District
+ctwat,WATERBURY,Waterbury District
+maspr,PIONEER,Pioneer Valley District
+manda,UMASS,UMass Dartmouth District
+melew,PINETREE,Pine Tree District
+cthar,HARTFORD,Hartford District
+necmp,NECMP,New England District Championships
+mawpi,BATTLECRY,Battlecry at WPI
