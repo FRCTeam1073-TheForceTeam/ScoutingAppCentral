@@ -59,6 +59,23 @@ def get_short_comp_list(season=None):
 
     return complist
 
+def get_comp_and_eventcode_list(season=None):
+    
+    my_config = ScoutingAppMainWebServer.global_config
+    complist = list()
+    if season == None:
+        season = my_config['this_season']
+    this_comp = my_config['this_competition']
+    complist.append((this_comp,CompAlias.get_eventcode_by_alias(this_comp)))
+    
+    other_competitions = CompAlias.get_comp_and_eventcode_list()
+    
+    for comp in other_competitions:
+        if comp and comp[0] != my_config['this_competition']:
+            complist.append(comp)
+
+    return complist
+
 # retrieve the list of competitions that the specified team has been scouted, including this competition
 def get_team_comp_list(this_comp, team):
     
