@@ -8,6 +8,7 @@ import os
 import re
 import web
 import urllib2
+import json
 
 import ImageFileUtils
 import AttributeDefinitions
@@ -845,6 +846,28 @@ def get_team_rankings_json(global_config, comp=None, store_json_file=False):
             raise
         
     return json_str
+
+def get_team_event_list_from_tba(global_config, team, season):
+    
+    global_config['logger'].debug( 'GET Team Event List TBA' )
+
+    result = []
+        
+    url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s/%s/events?X-TBA-App-Id=frc1073:scouting-system:v01' % (team,season)
+        
+    event_data = ''
+    try:
+        event_data = urllib2.urlopen(url_str).read()
+        event_json = json.loads(event_data)
+        
+        for event in event_json:
+            comp = WebCommonUtils.map_event_code_to_comp(event['event_code'], season)
+            result.append(comp)
+    except:
+        pass
+
+    return result
+    
 
 local_picklist = None
 def create_picklist_json(global_config, comp=None, store_json_file=False):

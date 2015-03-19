@@ -4,6 +4,7 @@ import DbSession
 import DataModel
 import CompAlias
 import WebEventData
+import WebTeamData
 
 def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
     head_str  = '<head>\n'
@@ -84,18 +85,29 @@ def get_team_comp_list(this_comp, team):
     
     if this_comp == None:
         this_comp = my_config['this_competition'] + my_config['this_season']
+        season = my_config['this_season']
+    else:
+        season = map_comp_to_season(this_comp)
         
     complist.append(this_comp)
     
-    session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
-    team_scores = DataModel.getTeamScore(session, team)
-    for score in team_scores:
-        comp = score.competition.upper()
-        # currently, the competition season is stored in the database
-        # as part of the competition. So, we need to add it for the comparison,
-        # but not as we define the complist itself
-        if comp != this_comp:
-            complist.append(comp)
+    team_complist = WebTeamData.get_team_event_list_from_tba(my_config, team, season)
+    if not team_complist:
+        session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
+        team_scores = DataModel.getTeamScore(session, team)
+        for score in team_scores:
+            comp = score.competition.upper()
+            # currently, the competition season is stored in the database
+            # as part of the competition. So, we need to add it for the comparison,
+            # but not as we define the complist itself
+            if comp != this_comp:
+                complist.append(comp)
+                
+    else:
+        for comp in team_complist:
+            if comp != this_comp:
+                complist.append(comp)
+            
     return complist
 
 # retrieve a list of team info name/value pairs
@@ -203,7 +215,10 @@ def map_event_code_to_comp(event_name, season=None):
         else:
             season = my_config['this_season']
     
-    comp = event_name[4:]
+    if event_name.startswith('201'):
+        comp = event_name[4:]
+    else:
+        comp = event_name
     event_info = CompAlias.get_event_by_code(comp)
     if event_info != None:
         comp = event_info.event_alias
@@ -219,7 +234,10 @@ def map_event_code_to_short_comp(event_name, season=None):
         else:
             season = my_config['this_season']
     
-    comp = event_name[4:]
+    if event_name.startswith('201'):
+        comp = event_name[4:]
+    else:
+        comp = event_name
     event_info = CompAlias.get_event_by_code(comp)
     if event_info != None:
         comp = event_info.event_alias

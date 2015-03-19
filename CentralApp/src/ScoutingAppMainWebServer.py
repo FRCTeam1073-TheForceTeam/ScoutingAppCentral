@@ -118,6 +118,7 @@ urls = (
     '/api/eventinfo/(.*)',          'EventInfoJson',
     '/api/eventstandings/(.*)',     'EventStandingsJson',
     '/api/eventresults/(.+)',       'EventResultsJson',
+    '/api/eventstats/(.+)',         'EventStatsJson',
     '/api/eventschedule/(.+)',      'MatchScheduleJson',
     '/api/events',                  'EventsJson',
     '/api/issue/(.*)',              'IssueJson',
@@ -640,6 +641,22 @@ class EventResultsJson(object):
             event_code = params[0][4:]
             round_str = params[1]
             result = WebEventData.get_event_matchresults_json(global_config, year, event_code, round_str)
+            
+            web.header('Content-Type', 'application/json')
+            
+        return result
+                           
+class EventStatsJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        result = ''
+        params = param_str.split('/')
+        if len(params) == 2:
+            year = params[0][0:4]
+            event_code = params[0][4:]
+            stat_type = params[1]
+            result = WebEventData.get_event_stats_json(global_config, year, event_code, stat_type)
             
             web.header('Content-Type', 'application/json')
             

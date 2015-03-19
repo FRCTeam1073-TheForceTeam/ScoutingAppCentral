@@ -366,6 +366,7 @@ def get_event_data_from_tba( query_str ):
         pass
     return event_data
 
+
 def get_event_info_json(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
@@ -554,6 +555,67 @@ def get_event_matchresults_json(global_config, year, event_code, round_str):
             raise
     return json_str    
     #return get_data_from_first(global_config, year, event_code, 'matchresults', round_str, table_to_parse)
+
+def get_event_stats_json(global_config, year, event_code, stat_type):
+        
+    global_config['logger'].debug( 'GET Event Results Json' )
+        
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+
+    store_data_to_file = False
+    result = []
+    
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    event_stats = ''
+    json_data = get_event_data_from_tba( '%s%s/stats' % (year,event_code.lower()) )
+    if json_data != '':
+        event_stats = json.loads(json_data)
+
+        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+        headings = [ 'Team', 'OPR' ]
+        
+        result.append('  "columns" : [\n')
+
+        for heading in headings:
+            result.append('    { "sTitle": "%s" }' % heading)
+            result.append(',\n')
+        if len(headings)>0:
+            result = result[:-1]
+        result.append(' ],\n')
+        result.append('  "stats" : [\n')
+    
+        stats_dict = event_stats[stat_type]
+        
+        for key, value in stats_dict.iteritems():
+            result.append( '       ["%s", %.2f' % (get_team_hyperlink( competition, key ),value) )
+            result.append(' ],\n')
+            store_data_to_file = True
+
+        if store_data_to_file is True:
+            result = result[:-1]
+            result.append(' ]\n')
+            
+        result.append(' ]\n')
+
+    else:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/eventstats_%s.json' % (competition,stat_type) )
+        if stored_file_data != '':
+            return stored_file_data
+    
+    result.append(' }\n')
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/eventstats_%s.json' % (competition,stat_type), 'text', json_str)
+        except:
+            raise
+    return json_str    
 
 def get_team_hyperlink( competition, team ):
     team_hyperlink = '<a href=\\"/teamdata/%s/%s\\">%s</a>' % (competition,team,team)
