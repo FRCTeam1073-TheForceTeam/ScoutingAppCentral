@@ -636,11 +636,15 @@ class EventResultsJson(object):
         WebLogin.check_access(global_config,10)
         result = ''
         params = param_str.split('/')
-        if len(params) == 2:
+        if len(params) >= 2:
             year = params[0][0:4]
             event_code = params[0][4:]
             round_str = params[1]
-            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, round_str)
+            if len(params)==3:
+                team_str = params[2]
+            else:
+                team_str = None
+            result = WebEventData.get_event_matchresults_json(global_config, year, event_code, round_str, team_str)
             
             web.header('Content-Type', 'application/json')
             

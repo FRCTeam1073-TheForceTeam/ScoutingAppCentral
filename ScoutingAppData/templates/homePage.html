@@ -9,6 +9,7 @@ $code:
     comp = short_comp + season
     comp_list = utils.get_short_comp_list(season)
     event_code = utils.map_comp_to_event_code(comp).lower() 
+    myteam = utils.get_myteam()
 
 <style type="text/css">
     #placeholder_scouting_rank
@@ -229,7 +230,7 @@ $$(document).ready(function () {
   <div class="article">
   
     <div id="title">
-        <h1>Team 1073 Competition Central</h1>
+        <h1>Team $myteam Competition Central</h1>
     </div>
 
     <!-- provide a dropdown to select the season to display on the home page -->

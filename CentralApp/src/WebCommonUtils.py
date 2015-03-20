@@ -27,6 +27,10 @@ def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
 
 import ScoutingAppMainWebServer
 
+def get_myteam():    
+    my_config = ScoutingAppMainWebServer.global_config
+    return my_config['my_team']
+    
 def get_comp_list():
     
     my_config = ScoutingAppMainWebServer.global_config

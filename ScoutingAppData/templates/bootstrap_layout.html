@@ -6,6 +6,11 @@ $# based on the dynamic data
 $code:
     complist = utils.get_comp_list()
     issuetypes = utils.get_issue_types()
+    myteam = utils.get_myteam()
+    if myteam == '1073':
+        my_favicon = '1073-favicon.ico'
+    else:
+        my_favicon = 'first-favicon.ico'
 
 <!DOCTYPE html>
 <html lang="en">
@@ -15,9 +20,9 @@ $code:
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="/static/media/images/1073-favicon.ico">
+    <link rel="icon" href="/static/media/images/$my_favicon">
 
-    <title>Team 1073 Competition Central</title>
+    <title>Team $myteam Competition Central</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/static/media/css/pure-min.css" type="text/css" media="screen" />
@@ -49,10 +54,10 @@ $code:
 
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
     <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-    <script src="/static/media/js/ie-emulation-modes-warning.js"></script>
+    <!--<script src="/static/media/js/ie-emulation-modes-warning.js"></script> -->
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="/static/media/js/ie10-viewport-bug-workaround.js"></script>
+    <!--<script src="/static/media/js/ie10-viewport-bug-workaround.js"></script> -->
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>

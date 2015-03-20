@@ -868,6 +868,15 @@ def get_team_event_list_from_tba(global_config, team, season):
 
     return result
     
+def get_team_data_from_tba(team_str, query_str):
+    
+    url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (team_str,query_str)
+    try:
+        event_data = urllib2.urlopen(url_str).read()
+    except:
+        event_data = ''
+        pass
+    return event_data    
 
 local_picklist = None
 def create_picklist_json(global_config, comp=None, store_json_file=False):

@@ -6,6 +6,11 @@ $# based on the dynamic data
 $code:
     complist = utils.get_comp_list()
     issuetypes = utils.get_issue_types()
+    myteam = utils.get_myteam()
+    if myteam == '1073':
+        my_favicon = '1073-favicon.ico'
+    else:
+        my_favicon = 'first-favicon.ico'
 
 <!DOCTYPE html>
 
@@ -17,9 +22,9 @@ $code:
 
 	<meta charset="utf-8" />
 	
-	<link rel="shortcut icon" href="/static/media/images/1073-favicon.ico" type="image/x-icon" />
-	<meta name="description" content="The Hollis Brookline FIRST Robotics Competition team...">
-	<meta name="keywords" content="FIRST, Hollis Brookline High School, FRC, Robots">
+	<link rel="shortcut icon" href="/static/media/images/$my_favicon" type="image/x-icon" />
+	<meta name="description" content="FIRST Robotics Competition">
+	<meta name="keywords" content="FIRST, FRC, Robots">
 	
 	<!--[if lte IE 9]> <link href="css/ie.css" rel="stylesheet" type="text/css" /> <![endif]-->
     <!--[if lte IE 8]><script type="text/javascript" language="javascript" src="excanvas.min.js"></script><![endif]-->

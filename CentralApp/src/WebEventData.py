@@ -11,6 +11,7 @@ import datetime
 import web
 import WebCommonUtils
 import FileSync
+import WebTeamData
 
 from BeautifulSoup import BeautifulSoup
 import re
@@ -458,7 +459,7 @@ def get_event_standings_json(global_config, year, event_code):
             raise
     return json_str
               
-def get_event_matchresults_json(global_config, year, event_code, round_str):
+def get_event_matchresults_json(global_config, year, event_code, round_str, team_str = None):
         
     global_config['logger'].debug( 'GET Event Results Json' )
 
@@ -480,7 +481,11 @@ def get_event_matchresults_json(global_config, year, event_code, round_str):
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
     event_matches = ''
-    json_data = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+    if team_str is None:
+        json_data = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+    else:
+        json_data = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
+        
     if json_data != '':
         event_matches = json.loads(json_data)
 
@@ -525,10 +530,18 @@ def get_event_matchresults_json(global_config, year, event_code, round_str):
                 result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][2]).lstrip('frc') ) )
                 
                 # Red alliance score
-                result.append( '"%s", ' % str(match['alliances']['red']['score'] ) )
+                
+                score = str(match['alliances']['red']['score'])
+                if score == '-1':
+                    score = '-'
+                result.append( '"%s", ' % score )
                 
                 # Blue alliance score
-                result.append( '"%s"' % str(match['alliances']['blue']['score'] ) )
+                score = str(match['alliances']['blue']['score'])
+                if score == '-1':
+                    score = '-'
+                result.append( '"%s" ' % score )
+                
                 
                 result.append(' ],\n')
                 store_data_to_file = True
