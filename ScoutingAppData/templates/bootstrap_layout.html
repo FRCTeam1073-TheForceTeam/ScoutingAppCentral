@@ -6,11 +6,20 @@ $# based on the dynamic data
 $code:
     complist = utils.get_comp_list()
     issuetypes = utils.get_issue_types()
-    myteam = utils.get_myteam()
-    if myteam == '1073':
+    my_team = utils.get_myteam()
+    if my_team == '1073':
+        # for our team, just fill in the values for the favicon and website
         my_favicon = '1073-favicon.ico'
+        my_website = 'http://www.theforceteam.com'
     else:
+        # use the default favicon for other hosted teams
         my_favicon = 'first-favicon.ico'
+        
+        # and pull the website from the team info string
+        team_info = utils.get_team_info_str(my_team)
+        for line in team_info:
+            if line[0] == 'Website':
+                my_website = line[1]
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +31,7 @@ $code:
     <meta name="author" content="">
     <link rel="icon" href="/static/media/images/$my_favicon">
 
-    <title>Team $myteam Competition Central</title>
+    <title>Team $my_team Competition Central</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/static/media/css/pure-min.css" type="text/css" media="screen" />
@@ -90,7 +99,7 @@ $code:
         <div class="row">
 
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="http://www.theforceteam.com">FRC Team 1073</a></li>
+            <li><a href="$my_website">FRC Team $my_team</a></li>
             <li><a href="http://www.thebluealliance.com/">The Blue Alliance</a></li>
             <li><a href="/userprofile">User Settings</a></li>
             <li><a href="/logout">Logout</a></li>
