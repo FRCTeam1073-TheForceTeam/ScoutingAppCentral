@@ -312,7 +312,11 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
     result = []
     result.append('{ "rankings": [\n')
             
-    team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
+    if stat_type == 'Average':
+        team_rankings = DataModel.getTeamAttributesInAverageRankOrder(session, comp, attr_name, False)        
+    else:
+        team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
+
     for team in team_rankings:
         if stat_type == 'Average':
             value = int(team.cumulative_value/team.num_occurs)

@@ -121,6 +121,7 @@ urls = (
     '/api/eventstats/(.+)',         'EventStatsJson',
     '/api/eventschedule/(.+)',      'MatchScheduleJson',
     '/api/events',                  'EventsJson',
+    '/api/district/rankings',       'DistrictRankingsJson',
     '/api/issue/(.*)',              'IssueJson',
     '/api/issues/(.*)',             'PlatformIssuesJson',
     '/api/debriefs/(.*)',           'DebriefsJson',
@@ -223,7 +224,7 @@ class TestPage(object):
         params = param_str.split('/')
         numparams = len(params)
         comp = 'GSR2013'
-        attr = 'Teleop_Points'
+        attr = 'Teleop_Stacks'
         if numparams == 3:
             comp = params[1]
             attr = params[2]
@@ -236,7 +237,7 @@ class AttrRankPage(object):
         params = param_str.split('/')
         numparams = len(params)
         comp = global_config['this_competition'] + global_config['this_season']
-        attr = 'Teleop_Goals'
+        attr = 'Teleop_Stacks'
         if numparams == 3:
             comp = params[1]
             attr = params[2]
@@ -551,7 +552,30 @@ class RecalculateRankings(object):
         DataModel.recalculate_scoring(global_config, comp)
         
         raise web.seeother('/event/%s' % event_code)
-                          
+
+class DistrictRankingsJson(object):
+    
+    def GET(self):
+        WebLogin.check_access(global_config,10)
+        request_data = web.input()
+        result = None
+        
+        try:
+            season = request_data.Year
+        except:
+            season = global_config['this_season']
+            
+        try:
+            event_type = request_data.Type
+            event_type = 'NE'
+            
+            result = WebEventData.get_district_rankings_json(global_config, season, event_type)
+        except:
+            event_type = None
+
+        web.header('Content-Type', 'application/json')
+        return result
+        
 class Events(object):
 
     def GET(self):

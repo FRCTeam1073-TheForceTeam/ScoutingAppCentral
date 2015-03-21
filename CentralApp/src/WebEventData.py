@@ -324,6 +324,63 @@ def get_district_events_json(global_config, year, type):
             pass
         return event_data
 
+def get_district_rankings_json(global_config, year, type):
+        
+        global_config['logger'].debug( 'GET District Rankings Json' )
+        
+        competition = global_config['this_competition']+year
+        
+        url_str = 'http://www.thebluealliance.com/api/v2/district/%s/%s/rankings?X-TBA-App-Id=frc1073:scouting-system:v02' % (type.lower(),year)
+
+        result = []
+        result.append('{ "district" : "%s",\n' % (type.upper()))
+
+        try:
+            rankings_data = urllib2.urlopen(url_str).read()
+            rankings_json = json.loads(rankings_data)
+       
+            # rankings is now a list of lists, with the first element of the list being the list of column headings
+            # take the list of columngs and apply to each of the subsequent rows to build the json response
+            result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+            headings = [ 'Rank', 'Points', 'Team', 'Event 1', 'Event 2', 'Age Points' ]
+    
+            result.append('  "columns" : [\n')
+
+            for heading in headings:
+                result.append('    { "sTitle": "%s" }' % heading)
+                result.append(',\n')
+            if len(headings)>0:
+                result = result[:-1]
+            result.append(' ],\n')
+            result.append('  "rankings" : [\n')
+
+            for team_rank in rankings_json:
+                result.append('       [ ')
+                result.append( '"%s", ' % str(team_rank['rank']) )
+                result.append( '"%s", ' % str(team_rank['point_total']) )
+                result.append( '"%s", ' % get_team_hyperlink( competition, str(team_rank['team_key']).lstrip('frc') ) )
+                                                            
+                for event, totals in team_rank['event_points'].iteritems():
+                    result.append( '"%s", ' % str(totals['total']) )
+                    
+                if len(team_rank['event_points']) == 1:
+                    result.append( '"-", ' )
+                elif len(team_rank['event_points']) == 0:
+                    result.append( '"-", "-", ' )
+                    
+                result.append( '"%s" ' % str(team_rank['rookie_bonus']) )
+                result.append('],\n')
+
+            if result[-1] == '],\n':
+                result = result[:-1]
+            result.append(']\n')
+            result.append('] }\n')
+            rank_data = ''.join(result)
+        except:
+            rank_data = ''
+            pass
+        return rank_data
+
 def get_events_json(global_config, year, type=None):
         
         global_config['logger'].debug( 'GET Event Info Json' )    
