@@ -419,6 +419,8 @@ def get_event_data_from_tba( query_str ):
     url_str = 'http://www.thebluealliance.com/api/v2/event/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (query_str)
     try:
         event_data = urllib2.urlopen(url_str).read()
+        if event_data == 'null':
+            event_data = ''
     except:
         event_data = ''
         pass
