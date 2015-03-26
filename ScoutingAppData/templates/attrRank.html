@@ -1,4 +1,4 @@
-$def with (comp, attr)
+$def with (comp)
 
 $# This snippet of python code will retrieve the list of attribute types
 $# This list will then be used to dynamically create the select dropdown for
@@ -15,7 +15,7 @@ $var title: Attribute Ranking
 <style type="text/css">
     #placeholder
     { 
-        width: 100%; 
+        #width: 100%; 
         height: 800px;
         margin: auto auto auto auto;
     }
@@ -35,37 +35,39 @@ $var title: Attribute Ranking
     }
 </style>
 
-<script type="text/javascript">
-function SelectAttr()
-{
-    var e = document.getElementById("attrdropdown1");
-    var SelValue = e.options[e.selectedIndex].text
-
-    var baseURL  = "/testpage/$comp/" + SelValue;
-    window.location.assign( baseURL );
-    
-    return true;
-}
-</script>
+<link rel="stylesheet" type="text/css" href="/static/media/js/dhtmlxTree/skins/web/dhtmlxtree.css"/>
+<script src="/static/media/js/dhtmlxTree/codebase/dhtmlxtree.js"></script>
 
 <script type="text/javascript">
 $$(document).ready(function () {
+
+    filter_init();
+
+});
+
+function filteredPlot( filter ) {
     var display = "horizontal";
     var data = [];
     var teams = [];
+    var uri = "/rankings/$comp";
 
-    var jqxhr = $$.getJSON( "/attrrankings/$comp/$attr", function(json_data) {
+    if ( filter.length > 0 )
+    {
+        uri += "?filter=" + filter;
+    }
+
+    var jqxhr = $$.getJSON( uri, function(json_data) {
         console.log( "success" );
         var numTeams = json_data.rankings.length;
         for (var i=0;i<numTeams;i++)
         {
             data[i] = [];
             if ( display=='horizontal' ) {
-                data[i][0] = json_data.rankings[i].value;
+                data[i][0] = json_data.rankings[i].score;
                 data[i][1] = i;
             } else {
                 data[i][0] = i;
-                data[i][1] = json_data.rankings[i].value;
+                data[i][1] = json_data.rankings[i].score;
             }
             teams[i] = json_data.rankings[i].team.toString();
         }
@@ -142,23 +144,83 @@ $$(document).ready(function () {
         }
         
     })
-});
+}
+
+function filter_init(){
+
+	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
+    
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+	tree.loadJSON("/api/attrlist");
+}	
+
+function plotByFilterData(){
+    filter = '';
+    var checked_items = tree.getAllChecked().split(",");
+    console.log( "Checked Items : " + checked_items );
+
+    var baseCheckboxState = tree.isItemChecked(1);
+
+    if ( baseCheckboxState == 0 ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
+        return;
+    } else if ( baseCheckboxState == 1 ) {
+        console.log( "Displaying All Attributes" );
+    } else {
+        for(var i=0; i<checked_items.length; i++) {
+            if ( checked_items[i].lastIndexOf("Skip_", 0) != 0 ) {
+                if ( filter.length > 0 )
+                    filter += '+';
+                filter += checked_items[i];
+            }
+        }
+    }
+
+    document.getElementById('NoAttrAlert').innerHTML = '';
+    console.log( "Filter String : " + filter );
+    filteredPlot(filter);
+}			
+
+
 </script>
 
 
   <div class="article">
   
     <div id="title">
-        <h1>Attribute Ranking Summary: $attr</h1>
+		<div class="col-sm-11" align="center">							
+        <h1>Filtered Attribute Ranking</h1>
+        </div>
     </div>
 
-    <label for="attrdropdown">Attribute Name:</label>
-    <select id="attrdropdown1" name="attrdropdown" onchange="SelectAttr();">
-        $for attr in attrlist:
-            <option value=$attr>$attr</option>
-    </select>
-    
-    <div id="placeholder"></div>
+	<div class="row">
+
+
+		<div class="col-sm-3">							
+            <div align="center">
+		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
+            </div>
+
+			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
+				<div id="NoAssignmentAlert"></div>
+			</div><!-- well -->
+
+
+		</div><!-- col-3 -->
+
+		<div class="col-sm-8">							
+	        <div id="NoAttrAlert"></div>
+            <div id="placeholder"></div>
+
+		</div><!-- col-8 -->
+	</div><!-- row -->
+
+
+
 
   </div>  
 
