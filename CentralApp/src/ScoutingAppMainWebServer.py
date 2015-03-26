@@ -126,6 +126,7 @@ urls = (
     '/api/issues/(.*)',             'PlatformIssuesJson',
     '/api/debriefs/(.*)',           'DebriefsJson',
     '/api/users',                   'UsersJson',
+    '/api/attrlist',                'AttributesJson',
     
     '/testpage(.*)',        'TestPage',
         
@@ -237,11 +238,11 @@ class AttrRankPage(object):
         params = param_str.split('/')
         numparams = len(params)
         comp = global_config['this_competition'] + global_config['this_season']
-        attr = 'Teleop_Stacks'
+        attr = ''
         if numparams == 3:
             comp = params[1]
             attr = params[2]
-        return render.attrRank(comp,attr)
+        return render.attrRank(comp)
     
 class AdminPage(object):
 
@@ -389,6 +390,9 @@ class TeamScoreBreakdownJson(object):
             name = params[1]
         else:
             return None
+        
+        web.header('Content-Type', 'application/json')
+
         return WebTeamData.get_team_score_breakdown_json(global_config, name, comp)
 
 class TeamScoreJson(object):
@@ -455,9 +459,14 @@ class TeamRankingJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
-            
+        query_data = web.input(filter=None)
+        if query_data.filter is None:
+            attr_filter = []
+        else:
+            attr_filter = query_data.filter.split()
+    
         web.header('Content-Type', 'application/json')
-        return WebTeamData.get_team_rankings_json(global_config, comp)
+        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter)
 
 class TeamPicklistJson(object):
 
@@ -714,7 +723,20 @@ class MatchScheduleJson(object):
             web.header('Content-Type', 'application/json')
 
         return result
-                           
+         
+
+class AttributesJson(object):
+
+    def GET(self):
+        WebLogin.check_access(global_config,10)
+        
+        web.header('Content-Type', 'application/json')
+
+        result = WebAttributeDefinitions.get_attr_tree_json(global_config)
+        
+        return result         
+
+                  
 class DownloadsPage(object):
 
     def GET(self):
@@ -1030,7 +1052,7 @@ class UserProfile(object):
 class DebriefsHomePage(object):
 
     def GET(self,competition):
-        WebLogin.check_access(global_config,5)
+        WebLogin.check_access(global_config,9)
         return render.debriefsMain(competition)
 
 class DebriefsJson(object):
@@ -1050,7 +1072,7 @@ class DebriefsJson(object):
 class DebriefPage(object):
 
     def GET(self, comp, match):
-        username, access_level = WebLogin.check_access(global_config,5)
+        username, access_level = WebLogin.check_access(global_config,9)
         if access_level <=1:
             result = WebDebrief.get_debrief_page(global_config, comp, match, allow_update=True)
         else:
@@ -1059,12 +1081,12 @@ class DebriefPage(object):
 
 class DebriefComment(object):
     def GET(self, comp, match):
-        WebLogin.check_access(global_config,5)
+        WebLogin.check_access(global_config,9)
         form = WebDebrief.get_match_comment_form(global_config, comp, match)
         return render.debrief_comment_form(form, comp, match)
            
     def POST(self, comp, match):
-        username,access_level = WebLogin.check_access(global_config,5)
+        username,access_level = WebLogin.check_access(global_config,9)
         form = WebDebrief.get_match_comment_form(global_config, comp, match)
         if not form.validates(): 
             return render.issue_comment_form_done(form)
@@ -1114,25 +1136,38 @@ class Sync(object):
         if len(path_elems) >= 2:
             comp_season_list = WebCommonUtils.split_comp_str(path_elems[0])
             if comp_season_list != None:
-                directory = path_elems[1]
-                                
-                result = WebEventData.update_event_data_files( global_config,  
-                                                               comp_season_list[1], 
-                                                               comp_season_list[0],
-                                                               directory )
-                
-                if result == True:
-                    result = WebTeamData.update_team_event_files( global_config,  
-                                                               comp_season_list[1], 
-                                                               comp_season_list[0], 
-                                                               directory )
+                # for the sync of event and team data, the URI path is of the following
+                # format /Sync/<comp>/EventData/[TeamData/]. if just EventData is provided,
+                # then the event data is regenerated, if TeamData is provided, then both
+                # the event data and team data is regenerated
+                if len(path_elems) >= 2 and path_elems[1] == 'EventData':
+                    result = WebEventData.update_event_data_files( self.global_config,  
+                                                                   comp_season_list[1], 
+                                                                   comp_season_list[0], 
+                                                                   path_elems[1] )
+                    if result == True:
+                        result = WebTeamData.update_team_event_files( self.global_config,  
+                                                                   comp_season_list[1], 
+                                                                   comp_season_list[0], 
+                                                                   path_elems[1] )
                     
-                    
-                if result == True:
-                    result = WebTeamData.update_team_data_files( global_config,  
-                                                               comp_season_list[1], 
-                                                               comp_season_list[0], 
-                                                               directory )
+                    # if we hit an error generating the event files, then there is no 
+                    # sense going on from here
+                    if result == False:
+                        raise web.BadRequest
+                                        
+                if len(path_elems) >= 3 and path_elems[2] == 'TeamData':
+                    try:
+                        team = path_elems[3]
+                        if team == '':
+                            team = None
+                    except:
+                        team = None
+                        
+                    result = WebTeamData.update_team_data_files( self.global_config,  
+                                                                 comp_season_list[1], 
+                                                                 comp_season_list[0], 
+                                                                 path_elems[2], team )
                 
         if result == False:
             raise web.BadRequest
