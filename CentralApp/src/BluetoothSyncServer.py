@@ -10,7 +10,16 @@ import FileSync
 import WebCommonUtils
 import WebEventData
 import WebTeamData
-
+ 
+class ClientThread(Thread):
+    def __init__(self, target, *args):
+        self._target = target
+        self._args = args
+        Thread.__init__(self)
+ 
+    def run(self):
+        self._target(*self._args)
+ 
 class BluetoothSyncServer(Thread):
     def __init__(self, global_config):
         Thread.__init__(self)
@@ -39,6 +48,16 @@ class BluetoothSyncServer(Thread):
             print "Waiting for connection on RFCOMM channel %d" % port
         
             client_sock, client_info = server_sock.accept()
+            
+            client_thread = ClientThread(self.processClientConnection, client_sock, client_info)
+            client_thread.start()
+            #client_thread.join()
+
+        server_sock.close()
+        print "Bluetooth Sync Server Terminated"
+
+
+    def processClientConnection( self, client_sock, client_info ):            
             print "Accepted connection from ", client_info
     
             files_received = 0
@@ -57,7 +76,7 @@ class BluetoothSyncServer(Thread):
                     
                     print "Request Type: %s" % request_type
                     print "Request Path: %s" % request_path
-
+    
                     request_complete = False
                     
                     # retrieve any params attached to the requested entity
@@ -68,7 +87,7 @@ class BluetoothSyncServer(Thread):
                         request_path = request_path[0:params_offset]
                     
                     request_path = request_path.lstrip('/')
-
+    
                     # if the requested path starts with 'static', then let's assume that
                     # the request knows the full path that it's looking for, otherwise, 
                     # we will prepend the path with the path to the data directory
@@ -94,32 +113,42 @@ class BluetoothSyncServer(Thread):
                         if len(path_elems) >= 2:
                             comp_season_list = WebCommonUtils.split_comp_str(path_elems[0])
                             if comp_season_list != None:
-                                directory = path_elems[1]
+                                result = False
+                                error = False
                                 
-                                if directory == 'EventData':
+                                # for the sync of event and team data, the URI path is of the following
+                                # format /Sync/<comp>/EventData/[TeamData/]. if just EventData is provided,
+                                # then the event data is regenerated, if TeamData is provided, then both
+                                # the event data and team data is regenerated
+                                if len(path_elems) >= 2 and path_elems[1] == 'EventData':
                                     result = WebEventData.update_event_data_files( self.global_config,  
                                                                                    comp_season_list[1], 
                                                                                    comp_season_list[0], 
-                                                                                   directory )
+                                                                                   path_elems[1] )
                                     if result == True:
                                         result = WebTeamData.update_team_event_files( self.global_config,  
                                                                                    comp_season_list[1], 
                                                                                    comp_season_list[0], 
-                                                                                   directory )
+                                                                                   path_elems[1] )
+                                    if result == False:
+                                        error = True
                                         
-                                elif directory == 'TeamData':
+                                if len(path_elems) >= 3 and path_elems[2] == 'TeamData' and error is False:
                                     try:
-                                        team = path_elems[2]
+                                        team = path_elems[3]
+                                        if team == '':
+                                            team = None
                                     except:
                                         team = None
                                         
                                     result = WebTeamData.update_team_data_files( self.global_config,  
                                                                                comp_season_list[1], 
                                                                                comp_season_list[0], 
-                                                                               directory, team )
+                                                                               path_elems[2], team )
+                                    
                                 if result == True:
                                     response_code = "200 OK"
-
+    
                         client_sock.send('HTTP/1.1 ' + response_code + '\r\n')
                         
                     elif request_type == "GET":
@@ -168,10 +197,8 @@ class BluetoothSyncServer(Thread):
             print "disconnected"
         
             client_sock.close()
-            
-        server_sock.close()
-        print "Bluetooth Sync Server Terminated"
-
+    
+    
     def read_request(self, client_sock):
         content_length = 0
         content_type = 'unknown'
@@ -219,7 +246,7 @@ class BluetoothSyncServer(Thread):
                 msg_body = msg_body.replace('\r\n\r\n', '\r\n')        
             if msg_body.endswith('\n\r\n'):
                 msg_body = msg_body.replace('\n\r\n', '\n')        
-
+    
             # make sure that we received the entire file
             if len(msg_body) != content_length:
                 print 'Expected %d bytes, Received %d bytes' % (content_length, len(msg_body))
