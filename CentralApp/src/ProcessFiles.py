@@ -20,6 +20,7 @@ import IssueTrackerDataModel
 import DebriefDataModel
 import FileParser
 import Logger
+import WebCommonUtils
 
 
 def log_exception(logger, e):
@@ -294,10 +295,13 @@ def process_debrief_files(global_config, input_dir, recursive=True):
             
             # Also, extract the competition name, too, if it has been included in
             # the data file
+            
             if debrief_attributes.has_key('Competition'):
                 competition = debrief_attributes['Competition']
+                issue_base_name = WebCommonUtils.split_comp_str(competition)[0]
             else:
                 competition = global_config['this_competition'] + global_config['this_season']
+                issue_base_name = global_config['this_competition']
 
                 if competition == None:
                     raise Exception( 'Competition Not Specified!')
@@ -314,77 +318,108 @@ def process_debrief_files(global_config, input_dir, recursive=True):
                 status = 'Open'
                 owner = 'Unassigned'
                 
-                if debrief_attributes.has_key('Issue1_Summary'):
+                if debrief_attributes.has_key('Issue1_Summary') or debrief_attributes.has_key('Issue1_Description'):
                     # look to see if there is already a debrief issue, and if so, do not attempt to create/update
                     # an issue, as there are already other issue files that would then conflict with this one
                     issue_key = 'Issue1'
-                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                        summary = debrief_attributes['Issue1_Summary']
+                    if DebriefDataModel.getDebriefIssue(debrief_session, competition, match_id, issue_key) == None:
+                        # if no summary is provided, then use the description as the summary. Likewise, if no description
+                        # is provided then use the summary as the description. Keep in mind that we need at least the
+                        # summary or description to be provided.
+                        if debrief_attributes.has_key('Issue1_Summary'):
+                            summary = debrief_attributes['Issue1_Summary']
+                        else:
+                            summary = debrief_attributes['Issue1_Description']
+                        if debrief_attributes.has_key('Issue1_Description'):
+                            description = debrief_attributes['Issue1_Description']
+                        else:
+                            description = debrief_attributes['Issue1_Summary']
+                            
                         if debrief_attributes.has_key('Issue1_Priority'):
                             priority = debrief_attributes['Issue1_Priority']
                         else:
                             priority = 'Priority_3'
+                            
                         if debrief_attributes.has_key('Issue1_Taskgroup'):
                             component = debrief_attributes['Issue1_Taskgroup']
                         else:
                             component = ''
-                        if debrief_attributes.has_key('Issue1_Description'):
-                            description = debrief_attributes['Issue1_Description']
-                        else:
-                            description = ''
+                            
                         debrief_key = str(match_id) + '_' + issue_key
                     
-                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, issue_base_name)
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
                             issue.create_file('./static/data/%s/ScoutingData' % competition)
                         DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
                     
-                if debrief_attributes.has_key('Issue2_Summary'):
+                if debrief_attributes.has_key('Issue2_Summary') or debrief_attributes.has_key('Issue2_Description'):
+                    # look to see if there is already a debrief issue, and if so, do not attempt to create/update
+                    # an issue, as there are already other issue files that would then conflict with this one
                     issue_key = 'Issue2'
-                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                        summary = debrief_attributes['Issue2_Summary']
+                    if DebriefDataModel.getDebriefIssue(debrief_session, competition, match_id, issue_key) == None:
+                        # if no summary is provided, then use the description as the summary. Likewise, if no description
+                        # is provided then use the summary as the description. Keep in mind that we need at least the
+                        # summary or description to be provided.
+                        if debrief_attributes.has_key('Issue2_Summary'):
+                            summary = debrief_attributes['Issue2_Summary']
+                        else:
+                            summary = debrief_attributes['Issue2_Description']
+                        if debrief_attributes.has_key('Issue2_Description'):
+                            description = debrief_attributes['Issue2_Description']
+                        else:
+                            description = debrief_attributes['Issue2_Summary']
+                            
                         if debrief_attributes.has_key('Issue2_Priority'):
                             priority = debrief_attributes['Issue2_Priority']
                         else:
                             priority = 'Priority_3'
+                            
                         if debrief_attributes.has_key('Issue2_Taskgroup'):
                             component = debrief_attributes['Issue2_Taskgroup']
                         else:
                             component = ''
-                        if debrief_attributes.has_key('Issue3_Description'):
-                            description = debrief_attributes['Issue3_Description']
-                        else:
-                            description = ''
+
                         debrief_key = str(match_id) + '_' + issue_key
                         
-                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, issue_base_name)
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
                             issue.create_file('./static/data/%s/ScoutingData' % competition)
                         DebriefDataModel.addOrUpdateDebriefIssue(debrief_session, match_id, competition, issue_id, issue_key)
                     
-                if debrief_attributes.has_key('Issue3_Summary'):
+                if debrief_attributes.has_key('Issue3_Summary') or debrief_attributes.has_key('Issue3_Description'):
+                    # look to see if there is already a debrief issue, and if so, do not attempt to create/update
+                    # an issue, as there are already other issue files that would then conflict with this one
                     issue_key = 'Issue3'
-                    if DebriefDataModel.getDebriefIssue(debrief_session, match_id, issue_key) == None:
-                        summary = debrief_attributes['Issue3_Summary']
+                    if DebriefDataModel.getDebriefIssue(debrief_session, competition, match_id, issue_key) == None:
+                        # if no summary is provided, then use the description as the summary. Likewise, if no description
+                        # is provided then use the summary as the description. Keep in mind that we need at least the
+                        # summary or description to be provided.
+                        if debrief_attributes.has_key('Issue3_Summary'):
+                            summary = debrief_attributes['Issue3_Summary']
+                        else:
+                            summary = debrief_attributes['Issue3_Description']
+                        if debrief_attributes.has_key('Issue3_Description'):
+                            description = debrief_attributes['Issue3_Description']
+                        else:
+                            description = debrief_attributes['Issue3_Summary']
+                            
                         if debrief_attributes.has_key('Issue3_Priority'):
                             priority = debrief_attributes['Issue3_Priority']
                         else:
                             priority = 'Priority_3'
+                            
                         if debrief_attributes.has_key('Issue3_Taskgroup'):
                             component = debrief_attributes['Issue3_Taskgroup']
                         else:
                             component = ''
-                        if debrief_attributes.has_key('Issue3_Description'):
-                            description = debrief_attributes['Issue3_Description']
-                        else:
-                            description = ''
+
                         debrief_key = str(match_id) + '_' + issue_key
                     
-                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, 'Robot')
+                        issue_id = IssueTrackerDataModel.getIssueId(issues_session, issue_base_name)
                         issue = IssueTrackerDataModel.addOrUpdateIssue(issues_session, issue_id, summary, status, priority, 
                                  subgroup, component, submitter, owner, description, timestamp, debrief_key)
                         if issue != None:
