@@ -155,7 +155,22 @@ class AttrDefinitions:
     def __repr__(self):
         return self._attrdefinitions.__repr__()            
 
-    
+    def get_attr_dict_by_category(self):
+        category_dict = dict()
+        category_dict['Uncategorized'] = list()
+        for key, attrdef in self._attrdefinitions.iteritems():
+            if attrdef['Sub_Category'] != '':
+                try:
+                    category_dict[attrdef['Sub_Category']].append(key)
+                except KeyError:
+                    category_dict[attrdef['Sub_Category']] = list()
+                    category_dict[attrdef['Sub_Category']].append(key)
+            else:
+                category_dict['Uncategorized'].append(key)
+                
+        
+        return category_dict
+
     
 if __name__ == '__main__':
         
