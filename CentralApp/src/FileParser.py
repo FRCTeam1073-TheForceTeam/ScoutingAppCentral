@@ -10,7 +10,8 @@ class FileParser(object):
     '''
     File parser class
     '''
-
+    filename = None
+    
     def __init__(self, filename):
         '''
         Constructor
@@ -20,7 +21,8 @@ class FileParser(object):
         '''
         # use the csv reader to parse out the comma separated elements within each row
         self._csv_reader = csv.reader(open(filename, 'r'), delimiter='|')
-
+        self.filename = filename
+        
     def parse(self, file_attributes):
         '''Parse entire file.'''
         for row in self._csv_reader:
@@ -42,6 +44,11 @@ class FileParser(object):
             # print 'Token data:', token
             # Split out the attribute name and value
             attribute, value = token.split(':', 1)
-            file_attributes[attribute] = value
+            try:
+                value.decode('ascii')
+            except UnicodeDecodeError:
+                print 'Discarding string with unexpected character in file: %s, for attribute: %s' % (self.filename, attribute)
+            else:
+                file_attributes[attribute] = value
   
 
