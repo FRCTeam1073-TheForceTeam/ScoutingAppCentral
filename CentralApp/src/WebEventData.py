@@ -12,6 +12,7 @@ import web
 import WebCommonUtils
 import FileSync
 import WebTeamData
+import CompAlias
 
 from BeautifulSoup import BeautifulSoup
 import re
@@ -541,8 +542,10 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
     
     event_matches = ''
     if team_str is None:
+        exp_filename = ''
         json_data = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
     else:
+        exp_filename = '_%s' % team_str
         json_data = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
         
     if json_data != '':
@@ -614,7 +617,7 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
     else:
         # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
         # information, otherwise we will return an empty json payload
-        stored_file_data = FileSync.get( global_config, '%s/EventData/matchresults_%s.json' % (competition,round_str) )
+        stored_file_data = FileSync.get( global_config, '%s/EventData/matchresults_%s%s.json' % (competition,round_str,exp_filename) )
         if stored_file_data != '':
             return stored_file_data
     
@@ -622,7 +625,7 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
     json_str = ''.join(result)
     if store_data_to_file:
         try:
-            FileSync.put( global_config, '%s/EventData/matchresults_%s.json' % (competition,round_str), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/matchresults_%s%s.json' % (competition,round_str,exp_filename), 'text', json_str)
         except:
             raise
     return json_str    
@@ -867,17 +870,25 @@ def update_event_data_files( global_config, year, event, directory ):
     
     result = False
     
+    event_code = CompAlias.get_eventcode_by_alias(event)
+    
+    my_team = global_config['my_team']
     # for now, we only support updating files in the EventData directory, so only continue if that's the 
     # directory that was specified.
     if directory.upper() == 'EVENTDATA':
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_event_standings_json( global_config, year, event )
-        get_event_matchresults_json(global_config, year, event, 'qual', 2)
-        get_event_matchresults_json(global_config, year, event, 'elim', 3)
-        get_event_matchschedule_json(global_config, year, event, 'qual')
-        get_event_matchschedule_json(global_config, year, event, 'elim')
+        get_event_standings_json( global_config, year, event_code )
+        get_event_stats_json( global_config, year, event_code, 'oprs' )
+        get_event_matchresults_json(global_config, year, event_code, 'qual')
+        get_event_matchresults_json(global_config, year, event_code, 'quarters')
+        get_event_matchresults_json(global_config, year, event_code, 'semis')
+        get_event_matchresults_json(global_config, year, event_code, 'finals')
+        get_event_matchresults_json(global_config, year, event_code, 'qual', my_team)
+        get_event_matchresults_json(global_config, year, event_code, 'quarters', my_team)
+        get_event_matchresults_json(global_config, year, event_code, 'semis', my_team)
+        get_event_matchresults_json(global_config, year, event_code, 'finals', my_team)
         
         result = True
         
