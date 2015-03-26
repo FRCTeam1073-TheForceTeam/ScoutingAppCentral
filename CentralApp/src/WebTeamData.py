@@ -17,7 +17,6 @@ import DbSession
 import DataModel
 import FileSync
 import WebCommonUtils
-from distutils.tests import here
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
