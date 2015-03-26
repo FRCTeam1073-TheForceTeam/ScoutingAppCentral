@@ -9,6 +9,7 @@ import re
 import web
 import urllib2
 import json
+import operator
 
 import ImageFileUtils
 import AttributeDefinitions
@@ -16,6 +17,7 @@ import DbSession
 import DataModel
 import FileSync
 import WebCommonUtils
+from distutils.tests import here
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -346,7 +348,6 @@ def get_team_score_breakdown_json(global_config, name, comp=None, store_json_fil
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
     
-    web.header('Content-Type', 'application/json')
     result = []
 
     result.append('{ "score_breakdown": [\n')
@@ -378,7 +379,7 @@ def get_team_score_breakdown_json(global_config, name, comp=None, store_json_fil
     
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_scorebreakdown.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_scorebreakdown.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -498,7 +499,7 @@ def get_team_datafile_json(global_config, filename, store_json_file=False):
     if store_json_file is True:
         try:
             short_fname = fname.replace('.txt','')
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_file_%s.json' % (comp,team,short_fname), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_file_%s.json' % (comp,team,short_fname), 'text', json_str)
         except:
             raise
         
@@ -513,28 +514,31 @@ def get_team_info_json(global_config, comp, name, store_json_file=False):
     
     team_info = DataModel.getTeamInfo(session, int(name))
     
-    result = []
-    result.append('{ "team": "%s", "team_data" : [\n' % name)
-    result.append('   { "name": "%s", "value": "%s" }' % ('nickname', team_info.nickname))
-    result.append(',\n')
-    result.append('   { "name": "%s", "value": "%s" }' % ('affiliation', team_info.fullname))
-    result.append(',\n')
-    result.append('   { "name": "%s", "value": "%s" }' % ('location', team_info.location))
-    result.append(',\n')
-    result.append('   { "name": "%s", "value": "%s" }' % ('rookie_season', team_info.rookie_season))
-    result.append(',\n')
-    result.append('   { "name": "%s", "value": "%s" }' % ('website', team_info.website))
-    result.append('\n')
+    if team_info is None:
+        json_str = ''
+    else:
+        result = []
+        result.append('{ "team": "%s", "team_data" : [\n' % name)
+        result.append('   { "name": "%s", "value": "%s" }' % ('nickname', team_info.nickname))
+        result.append(',\n')
+        result.append('   { "name": "%s", "value": "%s" }' % ('affiliation', team_info.fullname))
+        result.append(',\n')
+        result.append('   { "name": "%s", "value": "%s" }' % ('location', team_info.location))
+        result.append(',\n')
+        result.append('   { "name": "%s", "value": "%s" }' % ('rookie_season', team_info.rookie_season))
+        result.append(',\n')
+        result.append('   { "name": "%s", "value": "%s" }' % ('website', team_info.website))
+        result.append('\n')
+        
+        result.append(' ] }\n')
+        
+        json_str = ''.join(result)
     
-    result.append(' ] }\n')
-    
-    json_str = ''.join(result)
-
-    if store_json_file is True:
-        try:
-            FileSync.put( global_config, '%s/EventData/team%s_teaminfo.json' % (comp,name), 'text', json_str)
-        except:
-            raise
+        if store_json_file is True:
+            try:
+                FileSync.put( global_config, '%s/EventData/TeamData/team%s_teaminfo.json' % (comp,name), 'text', json_str)
+            except:
+                raise
         
     return json_str
 
@@ -564,7 +568,7 @@ def get_team_score_json(global_config, name, comp, store_json_file=False):
     
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_score.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_score.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -613,7 +617,8 @@ def get_team_scouting_data_summary_json(global_config, comp, name, store_json_fi
                 else:
                     attr_name = attr_def['Name']
                 result.append('   { "name": "%s", "matches": "%s", "cumulative_value": "%s", "average_value": "%s", "all_values": "%s" }' % \
-                              (attr_name,str(attribute.num_occurs),str(attribute.cumulative_value),str(attribute.avg_value),attribute.all_values ))
+                              (attr_name,str(attribute.num_occurs),str(attribute.cumulative_value),str(round(attribute.avg_value,1)),\
+                               DataModel.mapAllValuesToShortenedString(attr_def, attribute.all_values)) )
                 result.append(',\n')
         if some_attr_added:
             result = result[:-1]
@@ -623,7 +628,7 @@ def get_team_scouting_data_summary_json(global_config, comp, name, store_json_fi
     
     if store_json_file is True:   
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_data_summary.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_data_summary.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -660,7 +665,7 @@ def get_team_scouting_datafiles_json(global_config, comp, name, store_json_file=
     
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_datafiles.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_datafiles.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -712,7 +717,7 @@ def get_team_scouting_mediafiles_json(global_config, comp, name, store_json_file
     
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_mediafiles.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_mediafiles.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -744,7 +749,7 @@ def get_team_scouting_notes_json(global_config, comp, name, store_json_file=Fals
 
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/team%s_scouting_notes.json' % (comp,name), 'text', json_str)
+            FileSync.put( global_config, '%s/EventData/TeamData/team%s_scouting_notes.json' % (comp,name), 'text', json_str)
         except:
             raise
         
@@ -812,7 +817,7 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None, store_json_file=False):
+def get_team_rankings_json(global_config, comp=None, attr_filter=[], store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
     store_data_to_file = False
@@ -827,16 +832,55 @@ def get_team_rankings_json(global_config, comp=None, store_json_file=False):
 
     result = []
     result.append('{ "rankings": [\n')
+    rank_added = False
     
+    if len(attr_filter) == 0:
+        team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
+        for team in team_rankings:
+            # round the score to an integer value
+            team.score = float(int(team.score))
+            if team.score > 0:
+                result.append(team.json())
+                result.append(',\n')
+                rank_added = True
+    else:
+        # we'll need the attribute definitions in order to retrieve the correct attribute value
+        # and attribute weighting
+        attrdef_filename = './config/' + global_config['attr_definitions']
+        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions.parse(attrdef_filename)
         
-    team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
-    for team in team_rankings:
-        # round the score to an integer value
-        team.score = float(int(team.score))
-        if team.score > 0:
-            result.append(team.json())
-            result.append(',\n')
-    if len(result) > 0:
+        team_rank_dict = dict()
+        for attr_name in attr_filter:
+            attr_def = attr_definitions.get_definition(attr_name)
+            team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
+            for team in team_rankings:
+                try:
+                    stat_type = attr_def['Statistic_Type']
+                except:
+                    stat_type = 'Total'
+    
+                weight = int(float(attr_def['Weight']))
+                if stat_type == 'Average':
+                    score = int(team.cumulative_value/team.num_occurs*weight)
+                else:
+                    score = int(team.cumulative_value*weight)
+                                                
+                try:       
+                    team_rank_dict[team.team] += score
+                except:
+                    team_rank_dict[team.team] = score
+                    
+        sorted_team_rank = sorted(team_rank_dict.items(), key=operator.itemgetter(1))
+        for team, score in sorted_team_rank:
+            # round the score to an integer value
+            score = float(int(score))
+            if score > 0:
+                result.append( '{"score": %0.1f, "competition": "%s", "team": %d}' % (score, comp, team))
+                result.append(',\n')
+                rank_added = True
+        
+    if rank_added == True:
         result = result[:-1]
 
     result.append(']}')
@@ -977,7 +1021,7 @@ def update_team_event_files( global_config, year, event, directory ):
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_team_rankings_json( global_config, event+year, store_json_file=True )
+        get_team_rankings_json( global_config, event+year, attr_filter=[], store_json_file=True )
         get_team_list_json( global_config, event+year, store_json_file=True )
        
         result = True
