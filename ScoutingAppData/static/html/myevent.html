@@ -138,6 +138,7 @@ $(document).ready(function () {
                            '<li><a href="/static/html/myevent.html?event=WEEK0&season=' + season + '">Week0</a></li>' +
                            '<li><a href="/static/html/myevent.html?event=NASHUA&season=' + season + '">Nashua</a></li>' +
                            '<li><a href="/static/html/myevent.html?event=READING&season=' + season + '">Reading</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NU&season=' + season + '">Northeastern</a></li>' +
                            '</ul> </div>' );
 
     var display = "horizontal";
@@ -241,7 +242,7 @@ $(document).ready(function () {
 
           function drawTable( json_data ) {
             $('#event_teams').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
                 "aaData": json_data.teams,
@@ -263,7 +264,7 @@ $(document).ready(function () {
 
           function drawTable( json_data ) {
             $('#event_rankings').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
                 "aaData": json_data.rankings,
@@ -279,19 +280,19 @@ $(document).ready(function () {
 
       } );   
 
-      var jqxhr_qualresults = $.getJSON( "/eventdata/matchresultsqual" + query_str, function(json_data) {
+      var jqxhr_qualmatches = $.getJSON( "/eventdata/matchresults_qual" + query_str, function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $('#event_qualresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+            $('#event_qualmatches').dataTable( {
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 1, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -299,19 +300,19 @@ $(document).ready(function () {
 
       } );   
 
-      var jqxhr_elimresults = $.getJSON( "/eventdata/matchresultselim" + query_str, function(json_data) {
+      var jqxhr_quarterfinal_matches = $.getJSON( "/eventdata/matchresults_quarters" + query_str, function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $('#event_elimresults').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+            $('#event_quarterfinal_matches').dataTable( {
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
                 "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 2, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -319,19 +320,19 @@ $(document).ready(function () {
 
       } );   
 
-      var jqxhr_qualschedule = $.getJSON( "/eventdata/schedulequal" + query_str, function(json_data) {
+      var jqxhr_semifinal_matches = $.getJSON( "/eventdata/matchresults_semis" + query_str, function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $('#event_qualschedule').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+            $('#event_semifinal_matches').dataTable( {
+                "bAutoWidth": false,
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
-                "aaData": json_data.schedulequal,
+                "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 1, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
@@ -339,27 +340,79 @@ $(document).ready(function () {
 
       } );   
 
-      var jqxhr_elimschedule = $.getJSON( "/eventdata/scheduleelim" + query_str, function(json_data) {
+      var jqxhr_final_matches = $.getJSON( "/eventdata/matchresults_finals" + query_str, function(json_data) {
           console.log( "success" );
 
           console.log( json_data );
 
           function drawTable( json_data ) {
-            $('#event_elimschedule').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
+            $('#event_final_matches').dataTable( {
+                "bAutoWidth": false, 
                 "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                 "iDisplayLength": 100,
-                "aaData": json_data.scheduleelim,
+                "aaData": json_data.matchresults,
                 "aoColumns": json_data.columns,
-                "order": [[ 2, "asc" ]]
+                "order": [[ 0, "asc" ]]
             } );
           }
 
           drawTable( json_data );
 
       } );   
+
+      var jqxhr_oprs = $.getJSON( "/eventdata/eventstats_oprs" + query_str, function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $('#event_oprs').dataTable( {
+                "bAutoWidth": false,
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
+                "aaData": json_data.stats,
+                "aoColumns": json_data.columns,
+                "order": [[ 1, "dsc" ]]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );   
+
 
 });
+
+$(function() {
+    var json, tabsState;
+    $('a[data-toggle="pill"], a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        var href, json, parentId, tabsState;
+
+        tabsState = localStorage.getItem("tabs-state");
+        json = JSON.parse(tabsState || "{}");
+        parentId = $(e.target).parents("ul.nav.nav-pills, ul.nav.nav-tabs").attr("id");
+        href = $(e.target).attr('href');
+        json[parentId] = href;
+
+        return localStorage.setItem("tabs-state", JSON.stringify(json));
+    });
+
+    tabsState = localStorage.getItem("tabs-state");
+    json = JSON.parse(tabsState || "{}");
+
+    $.each(json, function(containerId, href) {
+        return $("#" + containerId + " a[href=" + href + "]").tab('show');
+    });
+
+    $("ul.nav.nav-pills, ul.nav.nav-tabs").each(function() {
+        var $this = $(this);
+        if (!json[$this.attr("id")]) {
+           return $this.find("a[data-toggle=tab]:first, a[data-toggle=pill]:first").tab("show");
+        }
+    });
+});
+
+
 </script>
  
   </head>
@@ -420,10 +473,9 @@ $(document).ready(function () {
           <li class="active"><a href="#pane_teams"    data-toggle="tab">Teams</a></li>
           <li><a href="#pane_scouting_rank" data-toggle="tab">Scouting Rankings</a></li>
           <li><a href="#pane_rankings"    data-toggle="tab">Match Rankings</a></li>
-          <li><a href="#pane_qualschedule" data-toggle="tab">Qual Schedule</a></li>
-          <li><a href="#pane_qualresults" data-toggle="tab">Qual Results</a></li>
-          <li><a href="#pane_elimschedule" data-toggle="tab">Elim Schedule</a></li>
-          <li><a href="#pane_elimresults" data-toggle="tab">Elim Results</a></li>
+          <li><a href="#pane_qualmatches" data-toggle="tab">Qual Round</a></li>
+          <li><a href="#pane_playoffmatches" data-toggle="tab">Playoff Round</a></li>
+          <li><a href="#pane_oprs" data-toggle="tab">OPRs</a></li>
       </ul>
  
       <div class="tab-content">
@@ -461,9 +513,10 @@ $(document).ready(function () {
           </ul>
           </div>
 
-          <div id="pane_qualschedule" class="tab-pane">
+          <div id="pane_qualmatches" class="tab-pane">
           <ul>
-          <table id="event_qualschedule" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+          <h3>Qualification Matches</h3>
+          <table id="event_qualmatches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
               <thead>
               </thead>
               <tbody>
@@ -472,38 +525,43 @@ $(document).ready(function () {
           </ul>
           </div>
 
-          <div id="pane_qualresults" class="tab-pane">
+          <div id="pane_playoffmatches" class="tab-pane">
           <ul>
-          <table id="event_qualresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
+          <h3>Quarter Final Matches</h3>
+          <table id="event_quarterfinal_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+
+          <ul>
+          <h3>Semi Final Matches</h3>
+          <table id="event_semifinal_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+
+          <ul>
+          <h3>Final Matches</h3>
+          <table id="event_final_matches" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
 	      </table>
           </ul>
           </div>
 
-          <div id="pane_elimresults" class="tab-pane">
+          <div id="pane_oprs" class="tab-pane">
           <ul>
-          <table id="event_elimresults" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
+          <h3>Offensive Power Ratings</h3>
+          <br>
+          <table id="event_oprs" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
 	      </table>
           </ul>
           </div>
 
-          <div id="pane_elimschedule" class="tab-pane">
-          <ul>
-          <table id="event_elimschedule" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
 
       </div>
     </div>

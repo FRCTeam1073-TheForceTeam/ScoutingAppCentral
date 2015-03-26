@@ -126,7 +126,7 @@ $(document).ready(function () {
     var query_str = "?event=" + event_name + "&season=" + season;
 
 
-    var jqxhr_teaminfo = $.getJSON( "/eventdata/team" + team_number + "_teaminfo", function(json_data) {
+    var jqxhr_teaminfo = $.getJSON( "/eventdata/TeamData/team" + team_number + "_teaminfo" + query_str, function(json_data) {
 
         $("#teaminfo").html("<h1>Team " + json_data.team + " Scouting Data Page</h1>" + "<ul>" +
                       "<li>Nickname: "      + json_data.team_data[0].value + "</li>" +
@@ -138,12 +138,14 @@ $(document).ready(function () {
                       "</ul><br>" );
     } );   
 
-    var jqxhr_datasummary = $.getJSON( "/eventdata/team" + team_number + "_scouting_data_summary" + query_str, function(json_data) {
+    var jqxhr_datasummary = $.getJSON( "/eventdata/TeamData/team" + team_number + "_scouting_data_summary" + query_str, function(json_data) {
 
           function drawSummaryTable( json_data ) {
             $('#scouting_data').dataTable( {
                 "aaData": json_data.scouting_data_summary,
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                "iDisplayLength": 100,
                 "aoColumns": [
                     { "mData": "name" },
                     { "mData": "matches" },
@@ -158,12 +160,12 @@ $(document).ready(function () {
 
       } );   
 
-    var jqxhr_datafiles = $.getJSON( "/eventdata/team" + team_number + "_scouting_datafiles" + query_str, function(json_data) {
+    var jqxhr_datafiles = $.getJSON( "/eventdata/TeamData/team" + team_number + "_scouting_datafiles" + query_str, function(json_data) {
 
           function drawDatafileTable( json_data ) {
             $('#datafiles').dataTable( {
                 "aaData": json_data.scouting_datafiles,
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
                 "aoColumns": [
                     { "mData": "filename", "mRender": function(name) { return '<a href="/ScoutingData/' + event_name + season + '/'+name+'">'+name+'</a>'; } }
                 ]
@@ -174,12 +176,12 @@ $(document).ready(function () {
 
       } );   
 
-    var jqxhr_mediafiles = $.getJSON( "/eventdata/team" + team_number + "_scouting_mediafiles" + query_str, function(json_data) {
+    var jqxhr_mediafiles = $.getJSON( "/eventdata/TeamData/team" + team_number + "_scouting_mediafiles" + query_str, function(json_data) {
 
           function drawMediafileTable( json_data ) {
             $('#mediafiles').dataTable( {
                 "aaData": json_data.scouting_mediafiles,
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
                 "aoColumns": [
                     { "mData": "filename", "mRender": function(name) { return '<a href="/static/data/' + event_name + season + '/ScoutingPictures/'+name+'">'+name+'</a>'; } }
                 ]
@@ -207,11 +209,11 @@ $(document).ready(function () {
 
       } );   
 
-    var jqxhr_notes = $.getJSON( "/eventdata/team" + team_number + "_scouting_notes" + query_str, function(json_data) {
+    var jqxhr_notes = $.getJSON( "/eventdata/TeamData/team" + team_number + "_scouting_notes" + query_str, function(json_data) {
           function drawNotesTable( json_data ) {
             $('#notes').dataTable( {
                 "aaData": json_data.scouting_notes,
-                "bAutoWidth": true, // Disable the auto width calculation
+                "bAutoWidth": false,
                 "aoColumns": [
                     { "mData": "note" }
                 ]
@@ -222,7 +224,7 @@ $(document).ready(function () {
 
       } );   
 
-      var jqxhr_notes = $.getJSON( "/eventdata/team" + team_number + "_scouting_scorebreakdown" + query_str, function(json_data) {
+      var jqxhr_notes = $.getJSON( "/eventdata/TeamData/team" + team_number + "_scouting_scorebreakdown" + query_str, function(json_data) {
         var data = [];
         var attr_data = json_data;
         var numAttr = json_data.score_breakdown.length;

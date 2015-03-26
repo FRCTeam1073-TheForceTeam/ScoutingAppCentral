@@ -1,0 +1,145 @@
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+
+    var path = location.pathname;
+    var query_string = location.search;
+    var team_number = "MyTeam";
+    var event_name  = "MyEvent";
+    var season = "2015";
+    var my_team_number = "1073";
+
+    // parse out the query string to locate the event name and team number
+    query_string = query_string.replace("?","");
+    var query_elems = query_string.split("&");
+    var num_elems = query_elems.length;
+    for (var i=0;i<num_elems;i++)
+    {
+        var parsed_elem = query_elems[i].split("=");
+        if ( parsed_elem.length == 2 )
+        {
+            if ( parsed_elem[0] == "event" )
+                event_name = parsed_elem[1];
+            else if ( parsed_elem[0] == "team" )
+                team_number = parsed_elem[1];
+            else if ( parsed_elem[0] == "season" )
+                season = parsed_elem[1];
+            else if ( parsed_elem[0] == "filename" )
+                scouting_filename = parsed_elem[1];
+        }
+    }
+
+    $("#mytitle").html('<h1>Team ' + team_number + ' Event Data </h1>');
+
+    $("#logo-home").html('<a class="navbar-brand" rel="home" href="/static/html/myevent.html?event=' + event_name + 
+                         '&season=' + season + '" title="Competition Central">' +
+                         '<img style="max-width:40px; margin-top: -7px;" src="/static/media/images/FIRST-logo-small.jpg"></a>' );
+    $("#nav-home").html('<a href="/static/html/myevent.html?event=' + event_name + 
+                        '&season=' + season + '">Home</a>' );
+    $("#nav-event").html('<a href="/static/html/myevent.html?event=' + event_name + 
+                         '&season=' + season + '">Event</a>' );
+    $("#nav-our-matches").html('<a href="/static/html/mymatches.html?event=' + event_name + 
+                         '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
+    $("#nav-teams").html('<a href="/static/html/myteams.html?event=' + event_name + 
+                         '&season=' + season + '">Teams</a>' );
+    $("#nav-alliance-selection").html('<a href="/static/html/mypicklist.html?event=' + event_name + 
+                                      '&season=' + season + '">Alliance Selection</a>' );
+
+    var query_str = "?event=" + event_name + "&season=" + season;
+
+    $("#fileinfo").html("<h2>" + event_name + season+ " Scouting Data File: " + scouting_filename + "</h2>");
+
+    function drawDataTable( json_data ) {
+        $('#scoutingdata').dataTable( {
+            "aaData": json_data.scouting_data,
+            "bAutoWidth": true, // Disable the auto width calculation 
+            "aoColumns": [
+                { "mData": "name" },
+                { "mData": "value" }
+            ]
+        } );   
+    }
+
+
+    var jqxhr = $.getJSON( "/eventdata/TeamData/" + event_name + season + "/team" + team_number + "_scouting_file_" + scouting_file, function(json_data) {
+        console.log( "success" );
+
+        console.log( json_data );
+        drawDataTable( json_data );
+
+    } );   
+
+} );
+
+</script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+
+          <div id="logo-home"></div>
+
+        </div>
+
+        <div class="collapse navbar-collapse">
+
+        <div class="row">
+
+          <ul class="nav navbar-nav">
+
+            <li class="inactive" id="nav-home"></li>
+            <li class="inactive" id="nav-event"></li>
+            <li class="inactive" id="nav-teams"></li>
+            <li class="inactive" id="nav-our-matches"></li>
+            <li class="inactive" id="nav-alliance-selection"></li>
+
+          </ul>
+
+        </div>
+
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <!-- Begin page content -->
+    <div class="container">
+
+
+  <div class="article">
+  
+    <div id="fileinfo"></div>
+
+    <div class="container-fluid">
+
+    <ul>
+    <table id="scoutingdata" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+    <thead>
+        <tr role="row">
+			<th>Attribute Name</th>
+			<th>Attribute Value</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+	</table>
+    </ul>
+
+    </div>
+  </div>
+
+
+  </body>
+</html>
+
