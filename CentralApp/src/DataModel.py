@@ -290,8 +290,62 @@ def mapValueFromString(string_value, map_values):
         raise Exception('ERROR: No Mapping For Value: %s' % value)
     return mapped_value
 
-def mapValueToString(value, all_values, attr_def, need_quote=False):
+def mapAllValuesToShortenedString( attr_def, all_values, need_quote=False, delim_str=':' ):
     if attr_def['Type'] == 'Map_Integer':
+        value_list = all_values.split(':')
+        unique_values = dict()
+        for item in value_list:
+            single_value_list = item.split(',')
+            for single_item in single_value_list:
+                try:
+                    unique_values[single_item] += 1
+                except KeyError:
+                    unique_values[single_item] = 1
+                    
+        value_string = ''
+        if ( need_quote == True ):
+            value_string = "'"
+        
+        index = 0    
+        for value in sorted(unique_values):
+            if index > 0:
+                value_string += delim_str
+            value_string += '%s(%d)' % (value,unique_values[value])
+            index += 1
+
+        if ( need_quote == True ):
+            value_string += "'"
+        return value_string
+    else:
+        return all_values
+            
+    
+def mapValueToString(value, all_values, attr_def, need_quote=False, delim_str='-'):
+    if attr_def['Type'] == 'Map_Integer':
+        value_list = all_values.split(':')
+        unique_values = dict()
+        for item in value_list:
+            single_value_list = item.split(',')
+            for single_item in single_value_list:
+                try:
+                    unique_values[single_item] += 1
+                except KeyError:
+                    unique_values[single_item] = 1
+                    
+        value_string = ''
+        if ( need_quote == True ):
+            value_string = "'"
+        
+        index = 0    
+        for value in sorted(unique_values):
+            if index > 0:
+                value_string += delim_str
+            value_string += '%s(%d)' % (value,unique_values[value])
+            index += 1
+            
+        '''
+        # TODO: commented out original implementation to save it in case the other 
+        # method doesn't work out
         value_list = all_values.split(':')
         unique_values = []
         for item in value_list:
@@ -314,6 +368,9 @@ def mapValueToString(value, all_values, attr_def, need_quote=False):
                 value_string += unique_values[index]
             else:
                 value_string += '-' + unique_values[index]
+                
+        '''
+                
         if ( need_quote == True ):
             value_string += "'"
         return value_string
@@ -602,7 +659,7 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
     error_logged = False
     team_rankings = getTeamsInRankOrder(session, competition)
     for team_entry in team_rankings:
-        mystring = str(team_entry.team) + ',' + str(team_entry.score)
+        mystring = str(team_entry.team) + ',' + str(int(team_entry.score))
         # retrieve each attribute from the database in the proper order
         for attr_def in attr_order:
             try:
@@ -613,13 +670,10 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
                     if attribute == None:
                         mystring += ','
                     elif ( attr_def['Statistic_Type'] == 'Total'):
-                        #mystring += ',' + str(attribute.cumulative_value)
-                        mystring += ',' + mapValueToString(attribute.cumulative_value, attribute.all_values, attr_def)
+                        mystring += ',' + mapValueToString(int(attribute.cumulative_value), attribute.all_values, attr_def)
                     elif ( attr_def['Statistic_Type'] == 'Average'):
-                        #mystring += ',' + str(attribute.avg_value)
-                        mystring += ',' + mapValueToString(attribute.avg_value, attribute.all_values, attr_def)
+                        mystring += ',' + mapValueToString(int(attribute.avg_value), attribute.all_values, attr_def)
                     else:
-                        #mystring += ',' + str(attribute.attr_value)
                         mystring += ',' + mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
             except KeyError:
                 if error_logged is False:
