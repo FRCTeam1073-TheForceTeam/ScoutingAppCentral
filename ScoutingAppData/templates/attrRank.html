@@ -4,6 +4,12 @@ $# This snippet of python code will retrieve the list of attribute types
 $# This list will then be used to dynamically create the select dropdown for
 $# attribute rank display
 $code:
+    event_code = utils.map_comp_to_event_code(comp)
+    short_comp = utils.split_comp_str(comp)[0]
+    season = utils.map_event_code_to_season(event_code)
+    comp_list = utils.get_comp_and_eventcode_list(season)
+    event_info = utils.get_event_info_str(event_code)
+    myteam = utils.get_myteam()
     attrlist = utils.get_attr_list()
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
@@ -199,12 +205,44 @@ function plotByFilterData(){
     </div>
 
 	<div class="row">
+	<div class="col-sm-11" align="left">							
 
+    <!-- provide a dropdown to select the season to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $season
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+            <li><a href="/event/$event_code">$season</a></li>
+        </ul>
+    </div>
 
+    <!-- provide a dropdown to select the competition to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $short_comp
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for comp_entry in comp_list:
+            <li><a href="/attrrank/$comp_entry[0]$season">$comp_entry[0]</a></li>
+        </ul>
+    </div>
+
+    </div>
+    </div>
+    
+
+	<div class="row">
+
+        <br>
 		<div class="col-sm-3">							
             <div align="center">
 		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
             </div>
+
+            <br>
 
 			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
 				<div id="NoAssignmentAlert"></div>

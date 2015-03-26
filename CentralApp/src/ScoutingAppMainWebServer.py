@@ -239,7 +239,9 @@ class AttrRankPage(object):
         numparams = len(params)
         comp = global_config['this_competition'] + global_config['this_season']
         attr = ''
-        if numparams == 3:
+        if numparams == 2:
+            comp = params[1]
+        elif numparams == 3:
             comp = params[1]
             attr = params[2]
         return render.attrRank(comp)
@@ -459,9 +461,12 @@ class TeamRankingJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
-        query_data = web.input(filter=None)
+        query_data = web.input(filter=None,queryname=None)
         if query_data.filter is None:
-            attr_filter = []
+            if query_data.queryname is None:
+                attr_filter = []
+            else:
+                attr_filter = WebAttributeDefinitions.get_saved_filter(query_data.queryname)
         else:
             attr_filter = query_data.filter.split()
     
