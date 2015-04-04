@@ -96,6 +96,7 @@ urls = (
     '/eventresults/(.*)',   'EventResults',
     '/setweights',          'SetWeights',
     '/attrrank(.*)',        'AttrRankPage',
+    '/allianceselect(.*)',  'AllianceSelectionPage',
     '/downloads',           'DownloadsPage',
     '/upload/',             'Upload',
     '/eventgallery/(.*)',   'EventGallery',
@@ -117,6 +118,7 @@ urls = (
     '/api/teamnotes/(.+)',          'TeamDataNotesJson',
     '/api/eventinfo/(.*)',          'EventInfoJson',
     '/api/eventstandings/(.*)',     'EventStandingsJson',
+    '/api/eventranklist/(.*)',      'EventRanklistJson',
     '/api/eventresults/(.+)',       'EventResultsJson',
     '/api/eventstats/(.+)',         'EventStatsJson',
     '/api/eventschedule/(.+)',      'MatchScheduleJson',
@@ -245,6 +247,17 @@ class AttrRankPage(object):
             comp = params[1]
             attr = params[2]
         return render.attrRank(comp)
+    
+class AllianceSelectionPage(object):
+
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        comp = global_config['this_competition'] + global_config['this_season']
+        if numparams >= 2:
+            comp = params[1]
+        return render.allianceSelection(comp)
     
 class AdminPage(object):
 
@@ -508,6 +521,7 @@ class TeamUpdatePicklistJson(object):
         web.header('Content-Type', 'application/json')
         return WebTeamData.update_picklist_json(global_config, int(query_data.fromPosition), int(query_data.toPosition), comp, store_json_file=True)
 
+
 class TeamRanking(object):
 
     def GET(self, param_str):
@@ -688,6 +702,20 @@ class EventResultsJson(object):
             
         return result
                            
+class EventRanklistJson(object):
+
+    def GET(self, name):
+        WebLogin.check_access(global_config,10)
+        year = name[0:4]
+        event_code = name[4:]
+        result = WebEventData.get_event_rank_list_json(global_config, year, event_code)
+            
+        web.header('Content-Type', 'application/json')
+        return result
+    
+    def POST(self, name):
+        return
+        
 class EventStatsJson(object):
 
     def GET(self, param_str):
