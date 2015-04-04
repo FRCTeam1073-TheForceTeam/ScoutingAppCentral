@@ -40,6 +40,8 @@ $code:
 	<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/plug-ins/725b2a2115b/integration/bootstrap/3/dataTables.bootstrap.css">
     <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
 
+    <link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap-toggle.css"/>
+    
     
 <!--
     <link href="/static/media/css/bootstrap.min.css" rel="stylesheet">
@@ -114,11 +116,9 @@ $code:
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Scouting <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
-                $for comp in complist:
-                  <li class="dropdown-header">$comp</li>
-                  <li class="subMenuItem"><a href="/rankchart/$comp">Team Rankings</a></li>
-                  <li class="subMenuItem"><a href="/attrrank/$comp">Attribute Data</a></li>
-                  <li class="divider"></li>
+                <li class="subMenuItem"><a href="/attrrank/$complist[0]">Filtered Attribute Query</a></li>
+                <li class="subMenuItem"><a href="/allianceselect/$complist[0]">Alliance Selection</a></li>
+                <li class="subMenuItem"><a href="/setweights">Set Attribute Weights</a></li>
               </ul>
             </li>
 
@@ -150,7 +150,6 @@ $code:
                 <li class="subMenuItem"><a href="/taskgroup_email/all">Task Group Message File Gen</a></li>
                 <li class="subMenuItem"><a href="/config">System Configuration</a></li>
                 <li class="subMenuItem"><a href="/genui">Tablet UI Generation</a></li>
-                <li class="subMenuItem"><a href="/setweights">Set Attribute Weights</a></li>
               </ul>
             </li>
 

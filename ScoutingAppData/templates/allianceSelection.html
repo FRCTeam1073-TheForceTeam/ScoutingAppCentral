@@ -1,0 +1,385 @@
+$def with (comp)
+
+$# This snippet of python code will retrieve the list of attribute types
+$# This list will then be used to dynamically create the select dropdown for
+$# attribute rank display
+$code:
+    event_code = utils.map_comp_to_event_code(comp)
+    short_comp = utils.split_comp_str(comp)[0]
+    season = utils.map_event_code_to_season(event_code)
+    comp_list = utils.get_comp_and_eventcode_list(season)
+    event_info = utils.get_event_info_str(event_code)
+    myteam = utils.get_myteam()
+    attrlist = utils.get_attr_list()
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Attribute Ranking
+
+
+
+<style type="text/css">
+    #placeholder
+    { 
+        #width: 100%; 
+        height: 800px;
+        margin: auto auto auto auto;
+    }
+    #flotTip
+    {
+        padding: 3px 5px;
+        background-color: #000;
+        z-index: 100;
+        color: #fff;
+        box-shadow: 0 0 10px #555;
+        opacity: .7;
+        filter: alpha(opacity=70);
+        border: 2px solid #fff;
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+    }
+
+</style>
+
+<link rel="stylesheet" type="text/css" href="/static/media/js/dhtmlxTree/skins/web/dhtmlxtree.css"/>
+<script src="/static/media/js/dhtmlxTree/codebase/dhtmlxtree.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap-toggle.css"/>
+<link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap-toggle-min.css"/>
+<script src="/static/media/js/bootstrap-toggle.js"></script>
+
+<script type="text/javascript">
+
+var team_availability = {};
+
+$$(document).ready(function () {
+
+    filter_init();
+
+    displayTeamButtons();
+
+	$$('#resetTeamAvailability').attr('onClick', 'resetTeamAvailability()');
+
+    loadTeamAvailability();
+
+});
+
+function resetTeamAvailability() {
+    $$.each(team_availability, function(team, value) {
+        team_id_ref_string = '#team_' + team;
+        $$(function() { $$(team_id_ref_string).bootstrapToggle('on'); })
+    });
+}
+
+function loadTeamAvailability() {
+
+    team_availability_str = localStorage.getItem('team_availability');
+    team_availability = JSON.parse( team_availability_str );
+    if ( team_availability == null ) {
+        team_availability = {};
+    }
+}
+
+function displayTeamButtons() {
+      var team_list;
+      var num_teams;
+      var num_teams_per_column = 4;
+      var num_columns;
+
+      //var jqxhr_events = $$.getJSON( "/api/teams/$comp", function(json_data) {
+      //    team_list = json_data.teams;
+      var jqxhr_events = $$.getJSON( "/api/eventranklist/$season$event_code", function(json_data) {
+          team_list = json_data.rankings;
+          num_teams = team_list.length;
+
+          console.log( "Number of teams: " + num_teams );
+
+          num_columns = Math.ceil(num_teams / num_teams_per_column);
+
+          console.log( "Number of columns: " + num_columns );
+
+          var team_button_string = "";
+          var team_id_string = "";
+          for ( row=0; row<num_teams_per_column; row++ ) {
+              for ( col=0; col<num_teams && col<=num_columns; col++ ) {
+                  index = row + (col * num_teams_per_column);
+                  if ( (index+1) <= num_teams ) {
+                      var initial_state = 'checked';
+
+                      if ( team_availability[ team_list[index].team_number ] == undefined ) {
+                          team_availability[ team_list[index].team_number ] = 'Available';
+                      } else {
+                          if ( team_availability[ team_list[index].team_number ] != 'Available' ) {
+                              initial_state = '';
+                          }
+                      }
+                      team_id_string = 'team_' + team_list[index].team_number;
+                      team_button_string += '<input ' + initial_state + ' id="' + team_id_string + '" data-toggle="toggle" data-on="' + team_list[index].team_number + '" data-off="' + team_list[index].team_number + '" data-size="small" data-width="60" type="checkbox">   ';
+
+                  }
+              }
+              team_button_string += '<br>';
+          }
+
+          $$("#team_buttons").html( team_button_string );
+
+          var team_id_ref_string;
+          for ( i=0; i<num_teams; i++ ) {
+              team_id_ref_string = '#team_' + team_list[i].team_number;
+              $$(function() { $$(team_id_ref_string).bootstrapToggle(); })
+
+              $$(team_id_ref_string).prop('team', team_list[i].team_number);
+              $$(team_id_ref_string).change(function() { 
+                    if ( $$(this).prop('checked') ) {
+                        team_availability[ $$(this).prop('team') ] = 'Available';
+                    } else {
+                        team_availability[ $$(this).prop('team') ] = 'Picked';
+                    }
+
+                    filteredPlot( '' );
+
+                    localStorage.setItem('team_availability', JSON.stringify( team_availability ));
+              } )
+          }
+
+          // display the initial plot
+          filteredPlot('');
+
+      } );   
+
+}
+
+function filteredPlot( filter ) {
+    var display = "horizontal";
+    var data = [];
+    var teams = [];
+    var uri = "/rankings/$comp";
+
+    if ( filter.length > 0 )
+    {
+        uri += "?filter=" + filter;
+    }
+
+    var jqxhr = $$.getJSON( uri, function(json_data) {
+        console.log( "success" );
+        var numTeams = json_data.rankings.length;
+        for (var i=0, j=0;i<numTeams;i++)
+        {
+            var team = json_data.rankings[i].team;
+
+            if ( team_availability[team] == 'Available' ) { 
+
+                data[j] = [];
+                if ( display=='horizontal' ) {
+                    data[j][0] = json_data.rankings[i].score;
+                    data[j][1] = j;
+                } else {
+                    data[j][0] = j;
+                    data[j][1] = json_data.rankings[i].score;
+                }
+
+                teams[j] = json_data.rankings[i].team.toString();
+
+                j++;
+            }
+
+        }
+
+        $$("#placeholder").bind("plotclick", function( event, pos, item ) {
+            if (item) {
+                window.location.assign( "/teamdata/" + teams[item.datapoint[1]] );
+            }
+        });
+
+        function generatePlot( data ) {
+            $$.plot($$("#placeholder"), [ data ], {
+	            series: {
+                    bars: { 
+                        show: true, 
+		                barWidth: 0.6,
+		                align: "center",
+		                horizontal: true
+                    }
+                },
+                yaxis: {
+                    tickFormatter: function(v,axis) {
+		                if ( (v >= 0) && (v < teams.length) ) {
+		                    return teams[v];
+		                } else {
+		                    return '';
+		                }
+                    },
+                    tickSize: 1,
+                    tickLength: 0,
+		            axisLabel: 'Team',
+                    axisLabelUseCanvas: true,
+                    axisLabelFontSizePixels: 10,
+                    axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
+                    axisLabelPadding: 5
+                },
+                xaxis: {
+                    axisLabel: 'Score',
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true
+                },
+	            tooltip: true,
+	            tooltipOpts: {
+	                content: function(label, xval, yval, flotItem) {
+		                var tipString;
+		                if ( display == 'horizontal' ) {
+		                    tipString = "Team: " + json_data.rankings[yval].team.toString() + 
+		                                ", Score: " + xval.toString();
+		                } else {
+		                    tipString = "Team: " + json_data.rankings[xval].team.toString() + 
+		                                ", Score: " + yval.toString();
+                        }
+		                console.log( tipString );
+		                return( tipString );
+	                },
+		            shifts: {
+		                x:20,
+		                y:0
+		            },
+                    defaultTheme: false
+	            },
+                legend: {
+                    labelBoxBorderColor: "none"
+                }
+            });
+        }
+
+        generatePlot(data);
+
+        window.onresize = function(event) {
+            generatePlot(data);
+        }
+        
+    })
+}
+
+function filter_init(){
+
+	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
+    
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+	tree.loadJSON("/api/attrlist");
+}	
+
+function plotByFilterData(){
+    filter = '';
+    var checked_items = tree.getAllChecked().split(",");
+    console.log( "Checked Items : " + checked_items );
+
+    var baseCheckboxState = tree.isItemChecked(1);
+
+    if ( baseCheckboxState == 0 ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
+        return;
+    } else if ( baseCheckboxState == 1 ) {
+        console.log( "Displaying All Attributes" );
+    } else {
+        for(var i=0; i<checked_items.length; i++) {
+            if ( checked_items[i].lastIndexOf("Skip_", 0) != 0 ) {
+                if ( filter.length > 0 )
+                    filter += '+';
+                filter += checked_items[i];
+            }
+        }
+    }
+
+    document.getElementById('NoAttrAlert').innerHTML = '';
+    console.log( "Filter String : " + filter );
+    filteredPlot(filter);
+}			
+
+</script>
+
+
+  <div class="article">
+  
+    <div id="title">
+		<div class="col-sm-11" align="center">							
+            <h1>Alliance Selection Page</h1>
+            <br>
+        </div>
+    </div>
+
+	<div class="row">
+	<div class="col-sm-11" align="left">							
+
+    <!-- provide a dropdown to select the season to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $season
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+            <li><a href="#">$season</a></li>
+        </ul>
+    </div>
+
+    <!-- provide a dropdown to select the competition to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $short_comp
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for comp_entry in comp_list:
+            <li><a href="/allianceselect/$comp_entry[0]$season">$comp_entry[0]</a></li>
+        </ul>
+    </div>
+
+    <br>
+
+    </div>
+    </div>
+    
+    <div id="teams">
+		<div class="col-sm-11" align="left">							
+            <br>
+	        <div class="row">
+		    <button type="button" class="btn btn-primary" id="resetTeamAvailability">Reset Teams</button>         
+            <div id="team_buttons" style="padding-left:120px;"></div>
+            </div>
+
+            <br>
+        </div>
+    </div>
+
+	<div class="row">
+
+        <br>
+		<div class="col-sm-3">							
+            <div align="center">
+		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
+            </div>
+
+            <br>
+
+			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
+				<div id="NoAssignmentAlert"></div>
+			</div><!-- well -->
+
+
+		</div><!-- col-3 -->
+
+		<div class="col-sm-8">							
+	        <div id="NoAttrAlert"></div>
+            <div id="placeholder"></div>
+
+		</div><!-- col-8 -->
+	</div><!-- row -->
+
+
+
+
+  </div>  
+
