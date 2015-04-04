@@ -519,60 +519,6 @@ def get_event_standings_json(global_config, year, event_code):
             raise
     return json_str
               
-def get_event_rank_list_json(global_config, year, event_code):
-        
-    global_config['logger'].debug( 'GET Event Rank List Json' )
-    
-    # derive our competition name from the FIRST event code 
-    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
-
-    #return get_data_from_first(global_config, year, event_code, 'rankings')
-    store_data_to_file = False
-    result = []
-    
-    rankings = ''
-    json_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
-    if json_data != '':
-        rankings = json.loads(json_data)
-
-    result.append('{ "event" : "%s",\n' % (event_code.lower()))
-    
-    if rankings:
-        # rankings is now a list of lists, with the first element of the list being the list of column headings
-        # take the list of columngs and apply to each of the subsequent rows to build the json response
-        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
-        result.append('  "rankings" : [\n')
-        
-        for line in rankings[1:]:
-            result.append('       { "rank": %d, "team_number": %d, "status": "available" }' % (line[0],line[1]))
-            result.append(',\n')
-                
-        if len(rankings) > 1:         
-            result = result[:-1]
-        result.append(' ]\n')
-        store_data_to_file = True
-    else:
-        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
-        # information, otherwise we will return an empty json payload
-        stored_file_data = FileSync.get( global_config, '%s/EventData/ranklist.json' % (competition) )
-        if stored_file_data != '':
-            return stored_file_data
-        else:
-            # no stored data either, so let's just return a formatted, but empty payload
-            result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
-            result.append('  "rankings" : []\n')        
-
-    result.append(' }\n')
-    json_str = ''.join(result)
-    if store_data_to_file:
-        try:
-            FileSync.put( global_config, '%s/EventData/ranklist.json' % (competition), 'text', json_str)
-        except:
-            raise
-    return json_str
-
-
-
 def get_event_matchresults_json(global_config, year, event_code, round_str, team_str = None):
         
     global_config['logger'].debug( 'GET Event Results Json' )
