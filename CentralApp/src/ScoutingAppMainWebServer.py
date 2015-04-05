@@ -128,7 +128,8 @@ urls = (
     '/api/issues/(.*)',             'PlatformIssuesJson',
     '/api/debriefs/(.*)',           'DebriefsJson',
     '/api/users',                   'UsersJson',
-    '/api/attrlist',                'AttributesJson',
+    '/api/attrlist(.*)',            'AttributesJson',
+    '/api/attrfilter/(.*)',         'AttributesFilter',
     
     '/testpage(.*)',        'TestPage',
         
@@ -760,14 +761,69 @@ class MatchScheduleJson(object):
 
 class AttributesJson(object):
 
-    def GET(self):
+    def GET(self, param_str):
         WebLogin.check_access(global_config,10)
+        param_str = param_str.lstrip('/')
+        params = []
         
+        if param_str != '':
+            params = param_str.split('/')
+        
+        if len(params) >= 1:
+            filter_name = params[0]
+        else:
+            filter_name = None  
+
         web.header('Content-Type', 'application/json')
 
-        result = WebAttributeDefinitions.get_attr_tree_json(global_config)
+        result = WebAttributeDefinitions.get_attr_tree_json(global_config, filter_name)
         
-        return result         
+        return result
+
+class AttributesFilter(object):   
+     
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = []
+        
+        if param_str != '':
+            params = param_str.split('/')
+        
+        if len(params) >= 1:
+            filter_name = params[0]
+        else:
+            filter_name = None  
+              
+        web.header('Content-Type', 'application/json')
+        return WebAttributeDefinitions.get_saved_filter_json(filter_name)
+        
+    def POST(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+                
+        query_data = web.input()
+        
+        if len(params) >= 1:
+            filter_name = params[0]
+            
+            WebAttributeDefinitions.save_filter(filter_name, query_data.filter)
+        else:
+            raise web.BadRequest
+        
+        return                 
+
+    def DELETE(self, param_str):
+        WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        
+        if len(params) >= 1:
+            filter_name = params[0]
+            
+            WebAttributeDefinitions.delete_filter(filter_name)
+        else:
+            raise web.BadRequest
+        
+        return                 
 
                   
 class DownloadsPage(object):

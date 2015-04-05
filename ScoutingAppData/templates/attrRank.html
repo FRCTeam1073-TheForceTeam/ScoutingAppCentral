@@ -49,7 +49,6 @@ $$(document).ready(function () {
 
     filter_init();
 
-    filteredPlot('');
 });
 
 function filteredPlot( filter ) {
@@ -156,16 +155,27 @@ function filteredPlot( filter ) {
 function filter_init(){
 
 	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
+	$$('#clearFilter').attr('onClick', 'clearFilter()');
+	$$('#saveFilter').attr('onClick', 'saveFilter()');
+	$$('#loadFilter').attr('onClick', 'loadFilter()');
+	$$('#deleteFilter').attr('onClick', 'deleteFilter()');
     
 	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
 	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
 	tree.enableCheckBoxes(1);
 	tree.enableThreeStateCheckboxes(true);
 	tree.openAllItems(1);
-	tree.loadJSON("/api/attrlist");
+
+    currFilter = localStorage.getItem('currFilter');
+    if ( currFilter == null || currFilter == '' ) {
+	    tree.loadJSON("/api/attrlist", function(){ plotByFilterData(); } );
+    } else {
+	    tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
+    }
 }	
 
-function plotByFilterData(){
+
+function getFilterString() {
     filter = '';
     var checked_items = tree.getAllChecked().split(",");
     console.log( "Checked Items : " + checked_items );
@@ -189,8 +199,58 @@ function plotByFilterData(){
 
     document.getElementById('NoAttrAlert').innerHTML = '';
     console.log( "Filter String : " + filter );
+
+    return filter;
+}
+
+function plotByFilterData(){
+
+    filter = getFilterString();
     filteredPlot(filter);
 }			
+
+function saveFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+    localStorage.setItem('currFilter', filter_name);
+    filter = getFilterString();
+    $$.post( "/api/attrfilter/" + filter_name, { "filter" : filter }, function(data,status){ plotByFilterData() });
+}
+
+function clearFilter() {
+    localStorage.setItem('currFilter', '');
+    tree.deleteChildItems(0);
+    tree.deleteItem(0, true);
+	tree.loadJSON("/api/attrlist/", function(){ plotByFilterData(); } );
+}
+
+function loadFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+    localStorage.setItem('currFilter', filter_name);
+
+    //tree.deleteChildItems(0);
+    //tree.deleteItem(0, true);
+    tree.destructor();
+    
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+
+	tree.loadJSON("/api/attrlist/" + filter_name, function(){ plotByFilterData(); } );
+
+}
+
+function deleteFilter() {
+    filter_name = document.getElementById('filterName').value;
+    $$.ajax({
+        url: '/api/attrfilter/' + filter_name,
+        type: 'DELETE',
+        success: function(result) { clearFilter(); }
+    });
+}
 
 
 </script>
@@ -238,16 +298,43 @@ function plotByFilterData(){
 
         <br>
 		<div class="col-sm-3">							
+
+            <!--
             <div align="center">
 		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
             </div>
+            -->
+
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Filter name..." id="filterName">
+
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="button" id="submitFilterData">Plot</button>
+                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Filter <span class="caret"></span></button>
+                  <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                    <li><a href="#" id="loadFilter">Load</a></li>
+                    <li><a href="#" id="saveFilter">Save</a></li>
+                    <li><a href="#" id="deleteFilter">Delete</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#" id="clearFilter">Clear</a></li>
+                  </ul>
+                </div><!-- /btn-group -->
+
+                <!--
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="saveFilter">Save</button>
+                    <button class="btn btn-default" type="button" id="loadFilter">Load</button>
+                </span> -->
+
+            </div><!-- /input-group -->
+            
+            <!-- <button type="button" class="btn btn-primary" id="clearFilter">Clear Filter</button> --> 
 
             <br>
 
 			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
 				<div id="NoAssignmentAlert"></div>
 			</div><!-- well -->
-
 
 		</div><!-- col-3 -->
 

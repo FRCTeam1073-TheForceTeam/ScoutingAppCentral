@@ -11,6 +11,7 @@ import os
 
 import AttributeDefinitions
 import DataModel
+import ConfigUtils
 
 attrdef_form = None
  
@@ -70,7 +71,7 @@ def process_attr_def_form(global_config, form):
             DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
 
-def get_attr_tree_json(global_config):
+def get_attr_tree_json(global_config, filter_name = None):
     
     global_config['logger'].debug( 'GET Attribute Definitions Tree JSON' )
 
@@ -80,10 +81,16 @@ def get_attr_tree_json(global_config):
     
     #categories = attr_definitions.get_sub_categories()
     
+    attr_filter = get_saved_filter(filter_name)
+    
     result = []
     result.append('{ "item": [\n')
     
-    checked = 0
+    if filter_name != None:
+        checked = 0
+    else:
+        checked = 1
+        
     opened = 1
     result.append('    { "text": "%s", "open": %d, "checked": %d, "id": "Skip_%s", "item": [ \n' % ('All Attributes',opened,checked,'All'))
     
@@ -92,7 +99,14 @@ def get_attr_tree_json(global_config):
         if category != 'Uncategorized':
             result.append('    { "text": "%s", "checked": %d, "id": "Skip_%s", "item": [ \n' % (category,checked,category))
             for attrname in sorted(attrlist):
-                result.append('        { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+                if filter_name is None:
+                    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+                else:
+                    if attrname in attr_filter:
+                        check_attr = 1
+                    else:
+                        check_attr = 0
+                    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,check_attr,attrname))
                 result.append(',\n')
                           
             if len(attrlist) > 0:
@@ -105,7 +119,15 @@ def get_attr_tree_json(global_config):
     attrlist = category_dict['Uncategorized']
     if len( attrlist ) > 0:
         for attrname in sorted(attrlist):
-            result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+            if filter_name is None:
+                result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+            else:
+                if attrname in attr_filter:
+                    check_attr = 1
+                else:
+                    check_attr = 0
+                result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,check_attr,attrname))
+                    
             result.append(',\n')
                       
     result = result[:-1]
@@ -116,5 +138,75 @@ def get_attr_tree_json(global_config):
 
     return json_str
 
+saved_filters = {}
+def get_saved_filter( filter_name ):
+    global saved_filters
+    
+    if len(saved_filters) == 0:
+        ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
+        
+    filter_list = []
+    try:
+        name = filter_name.title()
+        filter_str = saved_filters[name]
+        filter_list = filter_str.split('+')
+    except:
+        pass
+    
+    return filter_list
+    
+def get_saved_filter_json( filter_name ):
+    global saved_filters
+    
+    if len(saved_filters) == 0:
+        ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
+        
+    result = []
+    result.append('{ "filters": [\n')
+    
+    if filter_name != None:
+        try:
+            filter_name = filter_name.title()
+            filter_str = saved_filters[filter_name]
+        except:
+            pass
+    
+        result.append('   { "name": "%s", "filter_str": "%s" }\n' % (filter_name,filter_str))
+    else:
+        for filter_name, filter_str in saved_filters.iteritems():
+            result.append('   { "name": "%s", "filter_str": "%s" }' % (filter_name,filter_str))
+            result.append(',\n')
+            
+        if len(saved_filters) > 0:
+            result = result[:-1]
+    
+    result.append('] }\n')
+    
+    json_str = ''.join(result) 
+    return json_str
+    
+def save_filter(filter_name, filter_str):
+    
+    global saved_filters
+    
+    name = filter_name.title()
+    saved_filters[name] = filter_str
+    
+    ConfigUtils.write_config( saved_filters, './config/savedfilters.txt' )
+    
+    return
 
+def delete_filter(filter_name):
+    
+    global saved_filters
+    
+    name = filter_name.title()
+    try:
+        del saved_filters[name]
+        ConfigUtils.write_config( saved_filters, './config/savedfilters.txt' )
+    except KeyError:
+        pass
+    
+    return
 
+    
