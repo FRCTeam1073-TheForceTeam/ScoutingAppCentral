@@ -11,6 +11,7 @@ $code:
     event_info = utils.get_event_info_str(event_code)
     myteam = utils.get_myteam()
     attrlist = utils.get_attr_list()
+    filter_list = utils.get_filter_list()
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
@@ -45,6 +46,9 @@ $var title: Attribute Ranking
 <script src="/static/media/js/dhtmlxTree/codebase/dhtmlxtree.js"></script>
 
 <script type="text/javascript">
+
+var saved_filters = {};
+
 $$(document).ready(function () {
 
     filter_init();
@@ -157,8 +161,13 @@ function filter_init(){
 	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
 	$$('#clearFilter').attr('onClick', 'clearFilter()');
 	$$('#saveFilter').attr('onClick', 'saveFilter()');
+
 	$$('#loadFilter').attr('onClick', 'loadFilter()');
+
 	$$('#deleteFilter').attr('onClick', 'deleteFilter()');
+
+    $for filter_name in filter_list:
+        $$('#setFilter$filter_name').click( function() { ; setFilter($$(this).text() ); } );
     
 	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
 	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
@@ -170,8 +179,25 @@ function filter_init(){
     if ( currFilter == null || currFilter == '' ) {
 	    tree.loadJSON("/api/attrlist", function(){ plotByFilterData(); } );
     } else {
+        filter_name_label = document.getElementById('filterName');
+        filter_name_label.value = currFilter;
 	    tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
     }
+}
+
+// function isn't currently called because I can't figure out how to dynamically load the dropdown menu...yet.
+function build_filter_dropdown() {
+
+    // load the set of saved filters into this page
+    var jqxhr = $$.getJSON( '/api/attrfilter/', function(json_data) {
+        saved_filters = json_data.filters;
+
+        for ( i=0; i<saved_filters.length; i++ ) {
+            $$('#filterlist ul').append('<li><a href="#">' + saved_filters[i].name + '</a></li>');
+
+        }
+    } );
+
 }	
 
 
@@ -184,7 +210,7 @@ function getFilterString() {
 
     if ( baseCheckboxState == 0 ) {
         document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
-        return;
+        return filter;
     } else if ( baseCheckboxState == 1 ) {
         console.log( "Displaying All Attributes" );
     } else {
@@ -209,16 +235,30 @@ function plotByFilterData(){
     filteredPlot(filter);
 }			
 
+function setFilter(name) {
+    console.log( 'Filter Name: ' + name );
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = name;
+    loadFilter();
+}
+
 function saveFilter() {
 
     filter_name = document.getElementById('filterName').value;
+
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
     localStorage.setItem('currFilter', filter_name);
     filter = getFilterString();
-    $$.post( "/api/attrfilter/" + filter_name, { "filter" : filter }, function(data,status){ plotByFilterData() });
+    $$.post( "/api/attrfilter/" + filter_name, { "filter" : filter }, function(data,status){ plotByFilterData(); location.reload() });
 }
 
 function clearFilter() {
     localStorage.setItem('currFilter', '');
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
     tree.deleteChildItems(0);
     tree.deleteItem(0, true);
 	tree.loadJSON("/api/attrlist/", function(){ plotByFilterData(); } );
@@ -227,28 +267,32 @@ function clearFilter() {
 function loadFilter() {
 
     filter_name = document.getElementById('filterName').value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
     localStorage.setItem('currFilter', filter_name);
 
-    //tree.deleteChildItems(0);
-    //tree.deleteItem(0, true);
     tree.destructor();
-    
 	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
 	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
 	tree.enableCheckBoxes(1);
 	tree.enableThreeStateCheckboxes(true);
 	tree.openAllItems(1);
-
 	tree.loadJSON("/api/attrlist/" + filter_name, function(){ plotByFilterData(); } );
 
 }
 
 function deleteFilter() {
     filter_name = document.getElementById('filterName').value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
     $$.ajax({
         url: '/api/attrfilter/' + filter_name,
         type: 'DELETE',
-        success: function(result) { clearFilter(); }
+        success: function(result) { localStorage.setItem('currFilter', ''); location.reload(); }
     });
 }
 
@@ -299,40 +343,27 @@ function deleteFilter() {
         <br>
 		<div class="col-sm-3">							
 
-            <!--
-            <div align="center">
-		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
-            </div>
-            -->
-
             <div class="input-group">
                 <input type="text" class="form-control" placeholder="Filter name..." id="filterName">
 
-                <div class="input-group-btn">
-                  <button class="btn btn-default" type="button" id="submitFilterData">Plot</button>
-                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">Filter <span class="caret"></span></button>
-                  <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                    <li><a href="#" id="loadFilter">Load</a></li>
-                    <li><a href="#" id="saveFilter">Save</a></li>
-                    <li><a href="#" id="deleteFilter">Delete</a></li>
-                    <li class="divider"></li>
-                    <li><a href="#" id="clearFilter">Clear</a></li>
+                <div id="filterlist" class="input-group-btn">
+                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="caret"></span></button>
+                  <ul class="dropdown-menu dropdown-menu pull-right" role="menu"> 
+                      $for filter_name in filter_list:
+                          <li><a href="#" id="setFilter$filter_name">$filter_name</a></li>
                   </ul>
-                </div><!-- /btn-group -->
-
-                <!--
-                <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" id="saveFilter">Save</button>
-                    <button class="btn btn-default" type="button" id="loadFilter">Load</button>
-                </span> -->
-
-            </div><!-- /input-group -->
+                </div>
+            </div>
+            <div class="btn-group btn-block">
+                  <button class="btn btn-default col-lg-3" type="button" id="submitFilterData">Plot</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="saveFilter">Save</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="deleteFilter">Delete</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="clearFilter">Clear </button>
+            </div>
             
-            <!-- <button type="button" class="btn btn-primary" id="clearFilter">Clear Filter</button> --> 
-
             <br>
 
-			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
+			<div class="tree well" id="attr_tree" style="height:300px; padding: 8px 10px;">
 				<div id="NoAssignmentAlert"></div>
 			</div><!-- well -->
 
@@ -344,9 +375,6 @@ function deleteFilter() {
 
 		</div><!-- col-8 -->
 	</div><!-- row -->
-
-
-
 
   </div>  
 
