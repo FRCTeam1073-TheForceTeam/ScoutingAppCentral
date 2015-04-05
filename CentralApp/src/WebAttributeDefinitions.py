@@ -189,6 +189,9 @@ def save_filter(filter_name, filter_str):
     
     global saved_filters
     
+    if len(saved_filters) == 0:
+        ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
+            
     name = filter_name.title()
     saved_filters[name] = filter_str
     
@@ -199,7 +202,10 @@ def save_filter(filter_name, filter_str):
 def delete_filter(filter_name):
     
     global saved_filters
-    
+
+    if len(saved_filters) == 0:
+        ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
+            
     name = filter_name.title()
     try:
         del saved_filters[name]
@@ -207,6 +213,13 @@ def delete_filter(filter_name):
     except KeyError:
         pass
     
-    return
+def get_filter_list():
+    
+    global saved_filters
+
+    if len(saved_filters) == 0:
+        ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
+            
+    return saved_filters.keys()
 
     

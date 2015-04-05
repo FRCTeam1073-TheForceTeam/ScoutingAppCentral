@@ -5,6 +5,7 @@ import DataModel
 import CompAlias
 import WebEventData
 import WebTeamData
+import WebAttributeDefinitions
 
 def get_html_head(title_str = 'FIRST Team 1073 - The Force Team'):
     head_str  = '<head>\n'
@@ -149,6 +150,14 @@ def get_attr_list():
                 
     return attr_list
 
+def get_filter_list():
+    my_config = ScoutingAppMainWebServer.global_config
+    filter_list = list()
+    
+    filter_list = WebAttributeDefinitions.get_filter_list()
+    
+    return filter_list
+    
 def get_file_list(dir_name,thumbnail_size=None):
     file_list = []    
 
