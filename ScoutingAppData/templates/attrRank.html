@@ -158,31 +158,34 @@ function filteredPlot( filter ) {
 
 function filter_init(){
 
-	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
-	$$('#clearFilter').attr('onClick', 'clearFilter()');
-	$$('#saveFilter').attr('onClick', 'saveFilter()');
+    $$('#submitFilterData').attr('onClick', 'plotByFilterData()');
+    $$('#clearFilter').attr('onClick', 'clearFilter()');
+    $$('#saveFilter').attr('onClick', 'saveFilter()');
 
-	$$('#loadFilter').attr('onClick', 'loadFilter()');
+    $$('#loadFilter').attr('onClick', 'loadFilter()');
 
-	$$('#deleteFilter').attr('onClick', 'deleteFilter()');
+    $$('#deleteFilter').attr('onClick', 'deleteFilter()');
 
     $for filter_name in filter_list:
         $$('#setFilter$filter_name').click( function() { ; setFilter($$(this).text() ); } );
     
-	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
-	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
-	tree.enableCheckBoxes(1);
-	tree.enableThreeStateCheckboxes(true);
-	tree.openAllItems(1);
+    tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+    tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+    tree.enableCheckBoxes(1);
+    tree.enableThreeStateCheckboxes(true);
+    tree.openAllItems(1);
 
     currFilter = localStorage.getItem('currFilter');
     if ( currFilter == null || currFilter == '' ) {
 	    tree.loadJSON("/api/attrlist", function(){ plotByFilterData(); } );
+        console.log( "No Current Filter" );
     } else {
+        tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
         filter_name_label = document.getElementById('filterName');
         filter_name_label.value = currFilter;
-	    tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
+        console.log( "Current Filter: " + currFilter );
     }
+
 }
 
 // function isn't currently called because I can't figure out how to dynamically load the dropdown menu...yet.
