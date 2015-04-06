@@ -11,6 +11,7 @@ $code:
     event_info = utils.get_event_info_str(event_code)
     myteam = utils.get_myteam()
     attrlist = utils.get_attr_list()
+    filter_list = utils.get_filter_list()
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
@@ -19,7 +20,7 @@ $var title: Attribute Ranking
 
 
 <style type="text/css">
-    #placeholder
+    #rankchart
     { 
         #width: 100%; 
         height: 800px;
@@ -60,6 +61,14 @@ $$(document).ready(function () {
     displayTeamButtons();
 
 	$$('#resetTeamAvailability').attr('onClick', 'resetTeamAvailability()');
+    $$('#plotData').attr('onClick', 'plotData()');
+    $$('#clearFilter').attr('onClick', 'clearFilter()');
+    $$('#saveFilter').attr('onClick', 'saveFilter()');
+    $$('#loadFilter').attr('onClick', 'loadFilter()');
+    $$('#deleteFilter').attr('onClick', 'deleteFilter()');
+
+    $for filter_name in filter_list:
+        $$('#setFilter$filter_name').click( function() { ; setFilter($$(this).text() ); } );
 
     loadTeamAvailability();
 
@@ -84,8 +93,8 @@ function loadTeamAvailability() {
 function displayTeamButtons() {
       var team_list;
       var num_teams;
-      var num_teams_per_column = 4;
       var num_columns;
+      var num_rows;
 
       //var jqxhr_events = $$.getJSON( "/api/teams/$comp", function(json_data) {
       //    team_list = json_data.teams;
@@ -95,15 +104,16 @@ function displayTeamButtons() {
 
           console.log( "Number of teams: " + num_teams );
 
-          num_columns = Math.ceil(num_teams / num_teams_per_column);
+          num_columns = 8;
+          num_rows = Math.ceil(num_teams / num_columns);
 
-          console.log( "Number of columns: " + num_columns );
+          console.log( "Number of columns: " + num_columns + " Number of rows: " + num_rows );
 
           var team_button_string = "";
           var team_id_string = "";
-          for ( row=0; row<num_teams_per_column; row++ ) {
+          for ( row=0; row<num_rows; row++ ) {
               for ( col=0; col<num_teams && col<=num_columns; col++ ) {
-                  index = row + (col * num_teams_per_column);
+                  index = row + (col * num_rows);
                   if ( (index+1) <= num_teams ) {
                       var initial_state = 'checked';
 
@@ -115,7 +125,7 @@ function displayTeamButtons() {
                           }
                       }
                       team_id_string = 'team_' + team_list[index].team_number;
-                      team_button_string += '<input ' + initial_state + ' id="' + team_id_string + '" data-toggle="toggle" data-on="' + team_list[index].team_number + '" data-off="' + team_list[index].team_number + '" data-size="small" data-width="60" type="checkbox">   ';
+                      team_button_string += '<input ' + initial_state + ' id="' + team_id_string + '" data-toggle="toggle" data-on="' + team_list[index].team_number + '" data-off="' + team_list[index].team_number + '" data-size="small" data-width="60" type="checkbox">    ';
 
                   }
               }
@@ -162,7 +172,6 @@ function filteredPlot( filter ) {
     }
 
     var jqxhr = $$.getJSON( uri, function(json_data) {
-        console.log( "success" );
         var numTeams = json_data.rankings.length;
         for (var i=0, j=0;i<numTeams;i++)
         {
@@ -186,14 +195,14 @@ function filteredPlot( filter ) {
 
         }
 
-        $$("#placeholder").bind("plotclick", function( event, pos, item ) {
+        $$("#rankchart").bind("plotclick", function( event, pos, item ) {
             if (item) {
                 window.location.assign( "/teamdata/" + teams[item.datapoint[1]] );
             }
         });
 
         function generatePlot( data ) {
-            $$.plot($$("#placeholder"), [ data ], {
+            $$.plot($$("#rankchart"), [ data ], {
 	            series: {
                     bars: { 
                         show: true, 
@@ -261,18 +270,43 @@ function filteredPlot( filter ) {
 }
 
 function filter_init(){
-
-	$$('#submitFilterData').attr('onClick', 'plotByFilterData()');
     
-	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
-	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
-	tree.enableCheckBoxes(1);
-	tree.enableThreeStateCheckboxes(true);
-	tree.openAllItems(1);
-	tree.loadJSON("/api/attrlist");
+    tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+    tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+    tree.enableCheckBoxes(1);
+    tree.enableThreeStateCheckboxes(true);
+    tree.openAllItems(1);
+
+    currFilter = localStorage.getItem('currFilter');
+    if ( currFilter == null || currFilter == '' ) {
+	    tree.loadJSON("/api/attrlist", function(){ plotByFilterData(); } );
+        console.log( "No Current Filter" );
+    } else {
+        tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
+        filter_name_label = document.getElementById('filterName');
+        filter_name_label.value = currFilter;
+        console.log( "Current Filter: " + currFilter );
+    }
+
+}
+
+// function isn't currently called because I can't figure out how to dynamically load the dropdown menu...yet.
+function build_filter_dropdown() {
+
+    // load the set of saved filters into this page
+    var jqxhr = $$.getJSON( '/api/attrfilter/', function(json_data) {
+        saved_filters = json_data.filters;
+
+        for ( i=0; i<saved_filters.length; i++ ) {
+            $$('#filterlist ul').append('<li><a href="#">' + saved_filters[i].name + '</a></li>');
+
+        }
+    } );
+
 }	
 
-function plotByFilterData(){
+
+function getFilterString() {
     filter = '';
     var checked_items = tree.getAllChecked().split(",");
     console.log( "Checked Items : " + checked_items );
@@ -281,7 +315,7 @@ function plotByFilterData(){
 
     if ( baseCheckboxState == 0 ) {
         document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
-        return;
+        return filter;
     } else if ( baseCheckboxState == 1 ) {
         console.log( "Displaying All Attributes" );
     } else {
@@ -296,8 +330,87 @@ function plotByFilterData(){
 
     document.getElementById('NoAttrAlert').innerHTML = '';
     console.log( "Filter String : " + filter );
+
+    return filter;
+}
+
+function plotByFilterData(){
+
+    filter = getFilterString();
     filteredPlot(filter);
 }			
+
+function plotData() {
+
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    plotByFilterData();
+
+}
+
+function setFilter(name) {
+    console.log( 'Filter Name: ' + name );
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = name;
+    loadFilter();
+}
+
+function saveFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+    filter = getFilterString();
+    $$.post( "/api/attrfilter/" + filter_name, { "filter" : filter }, function(data,status){ plotByFilterData(); location.reload() });
+}
+
+function clearFilter() {
+    localStorage.setItem('currFilter', '');
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    tree.deleteChildItems(0);
+    tree.deleteItem(0, true);
+	tree.loadJSON("/api/attrlist/", function(){ plotByFilterData(); } );
+}
+
+function loadFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+
+    tree.destructor();
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+	tree.loadJSON("/api/attrlist/" + filter_name, function(){ plotByFilterData(); } );
+
+}
+
+function deleteFilter() {
+    filter_name_label = document.getElementById('filterName');
+    filter_name = filter_name_label.value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    filter_name_label.value = '';
+    $$.ajax({
+        url: '/api/attrfilter/' + filter_name,
+        type: 'DELETE',
+        success: function(result) { localStorage.setItem('currFilter', ''); location.reload(); }
+    });
+}
+
 
 </script>
 
@@ -312,7 +425,7 @@ function plotByFilterData(){
     </div>
 
 	<div class="row">
-	<div class="col-sm-11" align="left">							
+	<div id="compselect" class="col-sm-11" align="left">							
 
     <!-- provide a dropdown to select the season to display on the home page -->
     <div class="btn-group">
@@ -345,41 +458,50 @@ function plotByFilterData(){
     <div id="teams">
 		<div class="col-sm-11" align="left">							
             <br>
+		    <button type="button" class="btn btn-primary" id="resetTeamAvailability" align="right">Reset Teams</button>         
+            <br>
 	        <div class="row">
-		    <button type="button" class="btn btn-primary" id="resetTeamAvailability">Reset Teams</button>         
-            <div id="team_buttons" style="padding-left:120px;"></div>
+            <div id="team_buttons" style="padding-left:40px;padding-top:10px"></div>
             </div>
 
             <br>
         </div>
     </div>
 
-	<div class="row">
-
-        <br>
-		<div class="col-sm-3">							
-            <div align="center">
-		    <button type="button" class="btn btn-primary" id="submitFilterData">Generate Chart</button>         
-            </div>
-
+	<div class="col-sm-11" align="left">							
             <br>
+		    <div class="col-sm-3">							
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Filter name..." id="filterName">
 
-			<div class="tree well" id="attr_tree" style="height:500px; padding: 8px 10px;">
-				<div id="NoAssignmentAlert"></div>
-			</div><!-- well -->
+                    <div id="filterlist" class="input-group-btn">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="caret"></span></button>
+                        <ul class="dropdown-menu dropdown-menu pull-right" role="menu"> 
+                            $for filter_name in filter_list:
+                              <li><a href="#compselect" id="setFilter$filter_name">$filter_name</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="btn-group btn-block">
+                    <button class="btn btn-default col-lg-3" type="button" id="plotData">Plot</button>
+                    <button class="btn btn-default col-lg-3" type="button" id="saveFilter">Save</button>
+                    <button class="btn btn-default col-lg-3" type="button" id="deleteFilter">Delete</button>
+                    <button class="btn btn-default col-lg-3" type="button" id="clearFilter">Clear </button>
+                </div>
+                <br>
+		        <div class="tree well" id="attr_tree" style="height:300px; padding: 8px 10px;">
+		            <div id="NoAssignmentAlert"></div>
+		        </div>
+		    </div>
+       
+	        <div class="col-sm-8">							
+	            <div id="NoAttrAlert"></div>
+                <div id="rankchart"></div>
+	        </div>
+    </div>
+    </div>
 
-
-		</div><!-- col-3 -->
-
-		<div class="col-sm-8">							
-	        <div id="NoAttrAlert"></div>
-            <div id="placeholder"></div>
-
-		</div><!-- col-8 -->
-	</div><!-- row -->
-
-
-
+    </div>
 
   </div>  
 

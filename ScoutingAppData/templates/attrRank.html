@@ -51,6 +51,15 @@ var saved_filters = {};
 
 $$(document).ready(function () {
 
+    $$('#plotData').attr('onClick', 'plotData()');
+    $$('#clearFilter').attr('onClick', 'clearFilter()');
+    $$('#saveFilter').attr('onClick', 'saveFilter()');
+    $$('#loadFilter').attr('onClick', 'loadFilter()');
+    $$('#deleteFilter').attr('onClick', 'deleteFilter()');
+
+    $for filter_name in filter_list:
+        $$('#setFilter$filter_name').click( function() { ; setFilter($$(this).text() ); } );
+
     filter_init();
 
 });
@@ -157,17 +166,6 @@ function filteredPlot( filter ) {
 }
 
 function filter_init(){
-
-    $$('#submitFilterData').attr('onClick', 'plotByFilterData()');
-    $$('#clearFilter').attr('onClick', 'clearFilter()');
-    $$('#saveFilter').attr('onClick', 'saveFilter()');
-
-    $$('#loadFilter').attr('onClick', 'loadFilter()');
-
-    $$('#deleteFilter').attr('onClick', 'deleteFilter()');
-
-    $for filter_name in filter_list:
-        $$('#setFilter$filter_name').click( function() { ; setFilter($$(this).text() ); } );
     
     tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
     tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
@@ -238,6 +236,14 @@ function plotByFilterData(){
     filteredPlot(filter);
 }			
 
+function plotData() {
+
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    plotByFilterData();
+
+}
+
 function setFilter(name) {
     console.log( 'Filter Name: ' + name );
     filter_name_label = document.getElementById('filterName');
@@ -287,11 +293,13 @@ function loadFilter() {
 }
 
 function deleteFilter() {
-    filter_name = document.getElementById('filterName').value;
+    filter_name_label = document.getElementById('filterName');
+    filter_name = filter_name_label.value;
     if (filter_name == null || filter_name == '' ) {
         document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
         return;
     }
+    filter_name_label.value = '';
     $$.ajax({
         url: '/api/attrfilter/' + filter_name,
         type: 'DELETE',
@@ -307,12 +315,12 @@ function deleteFilter() {
   
     <div id="title">
 		<div class="col-sm-11" align="center">							
-        <h1>Filtered Attribute Ranking</h1>
+        <h1>Scouting Data Analysis</h1>
         </div>
     </div>
 
 	<div class="row">
-	<div class="col-sm-11" align="left">							
+    <div id="compselect" class="col-sm-11" align="left">							
 
     <!-- provide a dropdown to select the season to display on the home page -->
     <div class="btn-group">
@@ -353,12 +361,12 @@ function deleteFilter() {
                   <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="caret"></span></button>
                   <ul class="dropdown-menu dropdown-menu pull-right" role="menu"> 
                       $for filter_name in filter_list:
-                          <li><a href="#" id="setFilter$filter_name">$filter_name</a></li>
+                          <li><a href="#compselect" id="setFilter$filter_name">$filter_name</a></li>
                   </ul>
                 </div>
             </div>
             <div class="btn-group btn-block">
-                  <button class="btn btn-default col-lg-3" type="button" id="submitFilterData">Plot</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="plotData">Plot</button>
                   <button class="btn btn-default col-lg-3" type="button" id="saveFilter">Save</button>
                   <button class="btn btn-default col-lg-3" type="button" id="deleteFilter">Delete</button>
                   <button class="btn btn-default col-lg-3" type="button" id="clearFilter">Clear </button>
@@ -375,8 +383,8 @@ function deleteFilter() {
 		<div class="col-sm-8">							
 	        <div id="NoAttrAlert"></div>
             <div id="placeholder"></div>
-
 		</div><!-- col-8 -->
+
 	</div><!-- row -->
 
   </div>  

@@ -219,7 +219,9 @@ def get_filter_list():
 
     if len(saved_filters) == 0:
         ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
-            
-    return saved_filters.keys()
+    
+    filters = saved_filters.keys()
+    filters.sort()
+    return filters
 
     
