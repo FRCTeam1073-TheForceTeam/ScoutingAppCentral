@@ -478,14 +478,17 @@ class TeamRankingJson(object):
         query_data = web.input(filter=None,queryname=None)
         if query_data.filter is None:
             if query_data.queryname is None:
+                filter_name = None
                 attr_filter = []
             else:
-                attr_filter = WebAttributeDefinitions.get_saved_filter(query_data.queryname)
+                filter_name = query_data.queryname
+                attr_filter = WebAttributeDefinitions.get_saved_filter(filter_name)
         else:
+            filter_name = 'Filter_%d' % hash(query_data.filter)
             attr_filter = query_data.filter.split()
     
         web.header('Content-Type', 'application/json')
-        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter)
+        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter, filter_name)
 
 class TeamPicklistJson(object):
 
@@ -795,7 +798,7 @@ class AttributesFilter(object):
             filter_name = None  
               
         web.header('Content-Type', 'application/json')
-        return WebAttributeDefinitions.get_saved_filter_json(filter_name)
+        return WebAttributeDefinitions.get_saved_filter_json(global_config, filter_name)
         
     def POST(self, param_str):
         WebLogin.check_access(global_config,10)
@@ -1230,14 +1233,17 @@ class Sync(object):
                 # then the event data is regenerated, if TeamData is provided, then both
                 # the event data and team data is regenerated
                 if len(path_elems) >= 2 and path_elems[1] == 'EventData':
-                    result = WebEventData.update_event_data_files( self.global_config,  
+                    result = WebEventData.update_event_data_files( global_config,  
                                                                    comp_season_list[1], 
                                                                    comp_season_list[0], 
                                                                    path_elems[1] )
                     if result == True:
-                        result = WebTeamData.update_team_event_files( self.global_config,  
+                        result = WebTeamData.update_team_event_files( global_config,  
                                                                    comp_season_list[1], 
                                                                    comp_season_list[0], 
+                                                                   path_elems[1] )
+                    if result == True:
+                        result = WebAttributeDefinitions.update_event_data_files( global_config,  
                                                                    path_elems[1] )
                     
                     # if we hit an error generating the event files, then there is no 
@@ -1253,7 +1259,7 @@ class Sync(object):
                     except:
                         team = None
                         
-                    result = WebTeamData.update_team_data_files( self.global_config,  
+                    result = WebTeamData.update_team_data_files( global_config,  
                                                                  comp_season_list[1], 
                                                                  comp_season_list[0], 
                                                                  path_elems[2], team )

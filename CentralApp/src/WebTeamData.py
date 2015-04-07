@@ -816,7 +816,7 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None, attr_filter=[], store_json_file=False):
+def get_team_rankings_json(global_config, comp=None, attr_filter=[], filter_name=None, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
     store_data_to_file = False
@@ -888,7 +888,11 @@ def get_team_rankings_json(global_config, comp=None, attr_filter=[], store_json_
     
     if store_json_file is True:
         try:
-            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,'scoutingrankings'), 'text', json_str)
+            if filter_name is None:
+                file_name = 'scoutingrankings'
+            else:
+                file_name = 'scoutingrankings_%s' % filter_name
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,file_name), 'text', json_str)
         except:
             raise
         
@@ -1020,7 +1024,7 @@ def update_team_event_files( global_config, year, event, directory ):
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_team_rankings_json( global_config, event+year, attr_filter=[], store_json_file=True )
+        get_team_rankings_json( global_config, event+year, attr_filter=[], filter_name=None, store_json_file=True )
         get_team_list_json( global_config, event+year, store_json_file=True )
        
         result = True

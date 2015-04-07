@@ -12,6 +12,7 @@ import os
 import AttributeDefinitions
 import DataModel
 import ConfigUtils
+import FileSync
 
 attrdef_form = None
  
@@ -71,7 +72,7 @@ def process_attr_def_form(global_config, form):
             DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
 
-def get_attr_tree_json(global_config, filter_name = None):
+def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=False):
     
     global_config['logger'].debug( 'GET Attribute Definitions Tree JSON' )
 
@@ -79,6 +80,7 @@ def get_attr_tree_json(global_config, filter_name = None):
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
     
+    competition = global_config['this_competition'] + global_config['this_season']
     #categories = attr_definitions.get_sub_categories()
     
     attr_filter = get_saved_filter(filter_name)
@@ -135,6 +137,17 @@ def get_attr_tree_json(global_config, filter_name = None):
     result.append('],\n    "id": 0 \n}\n')
                                  
     json_str = ''.join(result)
+    
+    if store_data_to_file:
+        try:
+            if filter_name == None:
+                file_name = 'attrtree.json'
+            else:
+                file_name = 'attrtree_%s.json' % filter_name
+            FileSync.put( global_config, '%s/EventData/%s' % (competition,file_name), 'text', json_str)                
+        except:
+            raise
+
 
     return json_str
 
@@ -155,9 +168,11 @@ def get_saved_filter( filter_name ):
     
     return filter_list
     
-def get_saved_filter_json( filter_name ):
+def get_saved_filter_json( global_config, filter_name, store_data_to_file=False ):
     global saved_filters
     
+    competition = global_config['this_competition'] + global_config['this_season']
+
     if len(saved_filters) == 0:
         ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
         
@@ -182,7 +197,18 @@ def get_saved_filter_json( filter_name ):
     
     result.append('] }\n')
     
-    json_str = ''.join(result) 
+    json_str = ''.join(result)
+    
+    if store_data_to_file:
+        try:
+            if filter_name == None:
+                file_name = 'attrfilters.json'
+            else:
+                file_name = 'attrfilter_%s.json' % filter_name
+            FileSync.put( global_config, '%s/EventData/%s' % (competition,file_name), 'text', json_str)                
+        except:
+            raise
+
     return json_str
     
 def save_filter(filter_name, filter_str):
@@ -224,4 +250,28 @@ def get_filter_list():
     filters.sort()
     return filters
 
+def update_event_data_files( global_config, directory ):
+    
+    result = False
+    
+    # for now, we only support updating files in the EventData directory, so only continue if that's the 
+    # directory that was specified.
+    if directory.upper() == 'EVENTDATA':
+        # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
+        # will also store the json payload to the EventData directory completing the desired 
+        # operation
+        
+        # update the JSON data file for the attribute tree and all filters
+        get_saved_filter_json( global_config, filter_name=None, store_data_to_file=True )
+        get_attr_tree_json(global_config, filter_name = None, store_data_to_file=True)        
+                
+        # then update the JSON data files for each of the defined filters 
+        filter_list = get_filter_list()
+        for name in filter_list:
+            get_saved_filter_json( global_config, name, store_data_to_file=True )
+            get_attr_tree_json(global_config, name, store_data_to_file=True)        
+        
+        result = True
+        
+    return result
     
