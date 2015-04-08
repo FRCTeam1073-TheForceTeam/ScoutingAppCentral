@@ -81,14 +81,16 @@
 
 <script type="text/javascript">
 
+var team_number = "MyTeam";
+var event_name  = "MyEvent";
+var event_code  = "MyCode";
+var season      = "2015";
+var my_team_number = "1073";
+
 $(document).ready(function () {
 
     var path = location.pathname;
     var query_string = location.search;
-    var team_number = "MyTeam";
-    var event_name  = "MyEvent";
-    var season      = "2015";
-    var my_team_number = "1073";
 
     // parse the pathname to locate the event name
     // parse out the query string to locate the event name and team number
@@ -106,25 +108,27 @@ $(document).ready(function () {
                 team_number = parsed_elem[1];
             else if ( parsed_elem[0] == "season" )
                 season = parsed_elem[1];
+            else if ( parsed_elem[0] == "code" )
+                event_code = parsed_elem[1];
         }
     }
 
     $("#mytitle").html('<h1>Team ' + my_team_number + ' Competition Central</h1>');
 
     $("#logo-home").html('<a class="navbar-brand" rel="home" href="/static/html/myevent.html?event=' + event_name + 
-                         '&season=' + season + '" title="Competition Central">' +
+                         '&code=' + event_code + '&season=' + season + '" title="Competition Central">' +
                          '<img style="max-width:40px; margin-top: -7px;" src="/static/media/images/FIRST-logo-small.jpg"></a>' );
 
     $("#nav-home").html('<a href="/static/html/myevent.html?event=' + event_name + 
-                        '&season=' + season + '">Home</a>' );
+                        '&code=' + event_code + '&season=' + season + '">Home</a>' );
     $("#nav-event").html('<a href="/static/html/myevent.html?event=' + event_name + 
-                         '&season=' + season + '">Event</a>' );
+                         '&code=' + event_code + '&season=' + season + '">Event</a>' );
     $("#nav-our-matches").html('<a href="/static/html/mymatches.html?event=' + event_name + 
-                         '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
+                         '&code=' + event_code + '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
     $("#nav-teams").html('<a href="/static/html/myteams.html?event=' + event_name + 
-                         '&season=' + season + '">Teams</a>' );
-    $("#nav-alliance-selection").html('<a href="/static/html/mypicklist.html?event=' + event_name + 
-                                      '&season=' + season + '">Alliance Selection</a>' );
+                         '&code=' + event_code + '&season=' + season + '">Teams</a>' );
+    $("#nav-alliance-selection").html('<a href="/static/html/myalliance.html?event=' + event_name + 
+                                      '&code=' + event_code + '&season=' + season + '">Alliance Selection</a>' );
 
     $("#comp-select").html('<div class="btn-group"> <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">' +
                            season +
@@ -135,10 +139,11 @@ $(document).ready(function () {
                            '<a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">' + event_name +
                            ' <span class="caret"></span> </a>' +
                            '<ul class="dropdown-menu tba-dropdown-menu-limited">' +
-                           '<li><a href="/static/html/myevent.html?event=WEEK0&season=' + season + '">Week0</a></li>' +
-                           '<li><a href="/static/html/myevent.html?event=NASHUA&season=' + season + '">Nashua</a></li>' +
-                           '<li><a href="/static/html/myevent.html?event=READING&season=' + season + '">Reading</a></li>' +
-                           '<li><a href="/static/html/myevent.html?event=NU&season=' + season + '">Northeastern</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NECMP&code=necmp&season=' + season + '">NECMP</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NU&code=mabos&season=' + season + '">Northeastern</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=UNH&code=nhdur&season=' + season + '">UNH</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=READING&code=marea&season=' + season + '">Reading</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NASHUA&code=nhnas&season=' + season + '">Nashua</a></li>' +
                            '</ul> </div>' );
 
     var display = "horizontal";

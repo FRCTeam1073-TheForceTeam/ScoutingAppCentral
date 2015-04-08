@@ -1,14 +1,16 @@
 <script type="text/javascript">
 
+var team_number = "MyTeam";
+var event_name  = "MyEvent";
+var event_code  = "MyCode";
+var season      = "2015";
+var my_team_number = "1073";
+
 $(document).ready(function() {
 
 
     var path = location.pathname;
     var query_string = location.search;
-    var team_number = "MyTeam";
-    var event_name  = "MyEvent";
-    var season = "2015";
-    var my_team_number = "1073";
 
     // parse out the query string to locate the event name and team number
     query_string = query_string.replace("?","");
@@ -25,26 +27,29 @@ $(document).ready(function() {
                 team_number = parsed_elem[1];
             else if ( parsed_elem[0] == "season" )
                 season = parsed_elem[1];
+            else if ( parsed_elem[0] == "code" )
+                event_code = parsed_elem[1];
             else if ( parsed_elem[0] == "filename" )
                 scouting_filename = parsed_elem[1];
         }
     }
 
-    $("#mytitle").html('<h1>Team ' + team_number + ' Event Data </h1>');
+    $("#mytitle").html('<h1>Team ' + my_team_number + ' Competition Central</h1>');
 
     $("#logo-home").html('<a class="navbar-brand" rel="home" href="/static/html/myevent.html?event=' + event_name + 
-                         '&season=' + season + '" title="Competition Central">' +
+                         '&code=' + event_code + '&season=' + season + '" title="Competition Central">' +
                          '<img style="max-width:40px; margin-top: -7px;" src="/static/media/images/FIRST-logo-small.jpg"></a>' );
+
     $("#nav-home").html('<a href="/static/html/myevent.html?event=' + event_name + 
-                        '&season=' + season + '">Home</a>' );
+                        '&code=' + event_code + '&season=' + season + '">Home</a>' );
     $("#nav-event").html('<a href="/static/html/myevent.html?event=' + event_name + 
-                         '&season=' + season + '">Event</a>' );
+                         '&code=' + event_code + '&season=' + season + '">Event</a>' );
     $("#nav-our-matches").html('<a href="/static/html/mymatches.html?event=' + event_name + 
-                         '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
+                         '&code=' + event_code + '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
     $("#nav-teams").html('<a href="/static/html/myteams.html?event=' + event_name + 
-                         '&season=' + season + '">Teams</a>' );
-    $("#nav-alliance-selection").html('<a href="/static/html/mypicklist.html?event=' + event_name + 
-                                      '&season=' + season + '">Alliance Selection</a>' );
+                         '&code=' + event_code + '&season=' + season + '">Teams</a>' );
+    $("#nav-alliance-selection").html('<a href="/static/html/myalliance.html?event=' + event_name + 
+                                      '&code=' + event_code + '&season=' + season + '">Alliance Selection</a>' );
 
     var query_str = "?event=" + event_name + "&season=" + season;
 

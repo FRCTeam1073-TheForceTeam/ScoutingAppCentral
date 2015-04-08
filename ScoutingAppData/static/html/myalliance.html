@@ -1,0 +1,674 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/media/images/1073-favicon.ico">
+
+    <title>Team 1073 Competition Central</title>
+
+    <link href="/static/media/css/sticky-footer-navbar.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/media/css/pure-min.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="/static/media/css/dataTables.bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="/static/media/css/jquery-ui.css">
+
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery-ui.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/bootstrap.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/dataTables.bootstrap.js"></script>
+
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.tooltip.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.stack.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.resize.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.time.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.dataTables.rowReordering.js"></script>
+    <script type="text/javascript" language="javascript" src="/static/media/js/jquery.dataTables.rowGrouping.js"></script>
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="/static/media/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="/static/media/js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
+
+<style type="text/css">
+    #rankchart
+    { 
+        #width: 100%; 
+        height: 800px;
+        margin: auto auto auto auto;
+    }
+    #flotTip
+    {
+        padding: 3px 5px;
+        background-color: #000;
+        z-index: 100;
+        color: #fff;
+        box-shadow: 0 0 10px #555;
+        opacity: .7;
+        filter: alpha(opacity=70);
+        border: 2px solid #fff;
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+    }
+
+</style>
+
+<link rel="stylesheet" type="text/css" href="/static/media/css/dhtmlxtree.css"/>
+<script src="/static/media/js/dhtmlxtree.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap-toggle.css"/>
+<link rel="stylesheet" type="text/css" href="/static/media/css/bootstrap-toggle-min.css"/>
+<script src="/static/media/js/bootstrap-toggle.js"></script>
+
+<script type="text/javascript">
+
+var team_availability = {};
+
+var team_number = "MyTeam";
+var event_name  = "MyEvent";
+var event_code  = "MyCode";
+var season      = "2015";
+var my_team_number = "1073";
+var query_str = "";
+
+$(document).ready(function () {
+
+    var path = location.pathname;
+    var query_string = location.search;
+
+    // parse the pathname to locate the event name
+    // parse out the query string to locate the event name and team number
+    query_string = query_string.replace("?","");
+    var query_elems = query_string.split("&");
+    var num_elems = query_elems.length;
+    for (var i=0;i<num_elems;i++)
+    {
+        var parsed_elem = query_elems[i].split("=");
+        if ( parsed_elem.length == 2 )
+        {
+            if ( parsed_elem[0] == "event" )
+                event_name = parsed_elem[1];
+            else if ( parsed_elem[0] == "team" )
+                team_number = parsed_elem[1];
+            else if ( parsed_elem[0] == "season" )
+                season = parsed_elem[1];
+            else if ( parsed_elem[0] == "code" )
+                event_code = parsed_elem[1];
+        }
+    }
+
+    $("#mytitle").html('<h1>Team ' + my_team_number + ' Competition Central</h1>');
+
+    $("#logo-home").html('<a class="navbar-brand" rel="home" href="/static/html/myevent.html?event=' + event_name + 
+                         '&code=' + event_code + '&season=' + season + '" title="Competition Central">' +
+                         '<img style="max-width:40px; margin-top: -7px;" src="/static/media/images/FIRST-logo-small.jpg"></a>' );
+
+    $("#nav-home").html('<a href="/static/html/myevent.html?event=' + event_name + 
+                        '&code=' + event_code + '&season=' + season + '">Home</a>' );
+    $("#nav-event").html('<a href="/static/html/myevent.html?event=' + event_name + 
+                         '&code=' + event_code + '&season=' + season + '">Event</a>' );
+    $("#nav-our-matches").html('<a href="/static/html/mymatches.html?event=' + event_name + 
+                         '&code=' + event_code + '&team=' + my_team_number + '&season=' + season + '">Our Matches</a>' );
+    $("#nav-teams").html('<a href="/static/html/myteams.html?event=' + event_name + 
+                         '&code=' + event_code + '&season=' + season + '">Teams</a>' );
+    $("#nav-alliance-selection").html('<a href="/static/html/myalliance.html?event=' + event_name + 
+                                      '&code=' + event_code + '&season=' + season + '">Alliance Selection</a>' );
+
+    $("#comp-select").html('<div class="btn-group"> <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">' +
+                           season +
+                           ' <span class="caret"></span></a> <ul class="dropdown-menu tba-dropdown-menu-limited">' +
+                           '<li><a href="#">' + season + '</a></li>' +
+                           '</ul></div>' +
+                           '<div class="btn-group">' +
+                           '<a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">' + event_name +
+                           ' <span class="caret"></span> </a>' +
+                           '<ul class="dropdown-menu tba-dropdown-menu-limited">' +
+                           '<li><a href="/static/html/myevent.html?event=NECMP&code=necmp&season=' + season + '">NECMP</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NU&code=mabos&season=' + season + '">Northeastern</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=UNH&code=nhdur&season=' + season + '">UNH</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=READING&code=marea&season=' + season + '">Reading</a></li>' +
+                           '<li><a href="/static/html/myevent.html?event=NASHUA&code=nhnas&season=' + season + '">Nashua</a></li>' +
+                           '</ul> </div>' );
+
+    query_str = "?event=" + event_name + "&code=" + event_code + "&season=" + season;
+
+    filter_init();
+    build_filter_dropdown();
+
+    displayTeamButtons( season + event_code );
+
+	$('#resetTeamAvailability').attr('onClick', 'resetTeamAvailability()');
+    $('#plotData').attr('onClick', 'plotData()');
+    $('#clearFilter').attr('onClick', 'clearFilter()');
+    $('#saveFilter').attr('onClick', 'saveFilter()');
+    $('#loadFilter').attr('onClick', 'loadFilter()');
+    $('#deleteFilter').attr('onClick', 'deleteFilter()');
+
+    $('#filterlist').on('click', '.dropdown-menu li a', function () {
+        setFilter( $(this).text() );
+    });
+
+    loadTeamAvailability();
+
+});
+
+function resetTeamAvailability() {
+    $.each(team_availability, function(team, value) {
+        team_id_ref_string = '#team_' + team;
+        $(function() { $(team_id_ref_string).bootstrapToggle('on'); })
+    });
+
+    location.reload();
+}
+
+function loadTeamAvailability() {
+
+    team_availability_str = localStorage.getItem('team_availability');
+    team_availability = JSON.parse( team_availability_str );
+    if ( team_availability == null ) {
+        team_availability = {};
+    }
+}
+
+function displayTeamButtons( event_code ) {
+      var team_list;
+      var num_teams;
+      var num_columns;
+      var num_rows;
+
+      //var jqxhr_events = $.getJSON( "/api/teams/$comp", function(json_data) {
+      //    team_list = json_data.teams;
+      var jqxhr_events = $.getJSON( '/eventdata/ranklist' + query_str, function(json_data) {
+          team_list = json_data.rankings;
+          num_teams = team_list.length;
+
+          console.log( "Number of teams: " + num_teams );
+
+          num_columns = 8;
+          num_rows = Math.ceil(num_teams / num_columns);
+
+          console.log( "Number of columns: " + num_columns + " Number of rows: " + num_rows );
+
+          var team_button_string = "";
+          var team_id_string = "";
+          for ( row=0; row<num_rows; row++ ) {
+              for ( col=0; col<num_teams && col<=num_columns; col++ ) {
+                  index = row + (col * num_rows);
+                  if ( (index+1) <= num_teams ) {
+                      var initial_state = 'checked';
+
+                      if ( team_availability[ team_list[index].team_number ] == undefined ) {
+                          team_availability[ team_list[index].team_number ] = 'Available';
+                      } else {
+                          if ( team_availability[ team_list[index].team_number ] != 'Available' ) {
+                              initial_state = '';
+                          }
+                      }
+                      team_id_string = 'team_' + team_list[index].team_number;
+                      team_button_string += '<input ' + initial_state + ' id="' + team_id_string + '" data-toggle="toggle" data-on="' + team_list[index].team_number + '" data-off="' + team_list[index].team_number + '" data-size="small" data-width="60" type="checkbox">    ';
+
+                  }
+              }
+              team_button_string += '<br>';
+          }
+
+          $("#team_buttons").html( team_button_string );
+
+          var team_id_ref_string;
+          for ( i=0; i<num_teams; i++ ) {
+              team_id_ref_string = '#team_' + team_list[i].team_number;
+              $(function() { $(team_id_ref_string).bootstrapToggle(); })
+
+              $(team_id_ref_string).prop('team', team_list[i].team_number);
+              $(team_id_ref_string).change(function() { 
+                    if ( $(this).prop('checked') ) {
+                        team_availability[ $(this).prop('team') ] = 'Available';
+                    } else {
+                        team_availability[ $(this).prop('team') ] = 'Picked';
+                    }
+
+                    //filteredPlot( '' );
+
+                    localStorage.setItem('team_availability', JSON.stringify( team_availability ));
+
+                    //location.reload();
+              } )
+          }
+
+          // display the initial plot
+          filteredPlot('');
+
+      } );   
+
+}
+
+function filteredPlot( filter ) {
+    var display = "horizontal";
+    var data = [];
+    var teams = [];
+    var uri = "/eventdata/scoutingrankings";
+
+    filter_name_label = document.getElementById('filterName');
+    filter = filter_name_label.value
+
+    if ( filter.length > 0 )
+    {
+        uri += "_" + filter;
+    }
+
+    var jqxhr = $.getJSON( uri, function(json_data) {
+        var numTeams = json_data.rankings.length;
+        for (var i=0, j=0;i<numTeams;i++)
+        {
+            var team = json_data.rankings[i].team;
+
+            if ( team_availability[team] == 'Available' ) { 
+
+                data[j] = [];
+                if ( display=='horizontal' ) {
+                    data[j][0] = json_data.rankings[i].score;
+                    data[j][1] = j;
+                } else {
+                    data[j][0] = j;
+                    data[j][1] = json_data.rankings[i].score;
+                }
+
+                teams[j] = json_data.rankings[i].team.toString();
+
+                j++;
+            }
+
+        }
+
+        $("#rankchart").bind("plotclick", function( event, pos, item ) {
+            if (item) {
+                window.location.assign( "/teamdata/" + teams[item.datapoint[1]] );
+            }
+        });
+
+        function generatePlot( data ) {
+            $.plot($("#rankchart"), [ data ], {
+	            series: {
+                    bars: { 
+                        show: true, 
+		                barWidth: 0.6,
+		                align: "center",
+		                horizontal: true
+                    }
+                },
+                yaxis: {
+                    tickFormatter: function(v,axis) {
+		                if ( (v >= 0) && (v < teams.length) ) {
+		                    return teams[v];
+		                } else {
+		                    return '';
+		                }
+                    },
+                    tickSize: 1,
+                    tickLength: 0,
+		            axisLabel: 'Team',
+                    axisLabelUseCanvas: true,
+                    axisLabelFontSizePixels: 10,
+                    axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
+                    axisLabelPadding: 5
+                },
+                xaxis: {
+                    axisLabel: 'Score',
+                },
+                grid: {
+                    hoverable: true,
+                    clickable: true
+                },
+	            tooltip: true,
+	            tooltipOpts: {
+	                content: function(label, xval, yval, flotItem) {
+		                var tipString;
+		                if ( display == 'horizontal' ) {
+		                    tipString = "Team: " + json_data.rankings[yval].team.toString() + 
+		                                ", Score: " + xval.toString();
+		                } else {
+		                    tipString = "Team: " + json_data.rankings[xval].team.toString() + 
+		                                ", Score: " + yval.toString();
+                        }
+		                console.log( tipString );
+		                return( tipString );
+	                },
+		            shifts: {
+		                x:20,
+		                y:0
+		            },
+                    defaultTheme: false
+	            },
+                legend: {
+                    labelBoxBorderColor: "none"
+                }
+
+            });
+        }
+
+        generatePlot(data);
+
+        window.onresize = function(event) {
+            generatePlot(data);
+        }
+        
+    })
+
+}
+
+function filter_init(){
+    /*
+    tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+    tree.setImagePath("/static/media/images/");
+    tree.enableCheckBoxes(1);
+    tree.enableThreeStateCheckboxes(true);
+    tree.openAllItems(1);
+    */
+    currFilter = localStorage.getItem('currFilter');
+    if ( currFilter == null || currFilter == '' ) {
+	    // tree.loadJSON("/eventdata/attrtree" + query_str, function(){ plotByFilterData(); } );
+        console.log( "No Current Filter" );
+    } else {
+        // tree.loadJSON("/eventdata/attrtree_" + currFilter + query_str, function(){ plotByFilterData(); } );
+        filter_name_label = document.getElementById('filterName');
+        filter_name_label.value = currFilter;
+        console.log( "Current Filter: " + currFilter );
+    }
+
+}
+
+// function isn't currently called because I can't figure out how to dynamically load the dropdown menu...yet.
+function build_filter_dropdown() {
+
+    // load the set of saved filters into this page
+    var jqxhr = $.getJSON( '/eventdata/attrfilters' + query_str, function(json_data) {
+        saved_filters = json_data.filters;
+
+        for ( i=0; i<saved_filters.length; i++ ) {
+            filter_name = saved_filters[i].name;
+            $('#filterlist ul').append('<li><a href="#comp-select" id="setFilter' + filter_name + '">' + filter_name + '</a></li>');
+        }
+    } );
+
+}	
+
+
+function getFilterString() {
+    filter = '';
+
+    /* 
+    var checked_items = tree.getAllChecked().split(",");
+    console.log( "Checked Items : " + checked_items );
+
+    var baseCheckboxState = tree.isItemChecked(1);
+
+    if ( baseCheckboxState == 0 ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
+        return filter;
+    } else if ( baseCheckboxState == 1 ) {
+        console.log( "Displaying All Attributes" );
+    } else {
+        for(var i=0; i<checked_items.length; i++) {
+            if ( checked_items[i].lastIndexOf("Skip_", 0) != 0 ) {
+                if ( filter.length > 0 )
+                    filter += '+';
+                filter += checked_items[i];
+            }
+        }
+    }
+
+    document.getElementById('NoAttrAlert').innerHTML = '';
+    console.log( "Filter String : " + filter );
+    */
+
+    return filter;
+}
+
+function plotByFilterData(){
+
+    filter = getFilterString();
+    filteredPlot(filter);
+}			
+
+function plotData() {
+
+    //filter_name_label = document.getElementById('filterName');
+    //filter_name_label.value = '';
+    plotByFilterData();
+
+    location.reload();
+
+}
+
+function setFilter(name) {
+    console.log( 'Filter Name: ' + name );
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = name;
+    loadFilter();
+}
+
+function saveFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+    filter = getFilterString();
+    $.post( "/eventdata/attrfilter_" + filter_name + query_str, { "filter" : filter }, function(data,status){ plotByFilterData(); location.reload(); });
+}
+
+function clearFilter() {
+    localStorage.setItem('currFilter', '');
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    /*
+    tree.deleteChildItems(0);
+    tree.deleteItem(0, true);
+	tree.loadJSON("/eventdata/attrtree" + query_str, function(){ plotByFilterData(); location.reload(); } );
+    */
+
+    location.reload();
+}
+
+function loadFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+
+    /*
+    tree.destructor();
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/images/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+    tree.loadJSON("/eventdata/attrtree_" + filter_name + query_str, 
+                    function() { 
+                        plotByFilterData(); 
+                        //location.reload();
+                    } );
+    */
+
+    location.reload();
+}
+
+function deleteFilter() {
+    filter_name_label = document.getElementById('filterName');
+    filter_name = filter_name_label.value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    filter_name_label.value = '';
+    $.ajax({
+        url: '/eventdata/attrfilter_' + filter_name + query_str,
+        type: 'DELETE',
+        success: function(result) { 
+                                    localStorage.setItem('currFilter', ''); 
+                                    //location.reload(); 
+                                  }
+    });
+}
+
+
+</script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+
+          <div id="logo-home"></div>
+
+        </div>
+
+        <div class="collapse navbar-collapse">
+
+        <div class="row">
+
+          <ul class="nav navbar-nav">
+            <li class="inactive" id="nav-home"></li>
+            <li class="inactive" id="nav-event"></li>
+            <li class="inactive" id="nav-teams"></li>
+            <li class="inactive" id="nav-our-matches"></li>
+            <li class="inactive" id="nav-alliance-selection"></li>
+          </ul>
+
+        </div>
+
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <!-- Begin page content -->
+    <div class="container">
+
+  <div class="article">
+  
+    <div id="mytitle"></div>
+
+    <div class="container-fluid">
+
+    <div id="comp-select"></div>
+
+    <div>
+        <hr>
+    </div>
+
+	<div class="row">
+
+    </div>
+    </div>
+    
+    <div id="teams">
+		<div class="col-sm-11" align="left">							
+            <br>
+		    <button type="button" class="btn btn-primary" id="resetTeamAvailability" align="right">Reset Teams</button>         
+            <br>
+	        <div class="row">
+            <div id="team_buttons" style="padding-left:40px;padding-top:10px"></div>
+            </div>
+
+            <br>
+        </div>
+    </div>
+
+	<div class="col-sm-11" align="left">							
+            <br>
+		    <div class="col-sm-3">							
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Filter name..." id="filterName">
+
+                    <div id="filterlist" class="input-group-btn">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="caret"></span></button>
+                        <ul class="dropdown-menu dropdown-menu pull-right" role="menu"> 
+                        </ul>
+                    </div>
+                </div>
+                <div class="btn-group btn-block">
+                    <!--
+                    <button class="btn btn-default col-lg-3" type="button" id="saveFilter">Save</button>
+                    <button class="btn btn-default col-lg-3" type="button" id="deleteFilter">Delete</button>
+                    -->
+                    <button class="btn btn-default col-lg-3" type="button" id="plotData">Plot</button>
+                    <button class="btn btn-default col-lg-3" type="button" id="clearFilter">Clear </button>
+                </div>
+                <br>
+
+                <!--
+		        <div class="tree well" id="attr_tree" style="height:300px; padding: 8px 10px;">
+		            <div id="NoAssignmentAlert"></div>
+		        </div>
+                -->
+		    </div>
+       
+	        <div class="col-sm-8">							
+	            <div id="NoAttrAlert"></div>
+                <div id="rankchart"></div>
+	        </div>
+    </div>
+    </div>
+
+    </div>
+
+  </div>  
+
+
+  <!-- end of page content -->
+
+  </div>
+
+    <div class="footer">
+      <div class="container">
+        <p class="text-muted"></p>
+      </div>
+  </div>
+
+
+  <!-- Bootstrap core JavaScript
+    ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="/static/media/js/bootstrap.min.js"></script>
+ -->
+
+  </body>
+</html>
+
