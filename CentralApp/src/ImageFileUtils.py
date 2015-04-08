@@ -56,10 +56,13 @@ def create_thumbnails_from_image(imagefile, overwrite=False):
     for size in sizes:
         thumbnail = '%s/%dx%d_%s' % (path,size[0],size[1],filebase)
         if (os.path.isfile(thumbnail)==False) or (overwrite==True):
-            image_obj = PIL.Image.open(imagefile)
-            image_obj = image_obj.resize((1000,1000))
-            image_obj.thumbnail(size)
-            image_obj.save(thumbnail)
+            try:
+                image_obj = PIL.Image.open(imagefile)
+                image_obj = image_obj.resize((1000,1000))
+                image_obj.thumbnail(size)
+                image_obj.save(thumbnail)
+            except:
+                print 'Error creating thumbnail for %s' % filebase
 
 
 def rotate_image(imagefile, degrees):

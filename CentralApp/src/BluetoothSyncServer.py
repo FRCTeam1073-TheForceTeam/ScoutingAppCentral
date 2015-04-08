@@ -10,6 +10,7 @@ import FileSync
 import WebCommonUtils
 import WebEventData
 import WebTeamData
+import WebAttributeDefinitions
  
 class ClientThread(Thread):
     def __init__(self, target, *args):
@@ -129,6 +130,9 @@ class BluetoothSyncServer(Thread):
                                         result = WebTeamData.update_team_event_files( self.global_config,  
                                                                                    comp_season_list[1], 
                                                                                    comp_season_list[0], 
+                                                                                   path_elems[1] )
+                                    if result == True:
+                                        result = WebAttributeDefinitions.update_event_data_files( self.global_config,  
                                                                                    path_elems[1] )
                                     if result == False:
                                         error = True
