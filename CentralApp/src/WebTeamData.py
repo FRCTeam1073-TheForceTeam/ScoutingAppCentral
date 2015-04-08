@@ -17,6 +17,7 @@ import DbSession
 import DataModel
 import FileSync
 import WebCommonUtils
+import WebAttributeDefinitions
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -1027,6 +1028,12 @@ def update_team_event_files( global_config, year, event, directory ):
         get_team_rankings_json( global_config, event+year, attr_filter=[], filter_name=None, store_json_file=True )
         get_team_list_json( global_config, event+year, store_json_file=True )
        
+        # then update the JSON data files for each of the defined filters 
+        filter_list = WebAttributeDefinitions.get_filter_list()
+        for name in filter_list:
+            attr_filter = WebAttributeDefinitions.get_saved_filter(name)
+            get_team_rankings_json( global_config, event+year, attr_filter=attr_filter, filter_name=name, store_json_file=True )
+
         result = True
         
     return result

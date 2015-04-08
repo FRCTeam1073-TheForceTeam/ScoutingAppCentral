@@ -188,8 +188,8 @@ def get_saved_filter_json( global_config, filter_name, store_data_to_file=False 
     
         result.append('   { "name": "%s", "filter_str": "%s" }\n' % (filter_name,filter_str))
     else:
-        for filter_name, filter_str in saved_filters.iteritems():
-            result.append('   { "name": "%s", "filter_str": "%s" }' % (filter_name,filter_str))
+        for name, filter_str in saved_filters.iteritems():
+            result.append('   { "name": "%s", "filter_str": "%s" }' % (name,filter_str))
             result.append(',\n')
             
         if len(saved_filters) > 0:

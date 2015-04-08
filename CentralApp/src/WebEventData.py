@@ -862,6 +862,7 @@ def update_event_data_files( global_config, year, event, directory ):
         # will also store the json payload to the EventData directory completing the desired 
         # operation
         get_event_standings_json( global_config, year, event_code )
+        get_event_rank_list_json( global_config, year, event_code )
         get_event_stats_json( global_config, year, event_code, 'oprs' )
         get_event_matchresults_json(global_config, year, event_code, 'qual')
         get_event_matchresults_json(global_config, year, event_code, 'quarters')
