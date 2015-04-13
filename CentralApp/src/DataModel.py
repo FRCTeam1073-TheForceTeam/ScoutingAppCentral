@@ -182,6 +182,21 @@ def getTeamAttributesInOrder(session, teamId, comp):
             order_by(TeamAttribute.attr_name).all()
     return attrList
 
+def getTeamAttributesWithValue(session, comp, name, value, descending_order=True, max_teams=100):
+    if descending_order == True:
+        teamList = session.query(TeamAttribute).\
+                filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
+                filter(TeamAttribute.attr_name==name).\
+                filter(TeamAttribute.all_values.contains(value)).\
+                all()    
+    else:
+        teamList = session.query(TeamAttribute).\
+                filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
+                filter(TeamAttribute.attr_name==name).\
+                filter(TeamAttribute.all_values.contains(value)).\
+                all()    
+    return teamList
+
 def getTeamAttributesInRankOrder(session, comp, name, descending_order=True, max_teams=100):
     if descending_order == True:
         teamList = session.query(TeamAttribute).\
