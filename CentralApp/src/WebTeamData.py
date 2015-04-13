@@ -817,7 +817,7 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None, attr_filter=[], filter_name=None, store_json_file=False):
+def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_name=None, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
     store_data_to_file = False
@@ -834,7 +834,7 @@ def get_team_rankings_json(global_config, comp=None, attr_filter=[], filter_name
     result.append('{ "rankings": [\n')
     rank_added = False
     
-    if len(attr_filter) == 0:
+    if len(attr_filters) == 0:
         team_rankings = DataModel.getTeamsInRankOrder(session, comp, False)
         for team in team_rankings:
             # round the score to an integer value
@@ -851,25 +851,44 @@ def get_team_rankings_json(global_config, comp=None, attr_filter=[], filter_name
         attr_definitions.parse(attrdef_filename)
         
         team_rank_dict = dict()
-        for attr_name in attr_filter:
+        for attr_filter in attr_filters:
+            try:
+                attr_name, attr_value = attr_filter.split('=')
+            except:
+                attr_name = attr_filter
+                attr_value = None
+            
             attr_def = attr_definitions.get_definition(attr_name)
-            team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
-            for team in team_rankings:
-                try:
-                    stat_type = attr_def['Statistic_Type']
-                except:
-                    stat_type = 'Total'
-    
-                weight = int(float(attr_def['Weight']))
-                if stat_type == 'Average':
-                    score = int(team.cumulative_value/team.num_occurs*weight)
-                else:
-                    score = int(team.cumulative_value*weight)
-                                                
-                try:       
-                    team_rank_dict[team.team] += score
-                except:
-                    team_rank_dict[team.team] = score
+            
+            if attr_value is None:
+                team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name, False)
+                
+                for team in team_rankings:
+                    try:
+                        stat_type = attr_def['Statistic_Type']
+                    except:
+                        stat_type = 'Total'
+        
+                    weight = int(float(attr_def['Weight']))
+                    if stat_type == 'Average':
+                        score = int(team.cumulative_value/team.num_occurs*weight)
+                    else:
+                        score = int(team.cumulative_value*weight)
+                                                    
+                    try:       
+                        team_rank_dict[team.team] += score
+                    except:
+                        team_rank_dict[team.team] = score
+            else:
+                team_rankings = DataModel.getTeamAttributesWithValue(session, comp, attr_name, attr_value, False)
+                
+                for team in team_rankings:
+                    score = team.all_values.count(attr_value)
+                    try:       
+                        team_rank_dict[team.team] += score
+                    except:
+                        team_rank_dict[team.team] = score
+                
                     
         sorted_team_rank = sorted(team_rank_dict.items(), key=operator.itemgetter(1))
         for team, score in sorted_team_rank:

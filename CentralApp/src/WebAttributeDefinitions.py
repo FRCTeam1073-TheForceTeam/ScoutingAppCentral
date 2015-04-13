@@ -71,6 +71,30 @@ def process_attr_def_form(global_config, form):
             
             DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
+def get_attr_def_item_json( global_config, attr_def, attr_filter, checked_ind ):
+
+    attr_name = attr_def['Name']
+    result = []
+    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [' % (attr_name,checked_ind,attr_name))
+    
+    if attr_def['Control'] == 'Radio' or attr_def['Control'] == 'Checkbox':
+        map_values_str = attr_def['Map_Values']
+        map_values = map_values_str.split(':')
+        for map_value in map_values:
+            checked_override = checked_ind
+            map_tokens = map_value.split('=')
+            map_name = map_tokens[0]
+            map_filter_str = '%s=%s' % (attr_name,map_name)
+            if map_filter_str in attr_filter:
+                checked_override = 1
+            result.append('        { "text": "%s", "checked": %d, "id": "%s=%s", "item": [ ] }' % (map_name,checked_override,attr_name,map_name))
+            result.append(',\n')
+        result = result[:-1]
+    
+    result.append(' ] }')
+    
+    result_str = ''.join(result)    
+    return result_str
 
 def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=False):
     
@@ -101,14 +125,17 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
         if category != 'Uncategorized':
             result.append('    { "text": "%s", "checked": %d, "id": "Skip_%s", "item": [ \n' % (category,checked,category))
             for attrname in sorted(attrlist):
+                checked_ind = 0
                 if filter_name is None:
-                    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+                    # if there is no specified filter, then set the checked indicator based on the overall setting
+                    checked_ind = checked
                 else:
+                    # otherwise, if a filter is specified, then set the checked indicator based on if the attribute
+                    # name is specified in the filter list
                     if attrname in attr_filter:
-                        check_attr = 1
-                    else:
-                        check_attr = 0
-                    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,check_attr,attrname))
+                        checked_ind = 1
+                tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind )
+                result.append(tree_item_str)
                 result.append(',\n')
                           
             if len(attrlist) > 0:
@@ -121,15 +148,17 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
     attrlist = category_dict['Uncategorized']
     if len( attrlist ) > 0:
         for attrname in sorted(attrlist):
+            checked_ind = 0
             if filter_name is None:
-                result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,checked,attrname))
+                # if there is no specified filter, then set the checked indicator based on the overall setting
+                checked_ind = checked
             else:
+                # otherwise, if a filter is specified, then set the checked indicator based on if the attribute
+                # name is specified in the filter list
                 if attrname in attr_filter:
-                    check_attr = 1
-                else:
-                    check_attr = 0
-                result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [ ] }' % (attrname,check_attr,attrname))
-                    
+                    checked_ind = 1
+            tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind )
+            result.append(tree_item_str)
             result.append(',\n')
                       
     result = result[:-1]
@@ -219,6 +248,7 @@ def save_filter(filter_name, filter_str):
         ConfigUtils.read_config( saved_filters, './config/savedfilters.txt' )
             
     name = filter_name.title()
+    name = name.replace(' ', '_')
     saved_filters[name] = filter_str
     
     ConfigUtils.write_config( saved_filters, './config/savedfilters.txt' )
