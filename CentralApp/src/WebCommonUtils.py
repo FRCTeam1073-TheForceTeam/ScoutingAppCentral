@@ -32,6 +32,10 @@ def get_myteam():
     my_config = ScoutingAppMainWebServer.global_config
     return my_config['my_team']
     
+def get_mywebsite():    
+    my_config = ScoutingAppMainWebServer.global_config
+    return my_config['my_website']
+    
 def get_comp_list():
     
     my_config = ScoutingAppMainWebServer.global_config
