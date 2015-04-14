@@ -439,6 +439,7 @@ def get_event_info_dict(global_config, year, event_code):
         global_config['logger'].debug( 'GET Event Info Json' )
                     
         event_data = get_event_data_from_tba( '%s%s' % (year,event_code.lower()) )
+        try: 
             if event_data != '':
                 event_data = json.loads(event_data)
             else:
