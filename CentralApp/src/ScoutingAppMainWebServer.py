@@ -141,8 +141,9 @@ logger = Logger.init_logger('./config', 'logging.conf', 'scouting.webapp')
 
 global_config = { 'my_team'            : '1073',
                   'my_district'        : 'District',
-                  'this_season'        : '2014',
-                  'this_competition'   : 'Test2014', 
+                  'my_website'         : 'www.usfirst.org',
+                  'this_season'        : '2015',
+                  'this_competition'   : 'Test2015', 
                   'other_competitions' : '', 
                   'db_name'            : 'scouting', 
                   'issues_db_name'     : 'issues',
@@ -1242,8 +1243,7 @@ class Sync(object):
                                                                    comp_season_list[1], 
                                                                    comp_season_list[0], 
                                                                    path_elems[1] )
-                    if result == True:
-                        result = WebAttributeDefinitions.update_event_data_files( global_config,  
+                    result = WebAttributeDefinitions.update_event_data_files( global_config,  
                                                                    path_elems[1] )
                     
                     # if we hit an error generating the event files, then there is no 
