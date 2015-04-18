@@ -152,6 +152,11 @@ def addProcessedFile(session, name):
     file_name = ProcessedFiles(filename=name)
     session.add(file_name)
     
+def deleteProcessedFile(session, name):
+    result = session.query(ProcessedFiles).filter(ProcessedFiles.filename==name).all()
+    for file_entry in result:
+        session.delete(file_entry)
+    
 def addNotesEntry(session, teamnum, comp, notes, notestag):
     notes = NotesEntry(team=teamnum, competition=comp, data=notes, tag=notestag)
     session.add(notes)
@@ -163,6 +168,16 @@ def modifyNotesEntry(session, teamnum, comp, old_notes, new_notes, notestag):
     if notes:
         notes.data = new_notes
         notes.tag = notestag                                  
+    
+def deleteNotesEntry(session, teamnum, comp, old_notes, notestag):
+    notes = session.query(NotesEntry).filter(NotesEntry.team==teamnum).\
+                                      filter(func.lower(NotesEntry.competition)==func.lower(comp)).\
+                                      filter(NotesEntry.data==old_notes).all()
+    try:
+        note = notes[0]
+        session.delete(note)
+    except:
+        pass
     
 def getTeamNotes(session, teamId, comp):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
@@ -444,22 +459,93 @@ def modifyAttributeValue(session, team, comp, name, old_value, new_value, attrib
     if attribute_def['Name'] == 'Notes':
         modifyNotesEntry(session, team, comp, old_value, new_value, date)
     elif attribute_def['Type'] == 'String':
-        if attr.all_values.find(old_value) != -1:
-            if attr:
-                attr.all_values = attr.all_values.replace(old_value,new_value,1)            
+        if attr: 
+            if attr.all_values.find(old_value) != -1:
+                attr.all_values = attr.all_values.replace(old_value,new_value,1)
+            else:
+                raise ValueError('Value Not Found')
+        else:
+            raise ValueError('Attribute Not Found')
     else:
         # make sure that the value itself has been applied to this attribute
-        if attr.all_values.find(old_value) != -1:
-            old_attr_value = convertValues(attr_type, old_value, attribute_def)
-            new_attr_value = convertValues(attr_type, new_value, attribute_def)
-        
-            if attr:
+        if attr:
+            if attr.all_values.find(old_value) != -1:
+                old_attr_value = convertValues(attr_type, old_value, attribute_def)
+                new_attr_value = convertValues(attr_type, new_value, attribute_def)
+            
                 attr.attr_value = new_attr_value
                 attr.cumulative_value -= old_attr_value
                 attr.cumulative_value += new_attr_value
                 attr.avg_value = attr.cumulative_value / attr.num_occurs
                 attr.all_values = attr.all_values.replace(old_value,new_value,1)            
                 print attr.json()
+            else:
+                raise ValueError('Value Not Found')
+        else:
+            raise ValueError('Attribute Not Found')
+
+def deleteAttributeValue(session, team, comp, name, old_value, attribute_def, no_throw=False):
+    attrList = session.query(TeamAttribute).filter(TeamAttribute.team==team).\
+                                            filter(func.lower(TeamAttribute.competition)==func.lower(comp)).\
+                                            filter(TeamAttribute.attr_name==name)
+    attr = attrList.first()
+    attr_type = attribute_def['Type']
+    date = datetime.datetime.now(); #gets the current date and time down to the microsecond
+    
+    if attribute_def['Name'] == 'Notes':
+        deleteNotesEntry(session, team, comp, old_value, date)
+    elif attribute_def['Type'] == 'String':
+        if attr:
+            if attr.all_values.find(old_value) != -1:
+                if attr.num_occurs == 1:
+                    # if there is no other occurrences, then delete the attribute altogether
+                    session.delete(attr)
+                else:
+                    # otherwise, remove this occurrence from the data set
+                    attr.num_occurs -= 1
+                    attr.all_values = attr.all_values.replace(old_value,'',1)
+                    attr.all_values = attr.all_values.replace('::', ':',1)
+                    attr.all_values = attr.all_values.lstrip(':')
+                    attr.all_values = attr.all_values.rstrip(':')
+            else:
+                if no_throw is False:
+                    raise ValueError('Value Not Found')
+        else:
+            if no_throw is False:
+                raise ValueError('Attribute Not Found')
+    else:
+        # make sure that the value itself has been applied to this attribute
+        if attr:
+            if attr.all_values.find(old_value) != -1:
+                if attr.num_occurs == 1:
+                    # if there is no other occurrences, then delete the attribute altogether
+                    session.delete(attr)
+                else:
+                    # otherwise, remove this occurrence from the data set
+                    old_attr_value = convertValues(attr_type, old_value, attribute_def)                
+                    attr.cumulative_value -= old_attr_value
+                    attr.num_occurs -= 1
+                    attr.avg_value = attr.cumulative_value / attr.num_occurs
+                    attr.all_values = attr.all_values.replace(old_value,'',1)            
+                    attr.all_values = attr.all_values.replace('::', ':',1)
+                    attr.all_values = attr.all_values.lstrip(':')
+                    attr.all_values = attr.all_values.rstrip(':')
+                    
+                    # set the attribute value to the last entered value
+                    attr_value_list = attr.all_values.split(':')
+                    attr_value_str = attr_value_list[-1]
+                    if attr_value_str != '':
+                        attr.attr_value = convertValues(attr_type, attr_value_str, attribute_def)
+                    else:
+                        attr.attr_value = 0.0
+       
+                    print attr.json()
+            else:
+                if no_throw is False:
+                    raise ValueError('Value Not Found')
+        else:
+            if no_throw is False:
+                raise ValueError('Attribute Not Found')
 
 
 def createOrUpdateMatchDataAttribute(session, team, comp, match, scouter, name, value):

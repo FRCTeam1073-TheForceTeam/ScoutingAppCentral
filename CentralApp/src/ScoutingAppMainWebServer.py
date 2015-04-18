@@ -34,6 +34,7 @@ import WebAdminPage
 import WebTeamData
 import WebUiGen
 import WebSetConfig
+import WebDeleteAttr
 import WebModifyAttr
 import WebLogin
 import WebIssueTracker
@@ -69,6 +70,8 @@ urls = (
     '/genui',               'GenUi',
     '/config',              'SetConfig',
     '/modifyattr',          'ModifyAttr',
+    '/deleteattr',          'DeleteAttr',
+    '/deleteattrfile',      'DeleteAttrFile',
     '/newissue',            'NewIssue',
     '/newissue/(.*)',       'NewPlatformIssue',
     '/issue/(.*)',          'Issue',
@@ -878,8 +881,38 @@ class ModifyAttr(object):
         if not form.validates(): 
             return render.default_form(form)
         else:
-            WebModifyAttr.process_form(global_config, form)
+            result = WebModifyAttr.process_form(global_config, form)
+            return render.default_form_with_msg(form, result)
+
+class DeleteAttr(object):
+    def GET(self):
+        WebLogin.check_access(global_config,7)        
+        form = WebDeleteAttr.get_delete_attr_form(global_config)
+        return render.default_form(form)
+
+    def POST(self):
+        WebLogin.check_access(global_config,7)
+        form = WebDeleteAttr.get_delete_attr_form(global_config)
+        if not form.validates(): 
             return render.default_form(form)
+        else:
+            result = WebDeleteAttr.process_delete_attr_form(global_config, form)
+            return render.default_form_with_msg(form, result)
+
+class DeleteAttrFile(object):
+    def GET(self):
+        WebLogin.check_access(global_config,7)        
+        form = WebDeleteAttr.get_delete_file_form(global_config)
+        return render.default_form(form)
+
+    def POST(self):
+        WebLogin.check_access(global_config,7)
+        form = WebDeleteAttr.get_delete_file_form(global_config)
+        if not form.validates(): 
+            return render.default_form(form)
+        else:
+            result = WebDeleteAttr.process_delete_file_form(global_config, form)
+            return render.default_form_with_msg(form, result)
 
 class NewIssue(object):
     def GET(self):

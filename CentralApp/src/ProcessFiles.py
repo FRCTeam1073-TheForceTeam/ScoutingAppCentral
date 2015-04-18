@@ -210,6 +210,55 @@ def process_file(global_config, session, attr_definitions, data_filename):
     score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
     DataModel.setTeamScore(session, team, competition, score)
 
+        
+def remove_file_data(global_config, session, attr_definitions, data_filename, remove_from_processed_files=False):
+    print 'removing data file: %s'%data_filename
+    
+    competition = global_config['this_competition'] + global_config['this_season']
+    input_dir = './static/data/' + competition + '/ScoutingData/'
+    filepath = input_dir+data_filename
+    # Initialize the file_attributes dictionary in preparation for the
+    # parsing of the data file
+    file_attributes = {}
+    
+    # Parse the data file, removing all the information in the file_attributes
+    # dictionary
+    try:
+        FileParser.FileParser(filepath).parse(file_attributes)
+    except:
+        raise ValueError('Error Opening File')
+
+    # The team number can be retrieved from the Team attribute, one of the
+    # mandatory attributes within the data file
+    team = file_attributes['Team']
+    
+    # Also, extract the competition name, too, if it has been included in
+    # the data file
+    if file_attributes.has_key('Competition'):
+        competition = file_attributes['Competition']
+    else:
+        competition = global_config['this_competition'] + global_config['this_season']
+
+        if competition == None:
+            raise Exception( 'Competition Not Specified!')
+    
+    # Loop through the attributes from the data file and post them to the
+    # database
+    for attribute, value in file_attributes.iteritems():
+        if value is None:
+            value = ''
+        attr_definition = attr_definitions.get_definition(attribute)
+        if attr_definition == None:
+            raise ValueError( 'No Attribute Defined For Attribute: %s' % attribute )
+        elif attr_definition['Database_Store']=='Yes':
+            DataModel.deleteAttributeValue(session, team, competition, attribute, value, attr_definition, no_throw=True)
+            
+    if remove_from_processed_files:
+        DataModel.deleteProcessedFile(session, filepath)
+
+    score = DataModel.calculateTeamScore(session, team, competition, attr_definitions)
+    DataModel.setTeamScore(session, team, competition, score)
+
 def process_issue_files(global_config, input_dir, recursive=True):
 
     # Initialize the database session connection
