@@ -630,7 +630,8 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
                 result.append('       [ ')
                 
                 # Match number
-                result.append( '"%s", ' % str(match['match_number']) )
+                #result.append( '"%s", ' % str(match['match_number']) )
+                result.append( '"%s", ' % get_match_hyperlink(global_config, match) )
 
                 # Match start time
                 match_epoch_time = int(match['time'])
@@ -752,6 +753,21 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
 def get_team_hyperlink( competition, team ):
     team_hyperlink = '<a href=\\"/teamdata/%s/%s\\">%s</a>' % (competition,team,team)
     return team_hyperlink
+
+def get_match_hyperlink( competition, match ):
+    red_alliance =   'red=%s+%s+%s' % (str(match['alliances']['red']['teams'][0]).lstrip('frc'),\
+                                       str(match['alliances']['red']['teams'][1]).lstrip('frc'),\
+                                       str(match['alliances']['red']['teams'][2]).lstrip('frc'))
+    blue_alliance = 'blue=%s+%s+%s' % (str(match['alliances']['blue']['teams'][0]).lstrip('frc'),\
+                                       str(match['alliances']['blue']['teams'][1]).lstrip('frc'),\
+                                       str(match['alliances']['blue']['teams'][2]).lstrip('frc'))
+    filter_name = 'Scouting_Brief'
+    match_number = str(match['match_number'])
+    
+    match_hyperlink = '<a href=\\"/matchbrief/%s/%s?%s&%s&%s\\">%s </a>' % \
+        (competition,match_number,red_alliance,blue_alliance,filter_name,match_number)
+        
+    return match_hyperlink
 
 def get_event_matchschedule_json(global_config, year, event_code, round_str):
         

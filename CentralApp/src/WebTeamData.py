@@ -574,7 +574,7 @@ def get_team_score_json(global_config, name, comp, store_json_file=False):
         
     return json_str
 
-def get_team_scouting_data_summary_json(global_config, comp, name, store_json_file=False):
+def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[], filter_name=None, store_json_file=False):
     
     global_config['logger'].debug( 'GET Team %s Scouting Data For Competition %s', name, comp )
     
@@ -610,6 +610,12 @@ def get_team_scouting_data_summary_json(global_config, comp, name, store_json_fi
                         and attr_def.has_key('Weight') != '0':
                     include_attr = True
 
+                # if an attribute filter has been provided, only include the attribute data if the
+                # attribute is in the filter
+                if len(attr_filter) > 0:
+                    if attr_def['Name'] not in attr_filter:
+                        include_attr = False
+                
             if include_attr == True:  
                 some_attr_added = True
                 if attr_def.has_key('Display_Name'):
@@ -1085,7 +1091,7 @@ def update_team_data_files( global_config, year, event, directory, team=None ):
                 get_team_scouting_notes_json(global_config, comp, team_entry.team, store_json_file=True)           
                 get_team_scouting_mediafiles_json(global_config, comp, str(team_entry.team), store_json_file=True)
                 get_team_scouting_datafiles_json(global_config, comp, str(team_entry.team), store_json_file=True)
-                get_team_scouting_data_summary_json(global_config, comp, team_entry.team, store_json_file=True)
+                get_team_scouting_data_summary_json(global_config, comp, team_entry.team, attr_filter=[], filter_name=None, store_json_file=True)
         result = True
         
     return result

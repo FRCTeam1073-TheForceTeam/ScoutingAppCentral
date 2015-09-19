@@ -335,7 +335,20 @@ class TeamScoutingDataSummaryJson(object):
         if numparams >= 2:
             comp = params[0]
             name = params[1]
-            result = WebTeamData.get_team_scouting_data_summary_json(global_config,comp,name)
+            
+            query_data = web.input(filter=None,queryname=None)
+            if query_data.filter is None:
+                if query_data.queryname is None:
+                    filter_name = None
+                    attr_filter = []
+                else:
+                    filter_name = query_data.queryname
+                    attr_filter = WebAttributeDefinitions.get_saved_filter(filter_name)
+            else:
+                filter_name = 'Filter_%d' % hash(query_data.filter)
+                attr_filter = query_data.filter.split()
+            
+            result = WebTeamData.get_team_scouting_data_summary_json(global_config,comp,name,attr_filter=attr_filter, filter_name=filter_name)
         return result
 
 class TeamDataFilesJson(object):
