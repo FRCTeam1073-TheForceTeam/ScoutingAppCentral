@@ -80,6 +80,21 @@ public class ScoutingAppActivity extends Activity {
     
 	}
 	
+	private void DownloadCompetitionData(String path) {
+		// create an asynchronous task to retrieve the most up to date data for this competition.
+		// If no host IP address has been specified, use bluetooth,
+		// otherwise use http.
+		String download_control = "Retrieve_Current_Data";
+		if (sync_method.equalsIgnoreCase("Bluetooth")) {
+    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, download_control).execute(
+    				competition_directory + "/" + path +"/");
+		} else {
+    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, download_control).execute(
+    				competition_directory + "/" + path +"/");
+		}
+    
+	}
+	
 	private void LoadCompetitionConfiguration( boolean showDialog ) {
 
     	try {
@@ -657,8 +672,14 @@ public class ScoutingAppActivity extends Activity {
 	    case R.id.LoadCompetitionSettings:
 	        DownloadCompetitionConfiguration();
 	    	break;
-		    default:
-		      break;
+	    case R.id.RetrieveEventData:
+	        DownloadCompetitionData("EventData");
+	    	break;
+	    case R.id.RetrieveTeamData:
+	        DownloadCompetitionData("EventData/Teamdata");
+	    	break;
+		default:
+		    break;
 	    }
 	    return true;
 	}
@@ -726,15 +747,17 @@ public class ScoutingAppActivity extends Activity {
         		String[] directoriesToSync = null;
         		
         		if (sync_text_files && sync_media_files) {
-        			directoriesToSync = new String[2];
+        			directoriesToSync = new String[3];
         			directoriesToSync[0] = competition_directory + "/ScoutingData/";
         			directoriesToSync[1] = competition_directory + "/ScoutingPictures/";
+        			directoriesToSync[2] = competition_directory + "/ScoutingPictures/Thumbnails/";
         		} else if ( sync_text_files ) {
         			directoriesToSync = new String[1];
         			directoriesToSync[0] = competition_directory + "/ScoutingData/";
 	    		} else if ( sync_media_files ) {
-	    			directoriesToSync = new String[1];
+	    			directoriesToSync = new String[2];
 	    			directoriesToSync[0] = competition_directory + "/ScoutingPictures/";
+        			directoriesToSync[1] = competition_directory + "/ScoutingPictures/Thumbnails/";
 	    		}
         		
         		if ( directoriesToSync != null ) {
