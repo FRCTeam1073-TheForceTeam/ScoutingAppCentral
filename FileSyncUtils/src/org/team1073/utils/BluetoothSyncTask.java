@@ -73,16 +73,55 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	            for (int i = 0; i < count; i++) {
 	        		HashSet<String> filesOnServer = new HashSet<String>();
 	        		
-	    	        publishProgress( "Retrieving File List From Server" );
-	        		syncHelper.getFilelistFromServer(paths[i], filesOnServer);
 	        		
 	        		if ( syncControl.equalsIgnoreCase("Download_Updates")) {
-	                    publishProgress( "Downloading Files From Server" );
+	        			
+		    	        publishProgress( "Retrieving File List From Server" );
+		        		syncHelper.getFilelistFromServer(paths[i], filesOnServer);
+
+		        		publishProgress( "Downloading Files From Server" );
 	                   	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
 	            		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
+	            		
+	        		} else if ( syncControl.equalsIgnoreCase("Retrieve_Current_Data")) {
+	        			
+		    	        publishProgress( "Posting Update Request To Server" );
+		    	        boolean error = syncHelper.createLocalDirectories(paths[i]);
+		    	        if ( error ) {
+			    	        publishProgress( "Error Creating Local Directories" );		    	        	
+		    	        	
+		    	        } else {
+			    	        error = syncHelper.sendUpdateRequestToServer(paths[i]);
+			    	        if (  !error )
+			    	        {
+				    	        publishProgress( "Retrieving File List From Server" );
+				        		syncHelper.getFilelistFromServer(paths[i], filesOnServer);
+			    	        	
+				        		publishProgress( "Downloading Files From Server" );
+			                   	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
+			            		numFilesRetrieved += syncHelper.retrieveFilesFromServer( paths[i], filesToRetrieve);
+			    	        } else {
+				    	        publishProgress( "Error Posting Update Request" );		    	        	
+			    	        }		    	        	
+		    	        }  
+		    	        
+	        		} else if ( syncControl.equalsIgnoreCase("Upload_Files")) {
+	        			
+		        		List<String> filesToSend = new ArrayList<String>();
+		        		
+		        		syncHelper.getFilesToSend(paths[i], filesToSend);
+		            	
+		                publishProgress( "Sending Files To Server" );
+		               	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
+		    	        
 	        		} else {
+	        			
 		        		HashSet<String> fileSetToRetrieve = new HashSet<String>();
 		        		List<String> filesToSend = new ArrayList<String>();
+		        		
+		    	        publishProgress( "Retrieving File List From Server" );
+		        		syncHelper.getFilelistFromServer(paths[i], filesOnServer);
+
 		        		syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
 		            	
 		                publishProgress( "Sending Files To Server" );

@@ -14,9 +14,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.net.HttpURLConnection;
+import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+
+import android.os.AsyncTask;
 
 public class FileSyncUtils {
 	private static final int BUFSIZE = 8192;
@@ -25,6 +28,7 @@ public class FileSyncUtils {
 	private final String mDeviceName;
     private InputStream mInStream;
     private OutputStream mOutStream;
+    private AsyncTask<String, String, Integer> mParent;
     
     public FileSyncUtils( File baseDirectory, String deviceName, InputStream inStream, OutputStream outStream) {
     	mBaseDirectory = baseDirectory;
@@ -32,7 +36,7 @@ public class FileSyncUtils {
     	mInStream = inStream;
     	mOutStream = outStream;
     }
-
+    
     //
     // setInputStream() - mutator function to reset the input stream
     //
@@ -94,6 +98,24 @@ public class FileSyncUtils {
     }
     
     //
+    // createLocalDirectories() - Function will verify that the directories
+    //                            referenced by this path exist, creating them
+    //                            if they don't already exist
+    public boolean createLocalDirectories( String path )
+    {
+    	boolean error = false;
+    	
+    	try {
+    		File myDir = new File(mBaseDirectory + "/" + path);
+    		myDir.mkdirs();
+		} catch(Exception e) {
+			error = true;
+		}
+    	
+    	return error;
+    }
+    
+    //
     // getFilesToTransfer() - Function compares the set of files on the server device
     //                        with the contents of the specified local directory and
     //                        builds two sets of files to be transferred: one containing
@@ -143,8 +165,56 @@ public class FileSyncUtils {
 					//      to detect changed files, too, and transfer them.
 					if (!filesOnServer.contains(fileOnDevice))
 						filesToSend.add(fileOnDevice);
-					else
+					else {
+						String md5Str;
+						try {
+							md5Str = getMD5Checksum( mBaseDirectory + "/" + path + "/" + fileOnDevice );
+						} catch (Exception e) {
+						    e.printStackTrace();							
+						}
+						
 						fileSetToRetrieve.remove(fileOnDevice);
+					}
+				}
+			}
+		}
+	}
+    
+    //
+    // getFilesToSend() - Function builds a list of files to be sent from the
+    //                    specified local directory
+    //
+    public void getFilesToSend( String path, List<String> filesToSend) {
+
+		// Get the list of files in the directory on this device and iterate
+		// through the list, adding any file that is not already on the server to
+		// the list of files to be transferred
+		File myDir = new File(mBaseDirectory + "/" + path);
+		myDir.mkdirs();
+		File[] listOfFiles = myDir.listFiles(); 
+		String fileOnDevice;
+		
+		if ( listOfFiles != null ) {
+			int numFiles = listOfFiles.length;
+			for (int i=0; i<numFiles; i++) 
+			{
+				if (listOfFiles[i].isFile()) 
+				{
+					fileOnDevice = listOfFiles[i].getName();
+		
+					// skip any file that ends with a .tmp suffix, indicating
+					// that that file is a temporary file on the device.
+					if ( fileOnDevice.endsWith(".tmp") ) {
+						continue;
+					}
+					
+					// skip any file that ends with a .mp4 suffix, since the 
+					// application is having trouble with those file types.
+					if ( fileOnDevice.endsWith(".mp4") ) {
+						continue;
+					}
+					
+					filesToSend.add(fileOnDevice);
 				}
 			}
 		}
@@ -190,6 +260,38 @@ public class FileSyncUtils {
 			DataOutputStream outStream = new DataOutputStream(mOutStream);
 			outStream.writeBytes(cmdString);
 			outStream.write(fileContents);
+			outStream.writeBytes(EOL);
+			outStream.flush();
+			
+	        // read the response, and increment the transfer count if successful
+			BufferedReader inBufStream = new BufferedReader(new InputStreamReader(mInStream));
+			String recvLine;
+			recvLine = inBufStream.readLine();
+			
+			//TODO: Should we read more headers, or will this be the extent of the response?
+			if ( !recvLine.contains("200 OK")) {
+				error = true;
+			}
+		} catch(Exception e) { 
+			error = true; 
+		}
+		return error;
+	}
+
+	public boolean sendUpdateRequestToServer( String filepath ) {
+		
+		boolean error = false;
+		
+		// Send the update request to the server using an HTTP formatted POST request
+		try {				
+			// format the request and send to the server
+			String cmdString = "POST " + "/" + filepath + EOL;
+			cmdString += "From: " + mDeviceName + EOL;
+			cmdString += "Content-Length: 0" + EOL;
+			cmdString += EOL;
+			
+			DataOutputStream outStream = new DataOutputStream(mOutStream);
+			outStream.writeBytes(cmdString);
 			outStream.writeBytes(EOL);
 			outStream.flush();
 			
@@ -471,4 +573,32 @@ public class FileSyncUtils {
 	    return 0;
 	}
 
+	private static byte[] createChecksum(String filename) throws Exception {
+       InputStream fis =  new FileInputStream(filename);
+
+       byte[] buffer = new byte[1024];
+       MessageDigest complete = MessageDigest.getInstance("MD5");
+       int numRead;
+
+       do {
+           numRead = fis.read(buffer);
+           if (numRead > 0) {
+               complete.update(buffer, 0, numRead);
+           }
+       } while (numRead != -1);
+
+       fis.close();
+       return complete.digest();
+	}
+
+	public static String getMD5Checksum(String filename) throws Exception {
+       byte[] b = createChecksum(filename);
+       String result = "";
+
+       for (int i=0; i < b.length; i++) {
+           result += Integer.toString( ( b[i] & 0xff ) + 0x100, 16).substring( 1 );
+       }
+       return result;
+	}
+	
 }

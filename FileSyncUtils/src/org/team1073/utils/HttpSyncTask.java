@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+
 import org.team1073.utils.FileSyncUtils;
 
 import android.app.Activity;
@@ -53,16 +54,43 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
         for (int i = 0; i < count; i++) {
     		HashSet<String> filesOnServer = new HashSet<String>();
     		
-        	getFilesOnServer(paths[i], filesOnServer);
         	
     		if ( syncControl.equalsIgnoreCase("Download_Updates")) {
+    			
+            	getFilesOnServer(paths[i], filesOnServer);
+    			
                	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
         		numFilesRetrieved += retrieveFilesFromServer( paths[i], filesToRetrieve);
+        		
+    		} else if ( syncControl.equalsIgnoreCase("Retrieve_Current_Data")) {
+    			
+    			// function returns false for no error
+    	        if ( sendUpdateRequestToServer(paths[i]) == false )
+    	        {
+	        		getFilesOnServer(paths[i], filesOnServer);
+    	        	
+                   	List<String> filesToRetrieve = new ArrayList<String>(filesOnServer);
+            		numFilesRetrieved += retrieveFilesFromServer( paths[i], filesToRetrieve);
+    	        } else {
+	    	        publishProgress( "Error Posting Update Request" );		    	        	
+    	        }
+    	        
+    		} else if ( syncControl.equalsIgnoreCase("Upload_Files")) {
+    			
+        		List<String> filesToSend = new ArrayList<String>();
+        		
+        		syncHelper.getFilesToSend(paths[i], filesToSend);
+            	
+                publishProgress( "Sending Files To Server" );
+               	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
+    	        
     		} else {
         		HashSet<String> fileSetToRetrieve = new HashSet<String>();
         		List<String> filesToSend = new ArrayList<String>();
 
-	        	syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
+            	getFilesOnServer(paths[i], filesOnServer);
+
+            	syncHelper.getFilesToTransfer(paths[i], filesOnServer, filesToSend, fileSetToRetrieve);
 	        	List<String> filesToRetrieve = new ArrayList<String>(fileSetToRetrieve);            	
 	        	numFilesSent += sendFilesToServer( paths[i], filesToSend);
 	        	
@@ -163,7 +191,9 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 		String fileOnServer;
 		Integer filesTransferred = 0;
 		
-        publishProgress( "Receiving Files From Server" );
+		myDir.mkdirs();
+
+		publishProgress( "Receiving Files From Server" );
 
         // Transfer the specified list of files to the transfer on the opened socket
 		// connection
@@ -207,5 +237,33 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 	
 		return filesTransferred;
 	}	
+
+	private boolean sendUpdateRequestToServer( String path ) {
+		boolean error = true;
+		
+        publishProgress( "Posting Update Request To Server" );
+
+		try {
+			URL url = new URL(baseUrl + path );
+			HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+			httpCon.setDoOutput(true);
+			httpCon.setDoInput(true);
+			httpCon.setRequestMethod("POST");
+			OutputStream outstream = httpCon.getOutputStream();
+			outstream.flush();
+
+			int responseCode = httpCon.getResponseCode();
+			if (responseCode >= 200 && responseCode <= 202)
+				error = false;
+			outstream.close();
+
+		} catch(Exception e) { 
+			publishProgress( "Error Posting Update Request" );
+			error = true; 
+		}			
+
+		return error;
+	}
+	
 }
 
