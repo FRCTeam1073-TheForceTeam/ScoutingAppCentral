@@ -93,7 +93,7 @@ urls = (
     '/taskgroup_email/(.*)','TaskGroupEmail',
     '/taskgroup/(.*)',      'TaskGroup',
     '/taskgroups',          'TaskGroups',
-    '/events',              'Events',
+    '/events(.*)',              'Events',
     '/event/(.*)',          'EventData',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
@@ -133,6 +133,8 @@ urls = (
     '/api/users',                   'UsersJson',
     '/api/attrlist(.*)',            'AttributesJson',
     '/api/attrfilter/(.*)',         'AttributesFilter',
+    
+    '/images/(.*)','Images',
     
     '/testpage(.*)',        'TestPage',
         
@@ -222,7 +224,8 @@ class HomePage(object):
             if numparams > 2:
                 if len(params[2]) > 0:
                     competition = params[2]
-        return render.homePage(season,competition)
+        #return render.homePage(season,competition)
+        return render.myhome()
     
     
 class TestPage(object):
@@ -627,9 +630,26 @@ class DistrictRankingsJson(object):
         
 class Events(object):
 
-    def GET(self):
+    '''
+    def GET(self,param_str):
         user_info = WebLogin.check_access(global_config,10)
         return render.events()
+    '''
+    
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        season = global_config['this_season']
+        competition = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
+        return render.homePage(season,competition)
+
                            
 class EventsJson(object):
 
@@ -1399,6 +1419,19 @@ class Upload(object):
         else:
             return "No file uploaded"
         
+class Images(object):
+    def GET(self, image):
+        ext = image.split(".")[-1] # Gather extension
+        cType = {
+            "png":"image/png",
+            "jpg":"image/jpeg",
+            "gif":"image/gif",
+            "ico":"image/x-icon"}
+        try:
+            web.header("Content-Type", cType[ext]) # Set the Header
+            return open('images/%s'%image,"rb").read() # Notice 'rb' for reading images
+        except ValueError:
+            return image + ' does not exists!'
         
     
      
