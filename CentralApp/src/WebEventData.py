@@ -95,7 +95,8 @@ def get_events_page(global_config, year):
         
         url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
         try:
-            events = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            events = urllib2.urlopen(req).read()
             event_data_list = json.loads(events)
             
             page += '<ul>'
@@ -144,7 +145,8 @@ def get_event_standings_page(global_config, year, event_code):
             
         url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
-            event_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            event_data = urllib2.urlopen(req).read()
             event_data = json.loads(event_data)
                         
             page += '<ul>'
@@ -266,7 +268,8 @@ def get_event_results_page(global_config, year, event_code):
             
         url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
         try:
-            event_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            event_data = urllib2.urlopen(req).read()
             event_data = json.loads(event_data)
                         
             page += '<ul>'
@@ -308,7 +311,8 @@ def get_district_events_json(global_config, year, type):
         
         url_str = 'http://www.thebluealliance.com/api/v2/district/%s/%s/events?X-TBA-App-Id=frc1073:scouting-system:v02' % (type.lower(),year)
         try:
-            event_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            event_data = urllib2.urlopen(req).read()
             if type != None:
                 event_json = json.loads(event_data)
                 result = []
@@ -337,7 +341,8 @@ def get_district_rankings_json(global_config, year, type):
         result.append('{ "district" : "%s",\n' % (type.upper()))
 
         try:
-            rankings_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            rankings_data = urllib2.urlopen(req).read()
             rankings_json = json.loads(rankings_data)
        
             # rankings is now a list of lists, with the first element of the list being the list of column headings
@@ -388,7 +393,8 @@ def get_events_json(global_config, year, type=None):
         
         url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
         try:
-            event_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            event_data = urllib2.urlopen(req).read()
             if type != None:
                 event_json = json.loads(event_data)
                 result = []
@@ -419,12 +425,15 @@ def get_event_data_from_tba( query_str ):
     
     url_str = 'http://www.thebluealliance.com/api/v2/event/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (query_str)
     try:
-        event_data = urllib2.urlopen(url_str).read()
+        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+        event_data = urllib2.urlopen(req).read()
+        
         if event_data == 'null':
             event_data = ''
     except:
         event_data = ''
         pass
+    
     return event_data
 
 
@@ -547,7 +556,7 @@ def get_event_rank_list_json(global_config, year, event_code):
         result.append('  "rankings" : [\n')
         
         for line in rankings[1:]:
-            result.append('       { "rank": %d, "team_number": %d, "status": "available" }' % (line[0],line[1]))
+            result.append('       { "rank": %s, "team_number": %s, "status": "available" }' % (line[0],line[1]))
             result.append(',\n')
                 
         if len(rankings) > 1:         

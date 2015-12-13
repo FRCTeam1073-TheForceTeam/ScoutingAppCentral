@@ -814,7 +814,9 @@ def get_team_list_json_from_tba(global_config, comp):
     url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s/teams?X-TBA-App-Id=frc1073:scouting-system:v01' % (season,event_code.lower())
     event_data = ''
     try:
-        event_data = urllib2.urlopen(url_str).read()
+        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+        event_data = urllib2.urlopen(req).read()
+
     except:
         event_data = '[ ]'
         pass
@@ -934,7 +936,8 @@ def get_team_event_list_from_tba(global_config, team, season):
         
     event_data = ''
     try:
-        event_data = urllib2.urlopen(url_str).read()
+        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+        event_data = urllib2.urlopen(req).read()
         event_json = json.loads(event_data)
         
         for event in event_json:
@@ -949,7 +952,8 @@ def get_team_data_from_tba(team_str, query_str):
     
     url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (team_str,query_str)
     try:
-        event_data = urllib2.urlopen(url_str).read()
+        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+        event_data = urllib2.urlopen(req).read()
     except:
         event_data = ''
         pass
