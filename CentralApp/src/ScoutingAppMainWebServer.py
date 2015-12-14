@@ -93,7 +93,8 @@ urls = (
     '/taskgroup_email/(.*)','TaskGroupEmail',
     '/taskgroup/(.*)',      'TaskGroup',
     '/taskgroups',          'TaskGroups',
-    '/events(.*)',              'Events',
+    '/events(.*)',          'Events',
+    '/teams(.*)',           'Teams',
     '/event/(.*)',          'EventData',
     '/eventstandings/(.*)', 'EventStandings',
     '/eventresults/(.*)',   'EventResults',
@@ -224,8 +225,7 @@ class HomePage(object):
             if numparams > 2:
                 if len(params[2]) > 0:
                     competition = params[2]
-        #return render.homePage(season,competition)
-        return render.myhome()
+        return render.homePage()
     
     
 class TestPage(object):
@@ -630,12 +630,6 @@ class DistrictRankingsJson(object):
         
 class Events(object):
 
-    '''
-    def GET(self,param_str):
-        user_info = WebLogin.check_access(global_config,10)
-        return render.events()
-    '''
-    
     def GET(self, param_str):
         username, access_level = WebLogin.check_access(global_config,10)
         season = global_config['this_season']
@@ -648,7 +642,23 @@ class Events(object):
             if numparams > 2:
                 if len(params[2]) > 0:
                     competition = params[2]
-        return render.homePage(season,competition)
+        return render.eventsPage(season,competition)
+
+class Teams(object):
+
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        season = global_config['this_season']
+        competition = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
+        return render.teamsPage(season,competition)
 
                            
 class EventsJson(object):

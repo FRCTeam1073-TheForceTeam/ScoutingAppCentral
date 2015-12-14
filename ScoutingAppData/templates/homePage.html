@@ -1,363 +1,111 @@
-$def with (season, short_comp)
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<style>
+			#wrapper {
+				background: #fff;
+				margin: 0 auto;
+				padding: 0;
+				box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.2);
+				}
+			.carousel-caption h2{
+				background-color: #4c4c4c;
+				background: rgba(0, 0, 0, 0.40);
+				font-weight: 600;
+				border-radius: 2px;
+				box-shadow: inset 0px -1px 0px 0px rgba(0,0,0, 0.1);
+				color: #fff;
+				top: 200px;
+				left: 40px;
+				width: auto;
+				height: auto;
+				font-size: 14px;
+				padding: 18px 22px;
+				border-width: 0px;
+				opacity: 1;
+			}
+			.slide-text{
+				position: absolute;
+				z-index: auto;
+				padding-top: 20px;
+				padding-bottom: 20px;
+				color: #fff;
+				text-align: left;
+				text-shadow: 0 1px 2px rgba(0,0,0,.6);
+			}
+			.slide-text h1{
+				font-size: 20px;
+				line-height: 30px;
+				font-weight: 200;
+				font-family: "open sans",arial,sans-serif;
+				text-align: left;
+			}
+			
+			.slide-text button{
+				min-width:15%;
+			}
+			
+			.item img{
+				width:100%;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div class='container' id="wrapper">
+			<div id="picSlides" class="carousel slide  col-lg-offset-1 col-lg-10" style="padding:0" data-ride="carousel">
+				<ol class="carousel-indicators">
+					<li data-target="#picSlides" data-slide-to="0" class="active"></li>
+					<li data-target="#picSlides" data-slide-to="1"></li>
+					<li data-target="#picSlides" data-slide-to="2"></li>
+					<li data-target="#picSlides" data-slide-to="3"></li>
+					<li data-target="#picSlides" data-slide-to="4"></li>
+					<li data-target="#picSlides" data-slide-to="5"></li>
+				</ol>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+				<div class="carousel-inner">
+					<div class="item active">
+						<div class="slide-text" style="max-width:20%;top:40%;left:64%;color:#000;">
+							<h1>View scouting and event information for all FIRST FRC events</h1>
+							<button class="btn btn-primary" onclick="location.href = '/events';">View Events</button>
+						</div>
+						<img src="/images/slides/events.png">
+					</div>
+				
+					<div class="item">
+						<div class="slide-text" style="max-width:20%;top:15%;left:64%;color:#000;">
+							<h1>Use collected scouting data to make alliance selections.</h1>
+							<button class="btn btn-primary" onclick="location.href = '/allianceselect';">Select Alliance</button>
+						</div>
+						<img src="/images/slides/AllianceSelection.png">
+					</div>
+					
+					<div class="item">
+						<div class="slide-text" style="max-width:20%;top:40%;left:64%;color:#000;">
+							<h1>Use the data-driven reports to analyze team performance.</h1>
+							<button class="btn btn-primary" onclick="location.href = '/attrrank';">Analyze Data</button>
+						</div>
+						<img src="/images/slides/scouting.png">
+					</div>
+					
+					<div class="item">
+						<div class="slide-text" style="max-width:25%;top:10%;left:64%;color:#000;">
+							<h1 style="font-size:16px">View all collected scouting data for each team at an event.</h1>
+							<button class="btn btn-primary" onclick="location.href = '/teams';">View Teams</button>
+						</div>
+						<img src="/images/slides/teams.png">
+					</div>
+					
+					
+				</div><!--End of slides inner content-->
 
-$var title: Competition Central Home Page
-
-$code:
-    district = utils.get_district_string()
-    comp = short_comp + season
-    comp_list = utils.get_short_comp_list(season)
-    event_code = utils.map_comp_to_event_code(comp).lower() 
-    myteam = utils.get_myteam()
-
-<style type="text/css">
-    #placeholder_scouting_rank
-    { 
-        width: 100%; 
-        height: 800px;
-        margin: auto auto auto auto;
-    }
-
-    .legend table, .legend > div { 
-            height: 100px !important; 
-            opacity: 1 !important; 
-            left: 740px; 
-            top: 10px; 
-            width: 116px !important; }
-    .legend table { border: 1px solid #555; padding: 5px; }
-
-    #flotTip
-    {
-            padding: 3px 5px;
-            background-color: #000;
-            z-index: 100;
-            color: #fff;
-            box-shadow: 0 0 10px #555;
-            opacity: .7;
-            filter: alpha(opacity=70);
-            border: 2px solid #fff;
-            -webkit-border-radius: 4px;
-            -moz-border-radius: 4px;
-            border-radius: 4px;
-    }
-</style>
-
-<!--[if lte IE 8]><script type="text/javascript" language="javascript" src="/static/media/js/excanvas.min.js"></script><![endif]-->
-<script type="text/javascript" language="javascript" src="/static/media/js/jquery.flot.pie.min.js"></script>
-<script src="/static/media/js/jquery.flot.tooltip.js"></script>
-
-<script type="text/javascript">
-
-$$(document).ready(function () {
-
-    var display = "horizontal";
-    var data = [];
-    var teams = [];
-
-    var jqxhr = $$.getJSON( "/rankings/$comp", function(json_data) {
-        console.log( "success" );
-        var numTeams = json_data.rankings.length;
-        for (var i=0;i<numTeams;i++)
-        {
-            data[i] = [];
-            if ( display=='horizontal' ) {
-                data[i][0] = json_data.rankings[i].score;
-                data[i][1] = i;
-            } else {
-                data[i][0] = i;
-                data[i][1] = json_data.rankings[i].score;
-            }
-            teams[i] = json_data.rankings[i].team.toString();
-        }
-
-        $$("#placeholder_scouting_rank").bind("plotclick", function( event, pos, item ) {
-            if (item) {
-                window.location.assign( "/teamdata/$comp/" + teams[item.datapoint[1]] );
-            }
-        });
-
-        function generatePlot(data) {
-            $$.plot($$("#placeholder_scouting_rank"), [ data ], {
-	            series: {
-                    bars: { 
-                        show: true, 
-		                barWidth: 0.6,
-		                align: "center",
-		                horizontal: true
-                    }
-                },
-                yaxis: {
-                    tickFormatter: function(v,axis) {
-		                if ( (v >= 0) && (v < teams.length) ) {
-		                    return teams[v];
-		                } else {
-		                    return '';
-		                }
-                    },
-                    tickSize: 1,
-                    tickLength: 0,
-		            axisLabel: 'Team',
-                    axisLabelUseCanvas: true,
-                    axisLabelFontSizePixels: 10,
-                    axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
-                    axisLabelPadding: 5
-                },
-                xaxis: {
-                    axisLabel: 'Score',
-                },
-                grid: {
-                    hoverable: true,
-                    clickable: true
-                },
-	            tooltip: true,
-	            tooltipOpts: {
-	                content: function(label, xval, yval, flotItem) {
-		                var tipString;
-		                if ( display == 'horizontal' ) {
-		                    tipString = "Team: " + json_data.rankings[yval].team.toString() + 
-		                        ", Score: " + xval.toString();
-		                } else {
-		                    tipString = "Team: " + json_data.rankings[xval].team.toString() + 
-		                        ", Score: " + yval.toString();
-                        }
-		                console.log( tipString );
-		                return( tipString );
-	                },
-		            shifts: {
-		                x:20,
-		                y:0
-		            },
-                    defaultTheme: false
-	            },
-                legend: {
-                    labelBoxBorderColor: "none"
-                }
-            });
-        }
-
-        generatePlot(data);
-
-        window.onresize = function(event) {
-            console.log("resizing");
-            generatePlot(data);
-        }
-    })
-
-      var jqxhr_events = $$.getJSON( "/api/teams/$comp", function(json_data) {
-          console.log( "success" );
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-            $$('#event_teams').dataTable( {
-                "bAutoWidth": true, // Disable the auto width calculation
-                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                "iDisplayLength": 100,
-                "aaData": json_data.teams,
-                "aoColumns": [
-                    { "mData": "name", "mRender": function(data,type,row) { return '<a href="/teamdata/$comp/'+row.team_number+'">'+row.team_number+'</a>'; } },
-                    { "mData": "name", "mRender": function(data,type,row) { return '<a href="/teamdata/$comp/'+row.team_number+'">'+row.nickname+'</a>'; } }
-                ]
-            } );
-          }
-
-          drawTable( json_data );
-
-      } );   
-
-      var jqxhr_district_events = $$.getJSON( "/api/events?Year=$season;Type=$district", function(json_data) {
-          console.log( "success" );
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-              $$('#district_events').dataTable( {
-                  "aaData": json_data,
-                  "bAutoWidth": true, // Disable the auto width calculation 
-                  "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                  "iDisplayLength": 20,
-                  "aoColumns": [
-                      { "mData": "key", "mRender": function(key) { 
-                            short_key = key.substring(4).toUpperCase();
-                            return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
-                      { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
-                      { "mData": "start_date" },
-                      { "mData": "end_date" },
-                      { "mData": "official" }
-                  ],
-                  "order": [[ 3, "asc" ]]
-              } );   
-          }
-
-          drawTable( json_data );
-
-      } );   
-
-      var jqxhr_district_rankings = $$.getJSON( "/api/district/rankings?Year=$season;Type=$district", function(json_data) {
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-            $$('#district_rankings').dataTable( {
-                "bAutoWidth": false,
-                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                "iDisplayLength": 100,
-                "aaData": json_data.rankings,
-                "aoColumns": json_data.columns,
-                "order": [[ 0, "asc" ]]
-            } );
-          }
-
-          drawTable( json_data );
-
-      } );   
-
-      var jqxhr_events = $$.getJSON( "/api/events", function(json_data) {
-          console.log( "success" );
-
-          console.log( json_data );
-
-          function drawTable( json_data ) {
-              $$('#events').dataTable( {
-                  "aaData": json_data,
-                  "bAutoWidth": true, // Disable the auto width calculation 
-                  "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
-                  "iDisplayLength": 20,
-                  "aoColumns": [
-                      { "mData": "key", "mRender": function(key) { 
-                            short_key = key.substring(4).toUpperCase();
-                            return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
-                      { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
-                      { "mData": "start_date" },
-                      { "mData": "end_date" },
-                      { "mData": "official" }
-                  ],
-                  "order": [[ 3, "asc" ]]
-              } );   
-          }
-
-          drawTable( json_data );
-
-      } );   
-
-
-});
-</script>
- 
-
-  <div class="article">
-  
-    <div id="title">
-        <h1>Team $myteam Competition Central</h1>
-    </div>
-
-    <!-- provide a dropdown to select the season to display on the home page -->
-    <div class="btn-group">
-        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
-            $season
-          <span class="caret"></span>
-        </a>
-        <ul class="dropdown-menu tba-dropdown-menu-limited">
-            <li><a href="/home/2015">2015</a></li>
-            <!--<li><a href="/home/2014">2014</a></li> -->
-        </ul>
-    </div>
-
-    <!-- provide a dropdown to select the competition to display on the home page -->
-    <div class="btn-group">
-        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
-            $short_comp
-          <span class="caret"></span>
-        </a>
-        <ul class="dropdown-menu tba-dropdown-menu-limited">
-          $for comp_entry in comp_list:
-            <li><a href="/home/$season/$comp_entry">$comp_entry</a></li>
-        </ul>
-    </div>
-
-    <div class="container-fluid">
-
-    <div class="tabbable">
-      <ul class="nav nav-tabs">
-          <li class="active"><a href="#pane_scouting_rank" data-toggle="tab">$short_comp Rank Summary</a></li>
-          <li><a href="#pane_teams"    data-toggle="tab">$short_comp Teams</a></li>
-          <li><a href="/event/$season$event_code">$short_comp Event Page</a></li>
-          <li><a href="#pane_district_rankings"    data-toggle="tab">$district Rankings</a></li>
-          <li><a href="#pane_district_events"    data-toggle="tab">$district Events</a></li>
-          <li><a href="#pane_events"    data-toggle="tab">FIRST Events</a></li>
-      </ul>
- 
-      <div class="tab-content">
-          <div id="pane_scouting_rank" class="tab-pane active">
-          <br>
-          <ul>
-            <div id="placeholder_scouting_rank"></div>
-          </ul>
-          </div>
-
-          <div id="pane_teams" class="tab-pane">
-          <ul>
-          <table id="event_teams" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-                <tr role="row">
-			        <th>Team</th>
-			        <th>Team Name</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-          <div id="pane_district_rankings" class="tab-pane">
-          <ul>
-          <table id="district_rankings" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info">
-              <thead> </thead>
-              <tbody> </tbody>
-          </table>
-          </ul>
-          </div>
-
-          <div id="pane_district_events" class="tab-pane">
-          <ul>
-          <table id="district_events" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-                  <tr role="row">
-			          <th>Event Code</th>
-			          <th>Event Name</th>
-			          <th>Start Date</th>
-			          <th>End Date</th>
-			          <th>Official Event</th>
-                  </tr>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-          <div id="pane_events" class="tab-pane">
-          <ul>
-          <table id="events" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
-              <thead>
-                  <tr role="row">
-			          <th>Event Code</th>
-			          <th>Event Name</th>
-			          <th>Start Date</th>
-			          <th>End Date</th>
-			          <th>Official Event</th>
-                  </tr>
-              </thead>
-              <tbody>
-              </tbody>
-	      </table>
-          </ul>
-          </div>
-
-      </div>
-    </div>
-    </div>
-  </div>  
-
+				<a class="left carousel-control" href="#picSlides" role="button" data-slide="prev">
+					<span class="glyphicon glyphicon-chevron-left"></span>
+				</a>
+				<a class="right carousel-control" href="#picSlides" role="button" data-slide="next">
+					<span class="glyphicon glyphicon-chevron-right"></span>
+				</a>
+			</div> <!--end of slides -->
+		</div> <!--end of container -->
+	</body>
+</html>

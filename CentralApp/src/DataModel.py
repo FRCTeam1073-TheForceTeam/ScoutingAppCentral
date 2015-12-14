@@ -597,7 +597,8 @@ def getTeamInfo(session, team):
     if not team_info:
         url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s?X-TBA-App-Id=frc1073:scouting-system:v02' % team
         try:
-            team_data = urllib2.urlopen(url_str).read()
+            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
+            team_data = urllib2.urlopen(req).read()
             team_data = json.loads(team_data)
     
             if team_data.has_key('nickname'):
