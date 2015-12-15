@@ -69,6 +69,24 @@ def get_short_comp_list(season=None):
 
     return complist
 
+def get_season_list():
+    
+    my_config = ScoutingAppMainWebServer.global_config
+    this_season = my_config['this_season']
+    
+    season_list = list()
+    season_list.append( this_season )
+       
+    try:
+        past_seasons = my_config['past_seasons'].split(',')
+    except:
+        past_seasons = list()
+
+    for season in past_seasons:
+        season_list.append(season.lstrip())
+    
+    return season_list
+
 def get_comp_and_eventcode_list(season=None):
     
     my_config = ScoutingAppMainWebServer.global_config

@@ -247,14 +247,17 @@ class AttrRankPage(object):
         username, access_level = WebLogin.check_access(global_config,10)
         params = param_str.split('/')
         numparams = len(params)
-        comp = global_config['this_competition'] + global_config['this_season']
-        attr = ''
-        if numparams == 2:
-            comp = params[1]
-        elif numparams == 3:
-            comp = params[1]
-            attr = params[2]
-        return render.attrRank(comp)
+        competition = global_config['this_competition']
+        season = global_config['this_season']
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
+        return render.attrRank(season,competition)
+
     
 class AllianceSelectionPage(object):
 
@@ -262,10 +265,16 @@ class AllianceSelectionPage(object):
         username, access_level = WebLogin.check_access(global_config,10)
         params = param_str.split('/')
         numparams = len(params)
-        comp = global_config['this_competition'] + global_config['this_season']
-        if numparams >= 2:
-            comp = params[1]
-        return render.allianceSelection(comp)
+        competition = global_config['this_competition']
+        season = global_config['this_season']
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
+        return render.allianceSelection(season,competition)
     
 class AdminPage(object):
 

@@ -2,11 +2,12 @@ $def with (season, short_comp)
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
 
-$var title: Competition Central Home Page
+$var title: FRC Events Page
 
 $code:
     district = utils.get_district_string()
     comp = short_comp + season
+    season_list = utils.get_season_list()
     comp_list = utils.get_short_comp_list(season)
     event_code = utils.map_comp_to_event_code(comp).lower() 
     myteam = utils.get_myteam()
@@ -248,8 +249,8 @@ $$(document).ready(function () {
 
   <div class="article">
   
-    <div id="title">
-        <h1>Team $myteam Competition Central</h1>
+    <div id="title" align="center">
+        <h1>FRC Events Summary</h1>
     </div>
 
     <!-- provide a dropdown to select the season to display on the events page -->
@@ -259,8 +260,8 @@ $$(document).ready(function () {
           <span class="caret"></span>
         </a>
         <ul class="dropdown-menu tba-dropdown-menu-limited">
-            <li><a href="/events/2015">2015</a></li>
-            <!--<li><a href="/events/2014">2014</a></li> -->
+          $for season_entry in season_list:
+            <li><a href="/events/$season_entry">$season_entry</a></li>
         </ul>
     </div>
 

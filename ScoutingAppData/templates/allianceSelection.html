@@ -1,12 +1,12 @@
-$def with (comp)
+$def with (season,short_comp)
 
 $# This snippet of python code will retrieve the list of attribute types
 $# This list will then be used to dynamically create the select dropdown for
 $# attribute rank display
 $code:
+    comp = short_comp + season
     event_code = utils.map_comp_to_event_code(comp)
-    short_comp = utils.split_comp_str(comp)[0]
-    season = utils.map_event_code_to_season(event_code)
+    season_list = utils.get_season_list()
     comp_list = utils.get_comp_and_eventcode_list(season)
     event_info = utils.get_event_info_str(event_code)
     myteam = utils.get_myteam()
@@ -437,7 +437,7 @@ function deleteFilter() {
   
     <div id="title">
 		<div class="col-sm-11" align="center">							
-            <h1>Alliance Selection Page</h1>
+            <h1>Alliance Selection</h1>
             <br>
         </div>
     </div>
@@ -452,7 +452,8 @@ function deleteFilter() {
           <span class="caret"></span>
         </a>
         <ul class="dropdown-menu tba-dropdown-menu-limited">
-            <li><a href="#">$season</a></li>
+          $for season_entry in season_list:
+            <li><a href="/allianceselect/$season_entry">$season_entry</a></li>
         </ul>
     </div>
 
@@ -464,7 +465,7 @@ function deleteFilter() {
         </a>
         <ul class="dropdown-menu tba-dropdown-menu-limited">
           $for comp_entry in comp_list:
-            <li><a href="/allianceselect/$comp_entry[0]$season">$comp_entry[0]</a></li>
+            <li><a href="/allianceselect/$season/$comp_entry[0]">$comp_entry[0]</a></li>
         </ul>
     </div>
 
