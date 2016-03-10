@@ -640,7 +640,7 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
                 
                 # Match number
                 #result.append( '"%s", ' % str(match['match_number']) )
-                result.append( '"%s", ' % get_match_hyperlink(global_config, match) )
+                result.append( '"%s", ' % get_match_hyperlink(competition, match) )
 
                 # Match start time
                 match_epoch_time = int(match['time'])
