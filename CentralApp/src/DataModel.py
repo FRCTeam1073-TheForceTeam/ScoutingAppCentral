@@ -96,7 +96,7 @@ class TeamAttribute(Base):
     num_occurs       = Column(Integer)
     cumulative_value = Column(Float)
     avg_value        = Column(Float)
-    all_values       = Column(String(512))
+    all_values       = Column(String(8192))
     
 class TeamInfo(Base):
     __tablename__ = 'info'
@@ -183,6 +183,14 @@ def getTeamNotes(session, teamId, comp):
     notes = session.query(NotesEntry).filter(NotesEntry.team==teamId).\
                                       filter(func.lower(NotesEntry.competition)==func.lower(comp)).all()
     return notes
+        
+def getTeamNotesAsString(session, teamId, comp):
+    note_string = ''
+    notes = getTeamNotes(session, teamId, comp)
+    for note in notes:
+        note_string += note.data.replace(',', ' ').replace('  ',' ') + '\r'
+    note_string = note_string.rstrip()
+    return str(note_string)
         
 def getTeamAttributes(session, teamId, comp):
     attrList = session.query(TeamAttribute).filter(TeamAttribute.team==teamId).\
@@ -313,8 +321,11 @@ def mapValueFromString(string_value, map_values):
         tokens = map_values.split(':')
         for token in tokens:
             name, token_val = token.split('=')
-            if name == value:
-                mapped_value = token_val
+            if name.lower() == value.lower():
+                if mapped_value is None:
+                    mapped_value = int(token_val)
+                else:
+                    mapped_value += int(token_val)
                 break
     if mapped_value == None:
         raise Exception('ERROR: No Mapping For Value: %s' % value)
@@ -349,9 +360,30 @@ def mapAllValuesToShortenedString( attr_def, all_values, need_quote=False, delim
     else:
         return all_values
             
+
+def mapAllValuesToDict( attr_def, all_values, delim_str=':' ):
+    value_dict = {}
+    if attr_def['Type'] == 'Map_Integer':
+        value_list = all_values.split(':')
+        unique_values = dict()
+        for item in value_list:
+            single_value_list = item.split(',')
+            for single_item in single_value_list:
+                try:
+                    unique_values[single_item] += 1
+                except KeyError:
+                    unique_values[single_item] = 1
+        
+        for value in sorted(unique_values):
+            value_dict[value] = unique_values[value]
+
+    return value_dict
+
     
 def mapValueToString(value, all_values, attr_def, need_quote=False, delim_str='-'):
-    if attr_def['Type'] == 'Map_Integer':
+    if attr_def.has_key('Display_Numeric') and attr_def['Display_Numeric'] == 'Yes':
+        return str(value)
+    elif attr_def['Type'] == 'Map_Integer':
         value_list = all_values.split(':')
         unique_values = dict()
         for item in value_list:
@@ -372,35 +404,7 @@ def mapValueToString(value, all_values, attr_def, need_quote=False, delim_str='-
                 value_string += delim_str
             value_string += '%s(%d)' % (value,unique_values[value])
             index += 1
-            
-        '''
-        # TODO: commented out original implementation to save it in case the other 
-        # method doesn't work out
-        value_list = all_values.split(':')
-        unique_values = []
-        for item in value_list:
-            single_value_list = item.split(',')
-            for single_item in single_value_list:
-                if len(unique_values) == 0:
-                    unique_values.append( single_item )
-                else:
-                    found_match = False
-                    for value in unique_values:
-                        if ( value == single_item ):
-                            found_match = True
-                    if found_match == False:
-                        unique_values.append( single_item )
-        value_string = ''
-        if ( need_quote == True ):
-            value_string = "'"
-        for index in range(len(unique_values)):
-            if index == 0:
-                value_string += unique_values[index]
-            else:
-                value_string += '-' + unique_values[index]
-                
-        '''
-                
+                            
         if ( need_quote == True ):
             value_string += "'"
         return value_string
@@ -720,6 +724,15 @@ def recalculate_scoring(global_config, competition=None, attr_definitions=None):
     dump_database_as_csv_file(session, global_config, attr_definitions, competition)
     session.close()
 
+def format_string_attr_for_csv(attr):
+    attr_string = ''
+    attr_elems = attr.all_values.split(':')
+    for elem in attr_elems:
+        attr_string += elem.replace(',', ' ').replace('  ',' ') + '\r'
+    attr_string = attr_string.rstrip()
+    return attr_string
+
+    
 def dump_database_as_csv_file(session, global_config, attr_definitions, competition=None):
     
     if competition == None:
@@ -748,8 +761,17 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
     mystring = 'Team,Score'
     try:
         for attr_def in attr_order:
-            if attr_def['Database_Store'] == 'Yes':
+            if (attr_def.has_key('Include_In_Report') is False) or (attr_def['Include_In_Report'] != 'No'):
                 mystring += ',' + attr_def['Name']
+
+                # for the checkbox control type, write out each checkbox item as a separate column
+                if attr_def['Control'] == 'Checkbox':
+                    attr_def['Columns'] = []
+                    map_values = attr_def['Map_Values'].split(':')
+                    for map_value in map_values:
+                        item_name = map_value.split('=')[0]
+                        attr_def['Columns'].append(item_name)
+                        mystring += ',%s_%s' % (attr_def['Name'],item_name)
     except Exception, e:
         print 'Exception: %s' % str(e)
 
@@ -765,18 +787,46 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
         # retrieve each attribute from the database in the proper order
         for attr_def in attr_order:
             try:
-                if attr_def['Database_Store'] == 'Yes':
+                if (attr_def.has_key('Include_In_Report') is False) or (attr_def['Include_In_Report'] != 'No'):
                     attribute = getTeamAttribute(session, team_entry.team, competition, attr_def['Name'])
-                    # if the attribute doesn't exist, just put in an empty field so that the columns
-                    # stay aligned
-                    if attribute == None:
-                        mystring += ','
-                    elif ( attr_def['Statistic_Type'] == 'Total'):
-                        mystring += ',' + mapValueToString(int(attribute.cumulative_value), attribute.all_values, attr_def)
-                    elif ( attr_def['Statistic_Type'] == 'Average'):
-                        mystring += ',' + mapValueToString(int(attribute.avg_value), attribute.all_values, attr_def)
+                    if attr_def['Name'] == 'Notes':
+                        # We'll treat the notes separately, formatting the collected notes as a string with 
+                        # embedded newlines between each note entry
+                        mystring += ',"%s"' % getTeamNotesAsString(session, team_entry.team, competition)
                     else:
-                        mystring += ',' + mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
+                        attribute = getTeamAttribute(session, team_entry.team, competition, attr_def['Name'])
+                        if attribute == None:
+                            # if the attribute doesn't exist, just put in an empty field so that the columns
+                            # stay aligned
+                            mystring += ','
+                            # also, if the control type is checkbox, then also write empty columns for each checkbox item
+                            if attr_def['Control'] == 'Checkbox':
+                                columns = attr_def['Columns']
+                                for column in columns:
+                                    mystring +=','
+                        elif attr_def['Type'] == 'String':
+                            mystring += ',"%s"' % format_string_attr_for_csv(attribute)
+                        else:
+                            if ( attr_def['Statistic_Type'] == 'Total'):
+                                mystring += ',' + mapValueToString(int(attribute.cumulative_value), attribute.all_values, attr_def)
+                            elif ( attr_def['Statistic_Type'] == 'Average'):
+                                mystring += ',' + mapValueToString(int(attribute.avg_value), attribute.all_values, attr_def)
+                            else:
+                                mystring += ',' + mapValueToString(attribute.attr_value, attribute.all_values, attr_def)
+                                
+                            # if the control type is checkbox, then also write out each checkbox item as a separate column
+                            if attr_def['Control'] == 'Checkbox':
+                                value_dict = {}
+                                if attribute is not None:
+                                    value_dict = mapAllValuesToDict(attr_def, attribute.all_values)
+                                columns = attr_def['Columns']
+                                for column in columns:
+                                    try:
+                                        value = str(value_dict[column])
+                                    except:
+                                        value = ' '
+                                        
+                                    mystring += ',' + value                       
             except KeyError:
                 if error_logged is False:
                     print( 'Unexpected row - check for gaps in the Column_Order within the spreadsheet')

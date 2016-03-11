@@ -5,7 +5,17 @@ Created on Feb 5, 2014
 '''
 
 from threading import Thread
-from bluetooth import *
+
+'''
+    Attempt to import the bluetooth drivers, allow the import
+    to be unsuccessful
+'''
+try:
+    from bluetooth import *
+except:
+    print "Bluetooth drivers NOT installed"
+    pass
+
 import FileSync
 import WebCommonUtils
 import WebEventData

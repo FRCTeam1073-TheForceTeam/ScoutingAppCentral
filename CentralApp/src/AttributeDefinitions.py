@@ -15,6 +15,7 @@ class AttrDefinitions:
     
     def __init__(self):
         self._attrdefinitions = {}
+        self._attr_names = {}
         
     def get_definition(self, attr_name):
         if self._attrdefinitions.has_key(attr_name):
@@ -39,6 +40,7 @@ class AttrDefinitions:
             filename = self.xls_to_csv(filename)
             
         self._csv_reader = csv.reader(open(filename, 'r'))
+        row_number = 0
         for row in self._csv_reader:
             if first_row == True:
                 first_row = False
@@ -52,15 +54,40 @@ class AttrDefinitions:
                 for index, item in enumerate(row):
                     #print 'attr: ', header_row[index], ' value: ', item
                     definition[header_row[index]] = item.title()
-                        
+                
+                # set the Column_Order attribute to the row number, doing away with the troublesome
+                # column that has proven to be error prone. With this change, the column display
+                # order will be the same as the order of the rows of the spreadsheet        
+                definition['Column_Order'] = row_number
+
+                # also set the Uigen_Order attribute to the row number, automatically setting the
+                # order in which the attribute controls are generated for the UI based on the row
+                # within the spreadsheet
+                # TODO: See if we can do away with the Column_Order and Order attributes, seeing that
+                #       we are setting them to the same thing. The thing to check is how the 'extra'
+                #       attributes that we generate for the scoring matrix control are handled by the
+                #       UI generator code
+                #definition['Order'] = row_number
+                
                 #print 'attribute definition: ', definition
                 sheet_qualifier = definition['Sheet']
+                
+                # the following code will detect duplicate rows in the attribute definitions file. We
+                # continue to see issues where the file has rows with the same attribute name and this
+                # code will raise an exception during the parsing of the attribute definitions file
+                if self._attr_names.has_key(definition['Name']):
+                    raise Exception('ERROR: Duplicate Name In Attribute Definitions, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
+                else:
+                    self._attr_names[definition['Name']] = definition['Name']
+                    
                 if sheet_type == None or sheet_qualifier.lower() == 'all' or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
                     self._attrdefinitions[definition['Name']] = definition
                     
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
                     if definition['Control'] == 'Scoring_Matrix':
+                        definition['Type'] = 'Integer'
+
                         disp_type = None
                         options_str = definition['Options']    
                         if options_str != '':
@@ -88,10 +115,21 @@ class AttrDefinitions:
                             new_definition['Weight'] = '0.0'
                             new_definition['Map_Values'] = ''
                             new_definition['Type'] = 'Integer'
+                            new_definition['Include_In_Report'] = 'No'
                             new_definition['Column_Order'] = str(extra_column_order)
                             extra_column_order += 1
 
                             extra_attrdefinitions[attr_name] = new_definition
+                    elif definition['Control'] == 'Checkbox':
+                        definition['Type'] = 'Map_Integer'
+                        # set the control to use numeric values in the generated CSV file
+                        definition['Display_Numeric'] = 'Yes'
+                    elif definition['Control'] == 'Radio':
+                        definition['Type'] = 'Map_Integer'
+                        # set the control to use numeric values in the generated CSV file
+                        definition['Display_Numeric'] = 'Yes'
+                        
+            row_number += 1
         
         extra_column_order = float(len(self._attrdefinitions) + 1)            
         for key, extra_attr in extra_attrdefinitions.iteritems():

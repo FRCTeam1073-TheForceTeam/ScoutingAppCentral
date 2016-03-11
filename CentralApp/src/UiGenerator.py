@@ -12,6 +12,7 @@ from UiGeneratorTextfield import TextFieldUiGenControl
 from UiGeneratorScoringMatrix import ScoringMatrixUiGenControl 
 from UiGeneratorSeparator import LineSeparatorUiGenControl 
 from UiGeneratorButton import ButtonUiGenControl 
+from UiGeneratorHeading import HeadingFieldUiGenControl
 
 def gen_java_reload_handlers_termstr():
     java_str = "                }\n"
@@ -74,6 +75,8 @@ def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
                     ctrl_gen = ScoringMatrixUiGenControl(item)
                 elif item['Control'] == 'Line_Separator':
                     ctrl_gen = LineSeparatorUiGenControl(item)
+                elif item['Control'] == 'Heading':
+                    ctrl_gen = HeadingFieldUiGenControl(item)
                 elif item['Control'] == 'Button':
                     ctrl_gen = ButtonUiGenControl(item)
     

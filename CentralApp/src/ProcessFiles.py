@@ -88,6 +88,10 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
  
     some_files_processed = False
     
+    # read the ignore file list config each time through the loop. Any files
+    # in the ignore list will be skipped
+    ignore_filelist = read_ignore_filelist_cfg(input_dir + 'IgnoreFiles.txt')
+
     # The following regular expression will select all files that conform to 
     # the file naming format Team*.txt. Build a list of all datafiles that match
     # the naming format within the directory passed in via command line 
@@ -99,6 +103,9 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
 
     # Process data files
     for data_filename in files:
+        if data_filename.split('/')[-1] in ignore_filelist:
+            continue
+        
         try:
             process_file( global_config, session, attr_definitions, data_filename)
         except Exception, e:
@@ -487,6 +494,22 @@ def process_debrief_files(global_config, input_dir, recursive=True):
     debrief_session.close()
     issues_session.close()
 
+def read_ignore_filelist_cfg(ignore_filename):
+    ignore_filelist = []
+    if os.path.exists(ignore_filename):
+        try:
+            cfg_file = open(ignore_filename, 'r')
+            for cfg_line in cfg_file:
+                if cfg_line.startswith('#'):
+                    continue
+                cfg_items = cfg_line.split(',')
+                for cfg_item in cfg_items:
+                    ignore_filelist.append(cfg_item.rstrip())
+            cfg_file.close()
+        except:
+            print 'Error reading ignore file configuration'
+            
+    return ignore_filelist
 
 if __name__ == "__main__":
 
@@ -519,7 +542,8 @@ if __name__ == "__main__":
             start_time = datetime.datetime.now()
             
             competition = global_config['this_competition'] + global_config['this_season']
-            input_dir = './static/data/' + competition + '/ScoutingData/'
+            competition_dir = './static/data/' + competition
+            input_dir = competition_dir + '/ScoutingData/'
     
             if global_config['attr_definitions'] == None:
                 global_config['logger'].debug( 'No Attribute Definitions, Skipping Process Files' )

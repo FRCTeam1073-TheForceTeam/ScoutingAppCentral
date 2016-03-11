@@ -18,7 +18,7 @@ def open_db_session( db_name, db_model=None ):
     session = Session()
 
     # Create the database if it doesn't already exist and the model is provided
-    if not os.path.exists('./' + db_name):    
+    if not os.path.exists('./' + db_name) and db_model is not None:    
         db_model.create_db_tables(my_db)
 
     return session

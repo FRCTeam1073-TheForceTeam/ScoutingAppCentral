@@ -55,7 +55,7 @@ startActivity(emailIntent);
 public class ScoutingAppActivity extends Activity {
 	private String device_name="unknown";
 	private String device_id="un";
-	private String competition_directory="Test2014";
+	private String competition_directory="Test2016";
 	private String host_addr = "";
 	private String sync_method = "Bluetooth";
 	private String sync_control = "Upload_Only";

@@ -11,6 +11,14 @@ class TextFieldUiGenControl( UiGenControl ):
 
     def __init__(self, attr_def):
         self.attr_def = attr_def
+        self.config = { 'Lines':'1', 'Width':'Normal' }
+        option_str = attr_def['Options']
+        if option_str != '':
+            options = option_str.split(':')
+            for option in options:
+                if option.find('=') != -1:
+                    option_name, option_value = option.split('=')
+                    self.config[option_name] = option_value
 
     def gen_xml_string(self, above_name):
         xml_str =  "    <!-- Begin NAME field text label and entry field -->\n"
@@ -29,21 +37,16 @@ class TextFieldUiGenControl( UiGenControl ):
         xml_str += "    <EditText\n"
         xml_str += "        android:id=\"@+id/NAMEEntry\"\n"
 
-        if self.attr_def['Options'].find('Narrow') != -1:
+        if self.config['Width'] == 'Narrow':
             xml_str += "        android:layout_width=\"80dp\"\n"
-        elif self.attr_def['Options'].find('Wide') != -1:
+        elif self.config['Width'] == 'Wide':
             xml_str += "        android:layout_width=\"480dp\"\n"
         else:
             xml_str += "        android:layout_width=\"200dp\"\n"
-            
-        if self.attr_def['Options'].find('5_Lines') != -1:
-            xml_str += "        android:layout_height=\"200dp\"\n"
-        elif self.attr_def['Options'].find('3_Lines') != -1:
-            xml_str += "        android:layout_height=\"120dp\"\n"
-        elif self.attr_def['Options'].find('2_Lines') != -1:
-            xml_str += "        android:layout_height=\"80dp\"\n"
-        else:
-            xml_str += "        android:layout_height=\"40dp\"\n"
+        
+        lines = int(self.config['Lines'])
+        height = 40*lines
+        xml_str += "        android:layout_height=\"%ddp\"\n" % height
                 
         if self.attr_def['Type'] == 'Integer':
             xml_str += "        android:numeric=\"integer\"\n"
