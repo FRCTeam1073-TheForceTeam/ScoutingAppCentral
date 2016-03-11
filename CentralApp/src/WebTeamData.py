@@ -1054,14 +1054,14 @@ def update_team_event_files( global_config, year, event, directory ):
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_team_rankings_json( global_config, event+year, attr_filter=[], filter_name=None, store_json_file=True )
+        get_team_rankings_json( global_config, event+year, attr_filters=[], filter_name=None, store_json_file=True )
         get_team_list_json( global_config, event+year, store_json_file=True )
        
         # then update the JSON data files for each of the defined filters 
         filter_list = WebAttributeDefinitions.get_filter_list()
         for name in filter_list:
             attr_filter = WebAttributeDefinitions.get_saved_filter(name)
-            get_team_rankings_json( global_config, event+year, attr_filter=attr_filter, filter_name=name, store_json_file=True )
+            get_team_rankings_json( global_config, event+year, attr_filters=attr_filter, filter_name=name, store_json_file=True )
 
         result = True
         
