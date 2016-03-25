@@ -62,16 +62,27 @@ def get_files(global_config, session, db_name, input_dir, pattern, recursive=Tru
             #print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
             for name in files:
                 if pattern.match(name):
-                    if((isFileProcessed(global_config, session, db_name, os.path.join(root, name))) == False):
-                        file_list.append(os.path.join(root, name))
-
+                    pathname = os.path.join(root, name)
+                    file_processed = isFileProcessed(global_config, session, db_name, pathname)
+                    if file_processed is False:
+                        if pathname not in file_list:
+                            global_config['logger'].debug( '%s - Adding %s to be processed' % (__name__,pathname))
+                            file_list.append(pathname)
+                        else:
+                            global_config['logger'].debug( '%s - File %s already in list' % (__name__,pathname))
     else:
         files = os.listdir(input_dir)
         #print 'Files:', files
         for name in files:
             if pattern.match(name):
-                if((isFileProcessed(global_config, session, db_name, os.path.join(root, name))) == False):
-                    file_list.append(os.path.join(input_dir, name))
+                pathname = os.path.join(root, name)
+                file_processed = isFileProcessed(global_config, session, db_name, pathname)
+                if file_processed is False:
+                    if pathname not in file_list:
+                        global_config['logger'].debug( '%s - Adding %s to be processed' % (__name__,pathname))
+                        file_list.append(pathname)
+                    else:
+                        global_config['logger'].debug( '%s - File %s already in list' % (__name__,pathname))
 
     if len(file_list) > 0:
         print 'FileList:', file_list
@@ -99,35 +110,54 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
     file_regex = re.compile('Team[a-zA-Z0-9_]+.txt')
     files = get_files(global_config, session, db_name, input_dir, file_regex, recursive)
     
-    print 'files retrieved, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+    if len(files) > 0:
+        log_msg = 'files retrieved, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
+
+        global_config['logger'].debug( '%s - %d Files to be processed' % (process_files.__name__,len(files)))
 
     # Process data files
     for data_filename in files:
+        # If the file is on the ignore list (quarantined), then skip it
         if data_filename.split('/')[-1] in ignore_filelist:
+            global_config['logger'].debug( '%s - Ignoring file: %s' % (process_files.__name__,data_filename))
             continue
         
-        try:
-            process_file( global_config, session, attr_definitions, data_filename)
-        except Exception, e:
-            # log the exception but continue processing other files
-            log_exception(global_config['logger'], e)
+        # Make sure that the data file has not already been processed. We have seen cases
+        # where the data file gets inserted into the list of files to be processed more than
+        # once.
+        file_processed = isFileProcessed(global_config, session, db_name, data_filename)
+        if not file_processed:
+            try:
+                global_config['logger'].debug( '%s - Processing file: %s' % (process_files.__name__,data_filename))
+                process_file( global_config, session, attr_definitions, data_filename)
+            except Exception, e:
+                global_config['logger'].debug( '%s - Error processing file: %s' % (process_files.__name__,data_filename))
+                # log the exception but continue processing other files
+                log_exception(global_config['logger'], e)
 
-        # add the file to the set of processed files so that we don't process it again. Do it outside the
-        # try/except block so that we don't try to process a bogus file over and over again.       
-        DataModel.addProcessedFile(session, data_filename)
-        some_files_processed = True
-        
+            # add the file to the set of processed files so that we don't process it again. Do it outside the
+            # try/except block so that we don't try to process a bogus file over and over again.
+            DataModel.addProcessedFile(session, data_filename)
+            some_files_processed = True
+        else:
+            global_config['logger'].debug( '%s - Skipping file: %s, already processed' % (process_files.__name__,data_filename))
+
         # Commit all updates to the database
         session.commit()
 
-    print 'files processed, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
-    
     if some_files_processed == True:    
+        log_msg = 'files processed, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
+
         DataModel.dump_database_as_csv_file(session, global_config, attr_definitions)
-    
-        print 'database dumped, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
-    
-    
+
+        log_msg = 'database dumped, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
+
     session.close()
         
 def process_file(global_config, session, attr_definitions, data_filename):
@@ -162,13 +192,14 @@ def process_file(global_config, session, attr_definitions, data_filename):
     else:
         scouter = 'Unknown'
         
-    if file_attributes.has_key('Match'):
+    if '_Match' in data_filename:
         category = 'Match'
+        if not file_attributes.has_key('Match'):
+            file_attributes['Match'] = '0'
+    elif '_Pit_' in data_filename:
+        category = 'Pit'
     else:
-        if '_Pit_' in data_filename:
-            category = 'Pit'
-        else:
-            category = 'Other'
+        category = 'Other'
 
     # Loop through the attributes from the data file and post them to the
     # database
