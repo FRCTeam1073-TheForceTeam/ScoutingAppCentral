@@ -589,6 +589,7 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
         
     global_config['logger'].debug( 'GET Event Results Json' )
 
+
     if round_str == 'qual':
         match_selector = 'qm'
     elif round_str == 'quarters':
@@ -639,8 +640,13 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
                 result.append('       [ ')
                 
                 # Match number
-                #result.append( '"%s", ' % str(match['match_number']) )
-                result.append( '"%s", ' % get_match_hyperlink(competition, match) )
+                try:
+                    if global_config['json_no_links'] == 'Yes':
+                        result.append( '"%s", ' % str(match['match_number']) )
+                    else:
+                        raise
+                except:
+                    result.append( '"%s", ' % get_match_hyperlink(competition, match) )
 
                 # Match start time
                 match_epoch_time = int(match['time'])
@@ -648,16 +654,30 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
                 match_time_str = datetime.datetime.fromtimestamp(match_epoch_time).strftime(time_format_str)
                 result.append( '"%s", ' % match_time_str )
                 
-                # Red alliance teams
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][0]).lstrip('frc') ) )
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][1]).lstrip('frc') ) )
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][2]).lstrip('frc') ) )
-                
-                # Blue alliance teams
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][0]).lstrip('frc') ) )
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][1]).lstrip('frc') ) )
-                result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][2]).lstrip('frc') ) )
-                
+                try:
+                    if global_config['json_no_links'] == 'Yes':
+                        # Red alliance teams
+                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][0]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][1]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][2]).lstrip('frc') )
+                        
+                        # Blue alliance teams
+                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][0]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][1]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][2]).lstrip('frc') )
+                    else:
+                        raise
+                except:
+                    # Red alliance teams
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][0]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][1]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][2]).lstrip('frc') ) )
+                    
+                    # Blue alliance teams
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][0]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][1]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][2]).lstrip('frc') ) )
+                    
                 # Red alliance score
                 
                 score = str(match['alliances']['red']['score'])
