@@ -1,6 +1,6 @@
 week0,WEEK0,Week Zero
-nhbb,Bob,Battle Of The Bay
-mabos,NU,Northeastern District
+nhgrs,NHGRS,New Hampshire Granite State District
+mabos,BU,Boston District
 nhdur,UNH,UNH District
 rismi,RI,Rhode Island District
 marea,READING,Reading District
