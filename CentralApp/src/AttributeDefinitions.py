@@ -15,13 +15,14 @@ class AttrDefinitions:
     
     def __init__(self, global_config=None):
         self._attrdefinitions = {}
+        self._attr_names = {}
+
         # if this instance was created with config, then store it in the object, otherwise
         # just create an empty dictionary so that we can reference it within the methods
         if global_config is not None:
             self.global_config = global_config
         else:
             self.global_config = {}
-        
         
     def get_definition(self, attr_name):
         if self._attrdefinitions.has_key(attr_name):
@@ -75,6 +76,15 @@ class AttrDefinitions:
 
                 #print 'attribute definition: ', definition
                 sheet_qualifier = definition['Sheet']
+                
+                # the following code will detect duplicate rows in the attribute definitions file. We
+                # continue to see issues where the file has rows with the same attribute name and this
+                # code will raise an exception during the parsing of the attribute definitions file
+                if self._attr_names.has_key(definition['Name']):
+                    raise Exception('ERROR: Duplicate Name In Attribute Definitions, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
+                else:
+                    self._attr_names[definition['Name']] = definition['Name']
+                    
                 if sheet_type == None or sheet_qualifier.lower() == 'all' or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
                     self._attrdefinitions[definition['Name']] = definition
                     

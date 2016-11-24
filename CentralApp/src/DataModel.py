@@ -360,7 +360,7 @@ def mapAllValuesToShortenedString( attr_def, all_values, need_quote=False, delim
     else:
         return all_values
             
-    
+
 def mapAllValuesToDict( attr_def, all_values, delim_str=':' ):
     value_dict = {}
     if attr_def['Type'] == 'Map_Integer':
@@ -373,13 +373,13 @@ def mapAllValuesToDict( attr_def, all_values, delim_str=':' ):
                     unique_values[single_item] += 1
                 except KeyError:
                     unique_values[single_item] = 1
-
+        
         for value in sorted(unique_values):
             value_dict[value] = unique_values[value]
 
     return value_dict
 
-
+    
 def mapValueToString(value, all_values, attr_def, need_quote=False, delim_str='-'):
     if attr_def.has_key('Display_Numeric') and attr_def['Display_Numeric'] == 'Yes':
         return str(value)
@@ -739,8 +739,8 @@ def format_string_attr_for_csv(attr):
                 unique_values[single_item] += 1
             except KeyError:
                 unique_values[single_item] = 1
-                
-    index = 0    
+    
+    index = 0
     for value in sorted(unique_values):
         if index > 0:
             attr_string += delim_str
@@ -749,7 +749,7 @@ def format_string_attr_for_csv(attr):
         else:
             attr_string += '%s(%d)' % (value,unique_values[value])
         index += 1
-    
+
     attr_string = attr_string.rstrip()
     return attr_string
 
@@ -759,7 +759,6 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
     if competition == None:
         competition = global_config['this_competition'] + global_config['this_season']
 
-    
     # read in the attribute definitions and sort them in the colum order
     attr_dict = attr_definitions.get_definitions()
     attr_order = [{} for i in range(len(attr_dict))]

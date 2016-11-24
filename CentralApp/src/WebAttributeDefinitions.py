@@ -45,7 +45,11 @@ def get_attr_def_form(global_config):
             attr_dict = attr_definitions.get_definitions()
                                             
             for key, attr_def in sorted(attr_dict.items()):
-                form[key].value = str(int(float(attr_def['Weight'])))
+                try:
+                    weight = float(attr_def['Weight'])
+                except:
+                    weight = 0.0
+                form[key].value = str(int(weight))
                 
     return form
 

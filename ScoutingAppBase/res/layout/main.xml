@@ -54,6 +54,7 @@
         android:id="@+id/CameraButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_alignParentTop="true"
         android:layout_marginLeft="21dp"
         android:layout_toRightOf="@+id/ScouterEntry"
@@ -63,6 +64,7 @@
         android:id="@+id/VideoButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/CameraButton"
         android:text="Video" />
@@ -71,9 +73,15 @@
         android:id="@+id/SyncButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/VideoButton"
         android:text="Sync" />
+    
+
+    
+    
+    
     
     <!-- UIGEN:XML_FIELDS_BEGIN - insert generated XML code -->
     <!-- UIGEN:XML_FIELDS_END -->
@@ -107,6 +115,7 @@
         android:id="@+id/SaveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_below="@+id/NotesEntry"
         android:layout_alignParentLeft="true"
         android:text="  Save  "/>
@@ -115,6 +124,7 @@
         android:id="@+id/DiscardButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_below="@+id/NotesEntry"
         android:layout_centerInParent="true"        
         android:text="@string/discard_string"/>
@@ -123,6 +133,7 @@
         android:id="@+id/ReloadButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@layout/custom_button"        
         android:layout_below="@+id/NotesEntry"
         android:layout_alignParentRight="true"
         android:text="Reload"/>
