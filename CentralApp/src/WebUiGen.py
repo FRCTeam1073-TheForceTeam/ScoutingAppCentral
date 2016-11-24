@@ -61,7 +61,7 @@ def process_form(global_config, form):
     attr_defs_file = './config/' + form[attr_defs_label].value
     
     try:
-        generated_code_fragments = UiGenerator.gen_ui(attr_defs_file, \
+        generated_code_fragments = UiGenerator.gen_ui(global_config, attr_defs_file, \
                                                       dest_activity_prefix, \
                                                       create_fragment_file=True)
         

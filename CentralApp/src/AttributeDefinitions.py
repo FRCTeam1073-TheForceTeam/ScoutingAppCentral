@@ -13,8 +13,15 @@ attrdef_overrides_filename = './config/attrdef_overrides.txt'
 
 class AttrDefinitions:
     
-    def __init__(self):
+    def __init__(self, global_config=None):
         self._attrdefinitions = {}
+        # if this instance was created with config, then store it in the object, otherwise
+        # just create an empty dictionary so that we can reference it within the methods
+        if global_config is not None:
+            self.global_config = global_config
+        else:
+            self.global_config = {}
+        
         
     def get_definition(self, attr_name):
         if self._attrdefinitions.has_key(attr_name):
@@ -39,6 +46,7 @@ class AttrDefinitions:
             filename = self.xls_to_csv(filename)
             
         self._csv_reader = csv.reader(open(filename, 'r'))
+        row_number = 0
         for row in self._csv_reader:
             if first_row == True:
                 first_row = False
@@ -51,8 +59,20 @@ class AttrDefinitions:
                 definition = {}
                 for index, item in enumerate(row):
                     #print 'attr: ', header_row[index], ' value: ', item
-                    definition[header_row[index]] = item.title()
-                        
+                    
+                    # check if the global_config indicates that we're working with the 2014-era tablet UI that does not
+                    # normalize the case of the attributes. If we are in 'legacy' mode, then just use the attribute
+                    # label as is. If not, then capitalize the first character only
+                    if self.global_config.has_key('legacy_tablet_ui') and self.global_config['legacy_tablet_ui'].lower() == 'yes':
+                        definition[header_row[index]] = item
+                    else:
+                        definition[header_row[index]] = item.title()
+
+                # set the Column_Order attribute to the row number, doing away with the troublesome
+                # column that has proven to be error prone. With this change, the column display
+                # order will be the same as the order of the rows of the spreadsheet
+                definition['Column_Order'] = row_number
+
                 #print 'attribute definition: ', definition
                 sheet_qualifier = definition['Sheet']
                 if sheet_type == None or sheet_qualifier.lower() == 'all' or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
@@ -61,6 +81,8 @@ class AttrDefinitions:
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
                     if definition['Control'] == 'Scoring_Matrix':
+                        definition['Type'] = 'Integer'
+
                         disp_type = None
                         options_str = definition['Options']    
                         if options_str != '':
@@ -88,11 +110,22 @@ class AttrDefinitions:
                             new_definition['Weight'] = '0.0'
                             new_definition['Map_Values'] = ''
                             new_definition['Type'] = 'Integer'
+                            new_definition['Include_In_Report'] = 'No'
                             new_definition['Column_Order'] = str(extra_column_order)
                             extra_column_order += 1
 
                             extra_attrdefinitions[attr_name] = new_definition
-        
+                    elif definition['Control'] == 'Checkbox':
+                        definition['Type'] = 'Map_Integer'
+                        # set the control to use numeric values in the generated CSV file
+                        definition['Display_Numeric'] = 'Yes'
+                    elif definition['Control'] == 'Radio':
+                        definition['Type'] = 'Map_Integer'
+                        # set the control to use numeric values in the generated CSV file
+                        definition['Display_Numeric'] = 'Yes'
+
+            row_number += 1
+
         extra_column_order = float(len(self._attrdefinitions) + 1)            
         for key, extra_attr in extra_attrdefinitions.iteritems():
             if not self._attrdefinitions.has_key(key):
@@ -159,7 +192,7 @@ class AttrDefinitions:
         category_dict = dict()
         category_dict['Uncategorized'] = list()
         for key, attrdef in self._attrdefinitions.iteritems():
-            if attrdef['Sub_Category'] != '':
+            if attrdef.has_key('Sub_Category') and attrdef['Sub_Category'] != '':
                 try:
                     category_dict[attrdef['Sub_Category']].append(key)
                 except KeyError:

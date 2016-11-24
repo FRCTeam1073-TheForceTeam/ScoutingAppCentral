@@ -62,16 +62,27 @@ def get_files(global_config, session, db_name, input_dir, pattern, recursive=Tru
             #print 'Root:', root, ' Dirs: ', dirs, ' Files:', files
             for name in files:
                 if pattern.match(name):
-                    if((isFileProcessed(global_config, session, db_name, os.path.join(root, name))) == False):
-                        file_list.append(os.path.join(root, name))
-
+                    pathname = os.path.join(root, name)
+                    file_processed = isFileProcessed(global_config, session, db_name, pathname)
+                    if file_processed is False:
+                        if pathname not in file_list:
+                            global_config['logger'].debug( '%s - Adding %s to be processed' % (__name__,pathname))
+                            file_list.append(pathname)
+                        else:
+                            global_config['logger'].debug( '%s - File %s already in list' % (__name__,pathname))
     else:
         files = os.listdir(input_dir)
         #print 'Files:', files
         for name in files:
             if pattern.match(name):
-                if((isFileProcessed(global_config, session, db_name, os.path.join(root, name))) == False):
-                    file_list.append(os.path.join(input_dir, name))
+                pathname = os.path.join(input_dir, name)
+                file_processed = isFileProcessed(global_config, session, db_name, pathname)
+                if file_processed is False:
+                    if pathname not in file_list:
+                        global_config['logger'].debug( '%s - Adding %s to be processed' % (__name__,pathname))
+                        file_list.append(pathname)
+                    else:
+                        global_config['logger'].debug( '%s - File %s already in list' % (__name__,pathname))
 
     if len(file_list) > 0:
         print 'FileList:', file_list
@@ -81,7 +92,7 @@ def get_files(global_config, session, db_name, input_dir, pattern, recursive=Tru
   
 def process_files(global_config, attr_definitions, input_dir, recursive=True):
     start_time = datetime.datetime.now()
-    
+
     # Initialize the database session connection
     db_name  = global_config['db_name'] + global_config['this_season']
     session  = DbSession.open_db_session(db_name)
@@ -95,32 +106,49 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
     file_regex = re.compile('Team[a-zA-Z0-9_]+.txt')
     files = get_files(global_config, session, db_name, input_dir, file_regex, recursive)
     
-    print 'files retrieved, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+    if len(files) > 0:
+        log_msg = 'files retrieved, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
 
+        global_config['logger'].debug( '%s - %d Files to be processed' % (process_files.__name__,len(files)))
+        
     # Process data files
     for data_filename in files:
-        try:
-            process_file( global_config, session, attr_definitions, data_filename)
-        except Exception, e:
-            # log the exception but continue processing other files
-            log_exception(global_config['logger'], e)
+        # Make sure that the data file has not already been processed. We have seen cases
+        # where the data file gets inserted into the list of files to be processed more than
+        # once.
+        file_processed = isFileProcessed(global_config, session, db_name, data_filename)
+        if not file_processed:
+            try:
+                global_config['logger'].debug( '%s - Processing file: %s' % (process_files.__name__,data_filename))
+                process_file( global_config, session, attr_definitions, data_filename)
+            except Exception, e:
+                global_config['logger'].debug( '%s - Error processing file: %s' % (process_files.__name__,data_filename))
+                # log the exception but continue processing other files
+                log_exception(global_config['logger'], e)
 
-        # add the file to the set of processed files so that we don't process it again. Do it outside the
-        # try/except block so that we don't try to process a bogus file over and over again.       
-        DataModel.addProcessedFile(session, data_filename)
-        some_files_processed = True
-        
+            # add the file to the set of processed files so that we don't process it again. Do it outside the
+            # try/except block so that we don't try to process a bogus file over and over again.       
+            DataModel.addProcessedFile(session, data_filename)
+            some_files_processed = True
+        else:
+            global_config['logger'].debug( '%s - Skipping file: %s, already processed' % (process_files.__name__,data_filename))
+            
         # Commit all updates to the database
         session.commit()
-
-    print 'files processed, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
-    
+        
     if some_files_processed == True:    
+        log_msg = 'files processed, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
+    
         DataModel.dump_database_as_csv_file(session, global_config, attr_definitions)
     
-        print 'database dumped, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
-    
-    
+        log_msg = 'database dumped, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+        print log_msg
+        global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
+            
     session.close()
         
 def process_file(global_config, session, attr_definitions, data_filename):
@@ -141,8 +169,15 @@ def process_file(global_config, session, attr_definitions, data_filename):
     # Also, extract the competition name, too, if it has been included in
     # the data file
     if file_attributes.has_key('Competition'):
-        competition = file_attributes['Competition']
+        # check if the global_config indicates that we're working with the 2014-era tablet UI that may not
+        # format the competition string as we expect it to be. If we are in 'legacy' mode, then ignore the
+        # competition setting in the file and apply the competition/season from the config
+        if global_config.has_key('legacy_tablet_ui') and global_config['legacy_tablet_ui'].lower() == 'yes':
+            competition = global_config['this_competition'] + global_config['this_season']
+        else:
+            competition = file_attributes['Competition']
     else:
+        # if no competition setting attribute is in the file, then apply the competition/season from the config
         competition = global_config['this_competition'] + global_config['this_season']
 
         if competition == None:
@@ -155,13 +190,14 @@ def process_file(global_config, session, attr_definitions, data_filename):
     else:
         scouter = 'Unknown'
         
-    if file_attributes.has_key('Match'):
+    if '_Match' in data_filename:
         category = 'Match'
+        if not file_attributes.has_key('Match'):
+            file_attributes['Match'] = '0'
+    elif '_Pit_' in data_filename:
+        category = 'Pit'
     else:
-        if '_Pit_' in data_filename:
-            category = 'Pit'
-        else:
-            category = 'Other'
+        category = 'Other'
 
     # Loop through the attributes from the data file and post them to the
     # database
@@ -527,7 +563,7 @@ if __name__ == "__main__":
             else:
                 attrdef_filename = './config/' + global_config['attr_definitions']
                 if os.path.exists(attrdef_filename):
-                    attr_definitions = AttributeDefinitions.AttrDefinitions()
+                    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
                     attr_definitions.parse(attrdef_filename)
                     
                     process_files(global_config, attr_definitions, input_dir)

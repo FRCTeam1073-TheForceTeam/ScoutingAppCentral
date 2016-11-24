@@ -597,7 +597,7 @@ if __name__ == '__main__':
 
     # Build the attribute definition dictionary from the definitions csv file
     attrdef_filename = './config/' + global_config['attr_definitions']    
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
 
     if options.processfiles:

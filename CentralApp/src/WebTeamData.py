@@ -7,7 +7,6 @@ Created on Feb 7, 2013
 import os
 import re
 import web
-import urllib2
 import json
 import operator
 
@@ -18,6 +17,7 @@ import DataModel
 import FileSync
 import WebCommonUtils
 import WebAttributeDefinitions
+import TbaIntf
 
 def get_datafiles(input_dir, pattern, recursive,logger):
     '''Get list of files to be displayed.
@@ -67,7 +67,7 @@ def get_team_datafiles_page(global_config, name, display_notes=True):
         return None
     
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     page=''
     
@@ -302,7 +302,7 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
         
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     attr = attr_definitions.get_definition(attr_name)
     try:
@@ -345,7 +345,7 @@ def get_team_score_breakdown_json(global_config, name, comp=None, store_json_fil
     session = DbSession.open_db_session(global_config['db_name'] + season)
     
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     
     result = []
@@ -393,7 +393,7 @@ def get_team_attributes_page(global_config):
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     
     web.header('Content-Type', 'application/json')
@@ -585,7 +585,7 @@ def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[
         return None
     
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
 
     result = []
@@ -811,15 +811,12 @@ def get_team_list_json_from_tba(global_config, comp):
     event_code = WebCommonUtils.map_comp_to_event_code(comp)
     season = WebCommonUtils.map_comp_to_season(comp)
     
-    url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s/teams?X-TBA-App-Id=frc1073:scouting-system:v01' % (season,event_code.lower())
-    event_data = ''
+    url_str = '/api/v2/event/%s%s/teams' % (season,event_code.lower())
     try:
-        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-        event_data = urllib2.urlopen(req).read()
-
+        # retrieve the string itself as a formatted json string
+        event_data = TbaIntf.get_from_tba(url_str)
     except:
         event_data = '[ ]'
-        pass
 
     result.append( event_data )
     result.append('  }\n')
@@ -855,7 +852,7 @@ def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_nam
         # we'll need the attribute definitions in order to retrieve the correct attribute value
         # and attribute weighting
         attrdef_filename = './config/' + global_config['attr_definitions']
-        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
         attr_definitions.parse(attrdef_filename)
         
         team_rank_dict = dict()
@@ -932,15 +929,11 @@ def get_team_event_list_from_tba(global_config, team, season):
 
     result = []
         
-    url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s/%s/events?X-TBA-App-Id=frc1073:scouting-system:v01' % (team,season)
+    url_str = '/api/v2/team/frc%s/%s/events' % (team,season)
         
-    event_data = ''
     try:
-        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-        event_data = urllib2.urlopen(req).read()
-        event_json = json.loads(event_data)
-        
-        for event in event_json:
+        event_dict = TbaIntf.get_from_tba_parsed(url_str)
+        for event in event_dict:
             comp = WebCommonUtils.map_event_code_to_comp(event['event_code'], season)
             result.append(comp)
     except:
@@ -950,14 +943,9 @@ def get_team_event_list_from_tba(global_config, team, season):
     
 def get_team_data_from_tba(team_str, query_str):
     
-    url_str = 'http://www.thebluealliance.com/api/v2/team/frc%s/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (team_str,query_str)
-    try:
-        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-        event_data = urllib2.urlopen(req).read()
-    except:
-        event_data = ''
-        pass
-    return event_data    
+    url_str = '/api/v2/team/frc%s/%s' % (team_str,query_str)
+    team_data = TbaIntf.get_from_tba_parsed(url_str)
+    return team_data    
 
 local_picklist = None
 def create_picklist_json(global_config, comp=None, store_json_file=False):

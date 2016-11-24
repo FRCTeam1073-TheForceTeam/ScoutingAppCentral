@@ -1476,8 +1476,9 @@ def process_files_timer_callback(cmd):
     else:
         print 'Process files command already running'
 
+    return
     
-   
+    
 if __name__ == "__main__":
 
     # command line options handling
@@ -1560,7 +1561,7 @@ if __name__ == "__main__":
     if global_config['attr_definitions'] != None:
         attrdef_filename = './config/' + global_config['attr_definitions']
         if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions()
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
             attr_definitions.parse(attrdef_filename)
             
             # WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)

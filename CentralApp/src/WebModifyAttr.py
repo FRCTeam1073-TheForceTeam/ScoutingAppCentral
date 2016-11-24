@@ -53,7 +53,7 @@ def process_form(global_config, form):
     if global_config['attr_definitions'] != None:
         attrdef_filename = './config/' + global_config['attr_definitions']
         if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions()
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
             attr_definitions.parse(attrdef_filename)
             attr_def = attr_definitions.get_definition(attr_name)
 

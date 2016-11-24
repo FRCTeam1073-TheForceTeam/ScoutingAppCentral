@@ -40,7 +40,7 @@ def get_attr_def_form(global_config):
     else:
         attrdef_filename = './config/' + global_config['attr_definitions']
         if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions()
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
             attr_definitions.parse(attrdef_filename)
             attr_dict = attr_definitions.get_definitions()
                                             
@@ -57,7 +57,7 @@ def process_attr_def_form(global_config, form):
     else:
         attrdef_filename = './config/' + global_config['attr_definitions']
         if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions()
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
             attr_definitions.parse(attrdef_filename)
             attr_dict = attr_definitions.get_definitions()
 
@@ -101,7 +101,7 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
     global_config['logger'].debug( 'GET Attribute Definitions Tree JSON' )
 
     attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     
     competition = global_config['this_competition'] + global_config['this_season']

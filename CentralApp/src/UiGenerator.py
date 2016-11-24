@@ -29,9 +29,9 @@ def attr_order_compare( left, right ):
         right_order = int(float(right['Order']))
     return cmp( left_order, right_order )
 
-def gen_ui( attrdef_filename, sheet_type, create_fragment_file=False ):
+def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=False ):
     # Build the attribute definition dictionary from the definitions spreadsheet file
-    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename, sheet_type)
 
     attr_dict = attr_definitions.get_definitions()

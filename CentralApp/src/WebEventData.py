@@ -13,6 +13,7 @@ import WebCommonUtils
 import FileSync
 import WebTeamData
 import CompAlias
+import TbaIntf
 
 from BeautifulSoup import BeautifulSoup
 import re
@@ -80,144 +81,10 @@ class RankParser(ParserBase):
 
 
 
-def get_events_page(global_config, year):
-        
-        global_config['logger'].debug( 'GET Events Page' )
-
-        page = ''
-
-        page += '\n<script type="text/javascript" charset="utf-8">\n'
-        page += '    $(document).ready(function() {\n'
-        page += '        var otable = $(\'#%s\').dataTable({"iDisplayLength": 100});\n' % 'events'
-        page += '        otable.fnSort( [ [2,\'asc\'] ]);\n'
-        page += '    } );\n'
-        page += '</script>\n'
-        
-        url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
-        try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            events = urllib2.urlopen(req).read()
-            event_data_list = json.loads(events)
-            
-            page += '<ul>'
-            page += '<table cellpadding="0" cellspacing="0" border="1" class="display" id="events" width="100%">'
-            
-            page += '<thead>'
-            page += '<tr>'
-            page += '<th>Event Code</th>'
-            page += '<th>Name</th>'
-            page += '<th>Start Date</th>'
-            page += '<th>End Date</th>'
-            page += '</tr>'
-            page += '</thead>'
-            page += '<tbody>'
-            
-            for event in event_data_list:
-                event_code = event['key'][4:].upper()
-                                
-                page += '<tr>'
-                page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['key'],event_code)
-                page += '<td><a href="/eventstandings/%s">%s</a></td>' % (event['key'],event['name'])
-                page += '<td>' + event['start_date'] + '</td>'
-                page += '<td>' + event['end_date'] + '</td>'
-                page += '</tr>'
-            
-            page += '</tbody>'    
-            page += '</table>'
-            page += '</ul>'
-        except:
-            pass
-
-       
-        page += '</body>'
-        page += '</html>'
-                
-        return page
-
-
-
-
 def get_event_standings_page(global_config, year, event_code):
         
-        global_config['logger'].debug( 'GET Event Standings Page' )
-
-        page = ''
-            
-        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
-        try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            event_data = urllib2.urlopen(req).read()
-            event_data = json.loads(event_data)
-                        
-            page += '<ul>'
-            page += '<li>Name: %s</li>' % event_data['name']
-            page += '<li>Code: %s</li>' % event_data['event_code'].upper()
-            page += '<li>Start Date: %s</li>' % event_data['start_date']
-            page += '<li>End Date: %s</li>' % event_data['end_date']
-            page += '<li>Location: %s</li>' % event_data['location']
-            page += '</ul>'
-            
-            page += '<br>'
-            page += '<a href="/eventresults/%s%s">Match Results</a>' % (year,event_code)
-            page += '<br>'
-            page += '<br>'
-
-            try:        
-
-                page += '\n<script type="text/javascript" charset="utf-8">\n'
-                page += '    $(document).ready(function() {\n'
-                page += '        var otable = $(\'#%s\').dataTable({"iDisplayLength": 100});\n' % event_code
-                page += '        otable.fnSort( [ [0,\'asc\'] ]);\n'
-                page += '    } );\n'
-                page += '</script>\n'
-        
-                page += '<table cellpadding="0" cellspacing="0" border="1" class="display" id="' + event_code + '" width="100%">'
-                        
-                first_url_str = 'http://www2.usfirst.org/%scomp/events/%s/rankings.html' % (year,event_code.upper())
-                rank_data = urllib2.urlopen(first_url_str).read()
-                
-                my_parser = RankParser()
-                rankings, _ = my_parser.parse( rank_data, 2 )
-                
-                first_line = True
-                team_column = 0
-                for line in rankings:
-                    if first_line:
-                        index = 0
-                        first_line = False
-                        page += '<thead>'
-                        page += '<tr>'
-                        for column in line:
-                            page += '<th>%s</th>' % column
-                            if column == 'Team':
-                                team_column = index
-                            index += 1
-                        page += '</tr>'
-                        page += '</thead>'
-                        page += '<tbody>'
-                    else:
-                        index = 0
-                        page += '<tr>'
-                        for column in line:
-                            if index == team_column:
-                                page += '<td><a href="/teamdata/%s">%s</a></td>' % (column,column)
-                            else:
-                                page += '<td>%s</td>' % column
-                            index += 1
-                        page += '</tr>'
-                page += '</tbody>'
+        raise Exception('Not Implemented')
                     
-                page += '</table>'
-            except:
-                page += 'No Results At This Time'
-        except:
-            pass
-
-
-        
-        page += '</body>'
-        page += '</html>'
-                
         return page
 
 def insert_results_table(rank_data, event_code, table_index):
@@ -266,11 +133,9 @@ def get_event_results_page(global_config, year, event_code):
 
         page = ''
             
-        url_str = 'http://www.thebluealliance.com/api/v2/event/%s%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (year,event_code.lower())
+        url_str = '/api/v2/event/%s%s' % (year,event_code.lower())
         try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            event_data = urllib2.urlopen(req).read()
-            event_data = json.loads(event_data)
+            event_data = TbaIntf.get_from_tba_parsed(url_str)
                         
             page += '<ul>'
             page += '<li>Name: %s</li>' % event_data['name']
@@ -309,10 +174,9 @@ def get_district_events_json(global_config, year, type):
         
         global_config['logger'].debug( 'GET District Event Info Json' )    
         
-        url_str = 'http://www.thebluealliance.com/api/v2/district/%s/%s/events?X-TBA-App-Id=frc1073:scouting-system:v02' % (type.lower(),year)
+        url_str = '/api/v2/district/%s/%s/events' % (type.lower(),year)
         try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            event_data = urllib2.urlopen(req).read()
+            event_data = TbaIntf.get_from_tba(url_str)
             if type != None:
                 event_json = json.loads(event_data)
                 result = []
@@ -335,15 +199,13 @@ def get_district_rankings_json(global_config, year, type):
         
         competition = global_config['this_competition']+year
         
-        url_str = 'http://www.thebluealliance.com/api/v2/district/%s/%s/rankings?X-TBA-App-Id=frc1073:scouting-system:v02' % (type.lower(),year)
+        url_str = '/api/v2/district/%s/%s/rankings' % (type.lower(),year)
 
         result = []
         result.append('{ "district" : "%s",\n' % (type.upper()))
 
         try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            rankings_data = urllib2.urlopen(req).read()
-            rankings_json = json.loads(rankings_data)
+            rankings = TbaIntf.get_from_tba_parsed(url_str)
        
             # rankings is now a list of lists, with the first element of the list being the list of column headings
             # take the list of columngs and apply to each of the subsequent rows to build the json response
@@ -360,7 +222,7 @@ def get_district_rankings_json(global_config, year, type):
             result.append(' ],\n')
             result.append('  "rankings" : [\n')
 
-            for team_rank in rankings_json:
+            for team_rank in rankings:
                 result.append('       [ ')
                 result.append( '"%s", ' % str(team_rank['rank']) )
                 result.append( '"%s", ' % str(team_rank['point_total']) )
@@ -391,10 +253,9 @@ def get_events_json(global_config, year, type=None):
         
         global_config['logger'].debug( 'GET Event Info Json' )    
         
-        url_str = 'http://www.thebluealliance.com/api/v2/events/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % year
+        url_str = '/api/v2/events/%s' % year
         try:
-            req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-            event_data = urllib2.urlopen(req).read()
+            event_data = TbaIntf.get_from_tba(url_str)
             if type != None:
                 event_json = json.loads(event_data)
                 result = []
@@ -422,18 +283,13 @@ def get_events_json(global_config, year, type=None):
         return event_data
 
 def get_event_data_from_tba( query_str ):
-    
-    url_str = 'http://www.thebluealliance.com/api/v2/event/%s?X-TBA-App-Id=frc1073:scouting-system:v01' % (query_str)
-    try:
-        req = urllib2.Request(url_str, headers={'User-Agent': 'Mozilla/5.0'})
-        event_data = urllib2.urlopen(req).read()
-        
-        if event_data == 'null':
-            event_data = ''
-    except:
-        event_data = ''
-        pass
-    
+    url_str = '/api/v2/event/%s' % (query_str)
+    event_data = TbaIntf.get_from_tba_parsed(url_str)
+    return event_data
+
+def get_event_json_from_tba( query_str ):
+    url_str = '/api/v2/event/%s' % (query_str)
+    event_data = TbaIntf.get_from_tba(url_str)
     return event_data
 
 
@@ -441,20 +297,16 @@ def get_event_info_json(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
             
-        return get_event_data_from_tba( '%s%s' % (year,event_code.lower()) )
+        event_json = get_event_json_from_tba( '%s%s' % (year,event_code.lower()) )
+
+        return event_json
 
 def get_event_info_dict(global_config, year, event_code):
         
         global_config['logger'].debug( 'GET Event Info Json' )
                     
         event_data = get_event_data_from_tba( '%s%s' % (year,event_code.lower()) )
-        try: 
-            if event_data != '':
-                event_data = json.loads(event_data)
-            else:
-                event_data = None
-        except:
-            event_data = None
+
         return event_data
         
 def get_event_standings_json(global_config, year, event_code):
@@ -468,10 +320,7 @@ def get_event_standings_json(global_config, year, event_code):
     store_data_to_file = False
     result = []
     
-    rankings = ''
-    json_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
-    if json_data != '':
-        rankings = json.loads(json_data)
+    rankings = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
 
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
@@ -542,14 +391,11 @@ def get_event_rank_list_json(global_config, year, event_code):
     store_data_to_file = False
     result = []
     
-    rankings = ''
-    json_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
-    if json_data != '':
-        rankings = json.loads(json_data)
+    rankings = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
 
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
-    if rankings:
+    if len(rankings):
         # rankings is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response
         result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
@@ -606,18 +452,16 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
     
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
-    event_matches = ''
     if team_str is None:
         exp_filename = ''
-        json_data = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+        event_matches = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
     else:
         exp_filename = '_%s' % team_str
-        json_data = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
+        event_matches = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
         
-    if json_data != '':
-        event_matches = json.loads(json_data)
+    if len(event_matches):
 
-        # rankings is now a list of lists, with the first element of the list being the list of column headings
+        # matches is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response
         result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
         headings = [ 'Match', 'Start Time', 'Red 1', 'Red 2', 'Red 3', 'Blue 1', 'Blue 2', 'Blue 3', 'Red Score', 'Blue Score' ]
@@ -710,10 +554,8 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
     
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
-    event_stats = ''
-    json_data = get_event_data_from_tba( '%s%s/stats' % (year,event_code.lower()) )
-    if json_data != '':
-        event_stats = json.loads(json_data)
+    event_stats = get_event_data_from_tba( '%s%s/stats' % (year,event_code.lower()) )
+    if len(event_stats):
 
         # rankings is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response

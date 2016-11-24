@@ -47,7 +47,7 @@ def get_comp_list():
     other_competitions = CompAlias.get_comp_alias_list()
 
     for comp in other_competitions:
-        if comp and comp != my_config['this_competition']:
+        if comp and comp.upper() != my_config['this_competition'].upper():
             complist.append(comp+season)
 
     return complist
@@ -64,7 +64,7 @@ def get_short_comp_list(season=None):
     other_competitions = CompAlias.get_comp_alias_list()
     
     for comp in other_competitions:
-        if comp and comp != my_config['this_competition']:
+        if comp and comp.upper() != my_config['this_competition'].upper():
             complist.append(comp)
 
     return complist
@@ -99,7 +99,7 @@ def get_comp_and_eventcode_list(season=None):
     other_competitions = CompAlias.get_comp_and_eventcode_list()
     
     for comp in other_competitions:
-        if comp and comp[0] != my_config['this_competition']:
+        if comp and comp[0].upper() != my_config['this_competition'].upper():
             complist.append(comp)
 
     return complist
@@ -127,12 +127,12 @@ def get_team_comp_list(this_comp, team):
             # currently, the competition season is stored in the database
             # as part of the competition. So, we need to add it for the comparison,
             # but not as we define the complist itself
-            if comp != this_comp:
+            if comp != this_comp.upper():
                 complist.append(comp)
                 
     else:
         for comp in team_complist:
-            if comp != this_comp:
+            if comp.upper() != this_comp.upper():
                 complist.append(comp)
             
     return complist
@@ -164,7 +164,7 @@ def get_attr_list():
     
     attrdef_filename = './config/' + my_config['attr_definitions']
     if os.path.exists(attrdef_filename):
-        attr_definitions = AttributeDefinitions.AttrDefinitions()
+        attr_definitions = AttributeDefinitions.AttrDefinitions(my_config)
         attr_definitions.parse(attrdef_filename)
         attr_dict = attr_definitions.get_definitions()
         attr_list = attr_dict.keys()
