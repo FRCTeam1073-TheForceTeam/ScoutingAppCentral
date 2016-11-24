@@ -12,3 +12,4 @@ melew,PINETREE,Pine Tree District
 cthar,HARTFORD,Hartford District
 necmp,NECMP,New England District Championships
 mawpi,BATTLECRY,Battlecry at WPI
+mosl,STLRQu,St. Louis Regional
