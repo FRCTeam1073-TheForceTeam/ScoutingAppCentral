@@ -138,7 +138,7 @@ def get_team_datafiles_page(global_config, name, display_notes=True):
                                 and attr_def['Include_In_Report'] == 'Yes':
                             include_attr = True
                         elif attr_def.has_key('Weight') \
-                                and attr_def.has_key('Weight') != '0':
+                                and attr_def['Weight'] != '0':
                             include_attr = True
 
                     if include_attr == True:   
@@ -607,7 +607,7 @@ def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[
                         and attr_def['Include_In_Report'] == 'Yes':
                     include_attr = True
                 elif attr_def.has_key('Weight') \
-                        and attr_def.has_key('Weight') != '0':
+                        and attr_def['Weight'] != '0':
                     include_attr = True
 
                 # if an attribute filter has been provided, only include the attribute data if the
@@ -761,6 +761,37 @@ def get_team_scouting_notes_json(global_config, comp, name, store_json_file=Fals
         
     return json_str
 
+def get_team_scouting_thumbnails_json_snippet(global_config, comp, name):
+    
+    global_config['logger'].debug( 'GET Team %s Scouting Thumbnail files For Competition %s', name, comp )
+
+    result = []
+
+    input_dir = './static/data/' + comp + '/ScoutingPictures/'
+    pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.jpg|mp4'
+    mediafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
+
+    result.append('    "thumbnailfiles" : [')
+    result.append('\n')
+
+    ImageFileUtils.create_thumbnails(mediafiles)
+    thumbnail_dir = input_dir + "Thumbnails/"
+    pattern = '[0-9]*x[0-9]*_Team' + name + '_' + '[a-zA-Z0-9_]*.jpg|mp4'
+    thumbnailfiles = get_datafiles(thumbnail_dir, re.compile(pattern), False, global_config['logger'])
+    
+    for filename in thumbnailfiles:
+        segments = filename.split('/')
+        basefile = segments[-1]
+        
+        result.append('     { "filename": "%s" }' % (basefile))
+        result.append(',\n')
+    
+    result = result[:-1]
+    result.append(' ]')
+    json_str = ''.join(result)
+    
+    return json_str
+
 def get_team_list_json(global_config, comp, store_json_file=False):
     global team_info_dict
     
@@ -784,6 +815,9 @@ def get_team_list_json(global_config, comp, store_json_file=False):
             
         if team_info:
             result.append('   { "team_number": "%s", "nickname": "%s" }' % (team.team,team_info.nickname))
+            result.append(',\n')
+        else:
+            result.append('   { "team_number": "%s", "nickname": "%s" }' % (team.team,'Unknown'))
             result.append(',\n')
         
     if len(team_list) > 0:         
@@ -822,7 +856,8 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_name=None, store_json_file=False):
+def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_name=None, 
+                           thumbnails = False, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
     store_data_to_file = False
@@ -845,7 +880,11 @@ def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_nam
             # round the score to an integer value
             team.score = float(int(team.score))
             if team.score > 0:
-                result.append(team.json())
+                thumbnails_snippet = ''
+                if thumbnails:
+                    thumbnails_snippet = ',\n' + get_team_scouting_thumbnails_json_snippet(global_config, comp, str(team.team))
+                
+                result.append( '  { "score": %0.1f, "competition": "%s", "team": %d%s }' % (team.score, comp, team.team,thumbnails_snippet))
                 result.append(',\n')
                 rank_added = True
     else:
@@ -900,7 +939,11 @@ def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_nam
             # round the score to an integer value
             score = float(int(score))
             if score > 0:
-                result.append( '{"score": %0.1f, "competition": "%s", "team": %d}' % (score, comp, team))
+                thumbnails_snippet = ''
+                if thumbnails:
+                    thumbnails_snippet = ',\n' + get_team_scouting_thumbnails_json_snippet(global_config, comp, str(team))
+                
+                result.append( '  { "score": %0.1f, "competition": "%s", "team": %d%s }' % (score, comp, team, thumbnails_snippet))
                 result.append(',\n')
                 rank_added = True
         
@@ -922,6 +965,85 @@ def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_nam
             raise
         
     return json_str
+
+def get_team_attr_rankings_json(global_config, comp=None, attr_name=None):
+        
+    global_config['logger'].debug( 'GET Team Attribute Rankings Json' )
+    store_data_to_file = False
+    
+    if comp == None:
+        comp = global_config['this_competition'] + global_config['this_season']
+        season = global_config['this_season']
+    else:
+        season = WebCommonUtils.map_comp_to_season(comp)
+
+    session = DbSession.open_db_session(global_config['db_name'] + season)
+
+    attrdef_filename = './config/' + global_config['attr_definitions']
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename)
+    attr_def = attr_definitions.get_definition(attr_name)
+    try:
+        stat_type = attr_def['Statistic_Type']
+    except:
+        stat_type = 'Total'
+        
+    web.header('Content-Type', 'application/json')
+    result = []
+    result.append('{  "attr_name" : "%s",\n' % attr_name)
+    
+    # add the columns bases on the attribute definition type
+    result.append('   "columns" : [\n')
+    result.append('      { "sTitle": "Team" }')
+    result.append(',\n')
+    columns = []
+    if attr_def['Type'] == 'Map_Integer':
+        map_values = attr_def['Map_Values'].split(':')
+        for map_value in map_values:
+            item_name = map_value.split('=')[0]
+            columns.append(item_name)
+            result.append('      { "sTitle": "%s" }' % item_name)
+            result.append(',\n')
+        result = result[:-1]
+        result.append('\n')
+        result.append('   ],\n')
+
+    if stat_type == 'Average':
+        team_rankings = DataModel.getTeamAttributesInAverageRankOrder(session, comp, attr_name)        
+    else:
+        team_rankings = DataModel.getTeamAttributesInRankOrder(session, comp, attr_name)
+
+    result.append('   "rankings" : [\n')
+    for team_attr in team_rankings:
+        data_str = '      [ %d,' % team_attr.team
+        value_dict = DataModel.mapAllValuesToDict(attr_def, team_attr.all_values)
+        for column in columns:
+            try:
+                value = value_dict[column]
+            except:
+                value = 0
+            data_str += ' %d,' % value
+        data_str = data_str.rstrip(',')
+        data_str += ' ]'
+        result.append(data_str)
+        result.append(',\n')
+
+    if len(team_rankings) > 0:
+        result = result[:-1]
+    result.append('\n')
+    result.append('   ]\n}')    
+    
+    json_str = ''.join(result)
+    
+    if store_data_to_file is True:
+        try:
+            file_name = 'attrrankings_%s' % attr_name
+            FileSync.put( global_config, '%s/EventData/%s.json' % (comp,file_name), 'text', json_str)
+        except:
+            raise
+        
+    return json_str
+    
 
 def get_team_event_list_from_tba(global_config, team, season):
     
@@ -1042,14 +1164,14 @@ def update_team_event_files( global_config, year, event, directory ):
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_team_rankings_json( global_config, event+year, attr_filters=[], filter_name=None, store_json_file=True )
+        get_team_rankings_json( global_config, event+year, attr_filters=[], filter_name=None, thumbnails=True, store_json_file=True )
         get_team_list_json( global_config, event+year, store_json_file=True )
        
         # then update the JSON data files for each of the defined filters 
         filter_list = WebAttributeDefinitions.get_filter_list()
         for name in filter_list:
             attr_filter = WebAttributeDefinitions.get_saved_filter(name)
-            get_team_rankings_json( global_config, event+year, attr_filters=attr_filter, filter_name=name, store_json_file=True )
+            get_team_rankings_json( global_config, event+year, attr_filters=attr_filter, filter_name=name, thumbnails=True, store_json_file=True )
 
         result = True
         
@@ -1087,3 +1209,66 @@ def update_team_data_files( global_config, year, event, directory, team=None ):
         result = True
         
     return result
+
+def load_team_info( global_config, name=None):
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+    
+    if name is None:
+        global_config['logger'].debug( 'Loading Team Info For All FRC Teams' )
+        page = 0
+        done = False
+        while not done: 
+            url_str = '/api/v2/teams/%d' % (page)
+            teams_data = TbaIntf.get_from_tba_parsed(url_str)
+            if len(teams_data) == 0:
+                done = True
+            else:
+                for team_data in teams_data:
+                    DataModel.setTeamInfoFromTba(session, team_data)
+                page += 1
+    else:
+        global_config['logger'].debug( 'Loading Team Info For FRC Team %s' % name )
+        '''
+        url_str = '/api/v2/team/frc%s/%s' % (team_str,query_str)
+        for page in range(0,14): 
+            teams_data = TbaIntf.get_from_tba_parsed(url_str)
+            for team_data in teams_data:
+                setTeamInfoFromTba(session, team_data)
+        '''
+        
+def set_team_geo_location(global_config, team_key=None):
+    
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+    
+    DataModel.setTeamGeoLocation(session, team_key)
+
+def load_team_participation_years( global_config, team_number=None):
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+    
+    if team_number is None:
+        global_config['logger'].debug( 'Loading Team Participation Info For All FRC Teams' )
+        
+        teams = session.query(DataModel.TeamInfo).all()
+    
+        for team in teams:
+            if team.first_competed is None:
+                print 'Getting participation years for FRC%d' % team.team
+                url_str = '/api/v2/team/frc%d/years_participated' % team.team
+                team_data = TbaIntf.get_from_tba_parsed(url_str)
+                if len(team_data) > 0:
+                    team.first_competed = team_data[0]
+                    team.last_competed = team_data[-1]
+                
+                    session.commit()
+    else:
+        team = session.query(DataModel.TeamInfo).filter(DataModel.TeamInfo.team==int(team_number)).first()
+        if team:
+            url_str = '/api/v2/team/frc%s/years_participated' % team_number
+            team_data = TbaIntf.get_from_tba_parsed(url_str)
+            if len(team_data) > 0:
+                team.first_competed = team_data[0]
+                team.last_competed = team_data[-1]
+                session.commit()
+            
+    return
+    

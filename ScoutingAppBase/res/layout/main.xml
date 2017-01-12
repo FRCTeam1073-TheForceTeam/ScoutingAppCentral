@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The UIGEN_CUSTOM_BUTTONS namespace is created to allow the base application to contain placeholder
+     tags that the UI generator code can identify and manipulate in order to enable the multi-colored
+     buttons that the application now supports. When custom buttons are enabled, the UI generator 
+     will replace the namespace with 'android' to insert the custom buttons into the generated
+     XML layout file. -->
+     
+<ScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:UIGEN_CUSTOM_BUTTONS="http://uigenerator.custombuttontag.com"
     android:id="@+id/Scroller"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:fillViewport="true" >
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
     android:id="@+id/Layout"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -54,7 +62,7 @@
         android:id="@+id/CameraButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_alignParentTop="true"
         android:layout_marginLeft="21dp"
         android:layout_toRightOf="@+id/ScouterEntry"
@@ -64,7 +72,7 @@
         android:id="@+id/VideoButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/CameraButton"
         android:text="Video" />
@@ -73,7 +81,7 @@
         android:id="@+id/SyncButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/VideoButton"
         android:text="Sync" />
@@ -115,7 +123,7 @@
         android:id="@+id/SaveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_below="@+id/NotesEntry"
         android:layout_alignParentLeft="true"
         android:text="  Save  "/>
@@ -124,7 +132,7 @@
         android:id="@+id/DiscardButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_below="@+id/NotesEntry"
         android:layout_centerInParent="true"        
         android:text="@string/discard_string"/>
@@ -133,7 +141,7 @@
         android:id="@+id/ReloadButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@layout/custom_button"        
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
         android:layout_below="@+id/NotesEntry"
         android:layout_alignParentRight="true"
         android:text="Reload"/>

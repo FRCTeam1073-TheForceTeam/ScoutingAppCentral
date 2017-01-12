@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import android.app.Activity;
@@ -32,6 +33,8 @@ import android.widget.Toast;
 
 import org.team1073.utils.BluetoothSyncTask;
 import org.team1073.utils.HttpSyncTask;
+
+import com.google.gson.Gson;
 
 /* Following is how to send an email to a list of addresses from the tablet application       		
 String emailList[] = { "foo@email.com", "6031234567@vtext.com" };
@@ -62,39 +65,38 @@ public class ScoutingAppActivity extends Activity {
 	private Boolean sync_text_files = true;
 	private Boolean sync_media_files = false;
 	private Boolean unsavedChanges = false;
+	private MatchSchedule matchSchedule = null;
 	
     final String tmpFile = "ScoutingData.tmp";
+    
+    /*private void StartFileSyncTask( String sync_control, String path) {
+    	String[] paths = path.split("");
+    	StartFileSyncTask( sync_control, paths);
+    }*/
+    private void StartFileSyncTask( String sync_control, String... path) {
+		// Create an asynchronous task to transfer the files to/from the server
+		// Use either the Bluetooth or HTTP service based on the device configuration
+		if (sync_method.equalsIgnoreCase("Bluetooth")) {
+    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute(path);
+		} else {
+    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(path);
+		}
+    }
 
 	private void DownloadCompetitionConfiguration( ) {
-		// create an asynchronous task to transfer the scouting data and media files
-		// to the server. If no host IP address has been specified, use bluetooth,
-		// otherwise use http.
-		String download_control = "Download_Updates";
-		if (sync_method.equalsIgnoreCase("Bluetooth")) {
-    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, download_control).execute(
-    				"ScoutingConfig/");
-		} else {
-    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, download_control).execute(
-    				"ScoutingConfig/");
-		}
-    
+		StartFileSyncTask( "Download_Updates", "ScoutingConfig/");
 	}
 	
 	private void DownloadCompetitionData(String path) {
-		// create an asynchronous task to retrieve the most up to date data for this competition.
-		// If no host IP address has been specified, use bluetooth,
-		// otherwise use http.
 		String download_control = "Retrieve_Current_Data";
-		if (sync_method.equalsIgnoreCase("Bluetooth")) {
-    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, download_control).execute(
-    				competition_directory + "/" + path +"/");
-		} else {
-    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, download_control).execute(
-    				competition_directory + "/" + path +"/");
-		}
-    
+		StartFileSyncTask( download_control, competition_directory + "/" + path +"/");
 	}
-	
+
+	private void DownloadMatchSchedule() {
+		String download_control = "Retrieve_Files";
+		StartFileSyncTask( download_control, competition_directory + "/EventData/matchschedule.json");
+	}
+
 	private void LoadCompetitionConfiguration( boolean showDialog ) {
 
     	try {
@@ -120,6 +122,7 @@ public class ScoutingAppActivity extends Activity {
                 	ScoutingAppActivity.this.setTitle(app_title_base + competition_directory);
                 }
 			}
+			reader.close();
     	} catch (Exception e) {
     		showDialog = true;
     	}
@@ -208,6 +211,7 @@ public class ScoutingAppActivity extends Activity {
 	            		sync_media_files = false;
 	            }
 			}
+			reader.close();
     	} catch (Exception e) {
     		showDialog = true;
     	}
@@ -678,6 +682,12 @@ public class ScoutingAppActivity extends Activity {
 	    case R.id.RetrieveTeamData:
 	        DownloadCompetitionData("EventData/Teamdata");
 	    	break;
+	    case R.id.RetrieveMatchSchedule:
+	    	DownloadMatchSchedule();
+	    	break;
+	    case R.id.LoadMatchSchedule:
+	    	LoadMatchSchedule();
+	    	break;
 		default:
 		    break;
 	    }
@@ -761,16 +771,7 @@ public class ScoutingAppActivity extends Activity {
 	    		}
         		
         		if ( directoriesToSync != null ) {
-	        		// create an asynchronous task to transfer the scouting data and media files
-	        		// to the server. If no host IP address has been specified, use bluetooth,
-	        		// otherwise use http.
-	        		if (sync_method.equalsIgnoreCase("Bluetooth")) {
-		        		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute( directoriesToSync );
-		        		//		competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
-	        		} else {
-		        		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute( directoriesToSync );
-		        		//		competition_directory + "/ScoutingData/", competition_directory + "/ScoutingPictures/");
-	        		}
+        			StartFileSyncTask(sync_control, directoriesToSync);
         		} else {
         			Toast.makeText(ScoutingAppActivity.this, "No Folders Selected To Sync", Toast.LENGTH_LONG).show();        			
         		}
@@ -959,6 +960,98 @@ public class ScoutingAppActivity extends Activity {
         //// UICUSTOM:HANDLERS_END
 
     }
+    
+    //// UIGEN:HELPER_FUNCTIONS_BEGIN - insert generated code for helper functions
+    //// UIGEN:HELPER_FUNCTIONS_END
+
+    private void LoadMatchSchedule( ) {
+
+    	try {
+    			
+    		Gson gson = new Gson();
+
+    		// This code block will attempt to read the device configuration
+    		// file containing the device name, id, and other configuration 
+    		// parameters. If the file is there, the information is read and
+    		// stored for later access by the application itself
+    		File directory = Environment.getExternalStorageDirectory();
+			File myDir = new File(directory + "/" + competition_directory + "/EventData/");
+			File myFile = new File(myDir, "matchschedule.json");
+	        FileReader myReader = new FileReader(myFile);
+			BufferedReader reader = new BufferedReader(myReader);
+			
+			// Load the match results object from the json file
+			matchSchedule = gson.fromJson(reader, MatchSchedule.class);
+			
+			reader.close();
+
+			Toast.makeText(ScoutingAppActivity.this, "Match Schedule Loaded", Toast.LENGTH_SHORT).show();
+
+    	} catch (Exception e) {
+			e.printStackTrace();
+    	}
+    	
+	}
+	
+	private String[] FindMatchEntry( List<String[]>matches, String match_str ) {
+		String[] matchEntry = null;
+		int matchOffset = 1;
+		Boolean found = false;
+		
+		for ( int i=0; i<matches.size() && !found; i++ ) {
+			matchEntry = matches.get(i);
+			if ( matchEntry[matchOffset].equals(match_str) ) {
+				found = true;
+			}
+		}
+		
+		if ( !found )
+			matchEntry = null;
+		
+		return matchEntry;
+	}
+	
+	private String GetTeamFromMatchSchedule( String round, String alliance, String position_str, String match_str ) {
+		int offset = 0;
+		int position = Integer.parseInt(position_str);
+		String team = "0";
+		String[] matchEntry = null; 
+		
+		if ( alliance.equals("Red") ) {
+			offset = 2;
+		} else {
+			offset = 5;
+		}
+		offset += (position-1);
+		
+		if ( matchSchedule != null) {
+			if ( round.equals("Quals") ) {
+				int match = Integer.parseInt(match_str);
+				matchEntry = matchSchedule.qualification.get(match-1);
+			} else if ( round.equals("Quarters") ) {
+				matchEntry = FindMatchEntry( matchSchedule.quarter_finals, match_str );				
+			} else if ( round.equals("Semis") ) {
+				matchEntry = FindMatchEntry( matchSchedule.semi_finals, match_str );				
+			} else if ( round.equals("Finals") ) {
+				try {
+					int match = Integer.parseInt(match_str);
+					matchEntry = matchSchedule.finals.get(match-1);
+				} catch (Exception e) {
+					matchEntry = FindMatchEntry( matchSchedule.finals, match_str );
+				}
+			}
+			
+			if ( matchEntry != null ) {
+				team = matchEntry[offset];
+			}
+			
+		} else {
+	        Toast.makeText(ScoutingAppActivity.this, "No Match Schedule Loaded", Toast.LENGTH_SHORT).show();
+		}
+		
+		return team;
+	}
+    
 }
 
 

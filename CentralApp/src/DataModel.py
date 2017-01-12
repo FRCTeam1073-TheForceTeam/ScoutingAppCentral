@@ -15,10 +15,11 @@ from sqlalchemy.orm import sessionmaker
 from optparse import OptionParser
 
 import json
-
+import time
 import DbSession
 import AttributeDefinitions
 import TbaIntf
+import GoogleMapsIntf
 
 
 
@@ -108,6 +109,9 @@ class TeamInfo(Base):
     website         = Column(String(64))
     motto           = Column(String(128))
     location        = Column(String(64))
+    geo_location    = Column(String(128))
+    first_competed  = Column(Integer)
+    last_competed   = Column(Integer)
 
 class MatchData(Base):
     __tablename__ = 'match_data'
@@ -139,6 +143,23 @@ class NotesEntry(Base):
     data        = Column(String(1024))
     tag         = Column(String(64))
     
+class EventInfo(Base):
+    __tablename__ = 'eventinfo'
+    
+    event_key       = Column(String(16))
+    event_code      = Column(String(16))
+    name            = Column(String(128))
+    short_name      = Column(String(64))
+    alias           = Column(String(64))
+    event_year      = Column(Integer)
+    event_type      = Column(String(32))
+    district_name   = Column(String(64))
+    start_date      = Column(String(16))
+    end_date        = Column(String(16))
+    location        = Column(String(64))
+    geo_location    = Column(String(128))
+    
+
 def isFileProcessed(session, filename):
     
 
@@ -188,7 +209,7 @@ def getTeamNotesAsString(session, teamId, comp):
     note_string = ''
     notes = getTeamNotes(session, teamId, comp)
     for note in notes:
-        note_string += note.data.replace(',', ' ').replace('  ',' ') + '\r'
+        note_string += note.data.replace(',', ' ').replace('  ',' ').replace('"','\'') + '\r'
     note_string = note_string.rstrip()
     return str(note_string)
         
@@ -599,42 +620,154 @@ def getTeamInfo(session, team):
     # should only be one team in the list
     team_info = team_list.first()
     if not team_info:
-        url_str = '/api/v2/team/frc%s' % team
+        url_str = '/api/v2/team/frc%d' % team
         try:
             team_data = TbaIntf.get_from_tba_parsed(url_str)
-    
-            if team_data.has_key('nickname'):
-                nickname=team_data['nickname']
-            else:
-                nickname='None'
-            if team_data.has_key('name'):
-                fullname=team_data['name']
-            else:
-                fullname='None'
-            if team_data.has_key('rookie_year'):
-                rookie_season=int(team_data['rookie_year'])
-            else:
-                rookie_season=2014
-            if team_data.has_key('location'):
-                location=team_data['location']
-            else:
-                location='Unknown'
-            if team_data.has_key('motto'):
-                motto=team_data['motto']
-            else:
-                motto='None'
-            if team_data.has_key('website'):
-                website=team_data['website']
-            else:
-                website='None'
-                
-            team_info = addOrUpdateTeamInfo(session, team, 
-                                nickname, fullname, rookie_season,
-                                motto, location, website)
+
+            team_info = setTeamInfoFromTba(session, team_data)
+            
         except:
             team_info = None
             
     return team_info
+
+def setTeamInfoFromTba(session, team_data):
+    team = team_data['team_number']
+    
+    if team_data.has_key('nickname'):
+        nickname=team_data['nickname']
+    else:
+        nickname='None'
+    if team_data.has_key('name'):
+        fullname=team_data['name']
+    else:
+        fullname='None'
+        
+    try:
+        rookie_season=int(team_data['rookie_year'])
+    except:
+        rookie_season=1980
+        
+    if team_data.has_key('location'):
+        location=team_data['location']
+    else:
+        location='Unknown'
+    if team_data.has_key('motto'):
+        motto=team_data['motto']
+    else:
+        motto='None'
+    if team_data.has_key('website'):
+        website=team_data['website']
+    else:
+        website='None'
+        
+    team_info = addOrUpdateTeamInfo(session, team, 
+                        nickname, fullname, rookie_season,
+                        motto, location, website)
+
+
+def setTeamGeoLocation(session, team_key=None):
+    
+    teams = session.query(TeamInfo).filter(TeamInfo.team>0).all()
+    
+    geo_locations_found = 0
+    for team in teams:
+        # some teams in the database don't have complete information, so skip
+        # those that don't list an address location
+        if team.location != '' and team.geo_location is None:
+            print 'Getting Geo Location For Team: FRC%d' % team.team
+            try:
+                # check to see if we haven't already obtained the geo location and
+                # skip those that have already been set. The Google APIs have usage
+                # limits so we're going to have to do this a piece at a time
+                geo_location = GoogleMapsIntf.get_geo_location( team.location )
+                
+                # if the location is not found, let's massage the location and try again
+                if geo_location is None:
+                    if 'USA'  in team.location:
+                        print 'Skipping team FRC%d From %s' & (team.team,team.location)
+                    else:
+                        split_location = team.location.split(',')
+                        if len(split_location) > 2:
+                            new_location = split_location[0] + ',' + split_location[-1]
+                            geo_location = GoogleMapsIntf.get_geo_location( new_location )
+                        
+                #if len(geo_location) != 2:
+                #    raise
+                if geo_location is not None:
+                    geo_location_json = json.dumps(geo_location)
+                    team.geo_location = geo_location_json
+                
+                    print 'Geo Location For FRC%d: %s' % (team.team, geo_location_json)
+                
+                    geo_locations_found += 1
+            
+                    # commit each location as it is found so that we don't lose any
+                    # should an exception be raised
+                    session.commit()        
+                    
+            except:
+                print 'Error Getting Geo Location For Team: FRC%d' % team.team
+                #break
+                
+            # pause between each request to ensure that we don't exceed the rate in which we
+            # call the Google APIs
+            time.sleep(1)
+            
+    print 'Successful Geo Location Lookups: %d ' % geo_locations_found
+    
+    return
+
+def setEventInfo( event_info, event_data):
+    event_info.event_key       = event_data['key']
+    event_info.event_code      = event_data['event_code']
+    event_info.name            = event_data['name']
+    event_info.short_name      = event_data['short_name']
+    event_info.event_year      = event_data['year']
+    event_info.event_type      = event_data['event_type_string']
+    event_info.district_name   = event_data['event_district']
+    event_info.start_date      = event_data['start_date']
+    event_info.end_date        = event_data['end_date']
+    event_info.location        = event_data['location']
+
+def addOrUpdateEventInfo(session, event_data):
+    event_key = event_data['key']
+    
+    event_info = session.query(EventInfo).filter(EventInfo.event_key==event_key).first()
+    
+    if event_info:
+        setEventInfo(event_info, event_data)
+    else:
+        event_info = EventInfo()
+        setEventInfo(event_info, event_data)        
+        session.add(event_info)
+
+    return event_info
+
+def setEventsGeoLocation(session, event_key=None):
+    
+    events = session.query(EventInfo).all()
+    
+    for event in events:
+        try:
+            if 'Mexico' in event.location:
+                print 'Location: %s' % event.location
+                
+            if event.geo_location is None or event.geo_location == 'null':
+                print 'Getting Geo Location For Event: %d %s' % (event.event_year,event.name)
+                geo_location = GoogleMapsIntf.get_geo_location( event.location )
+                geo_location_json = json.dumps(geo_location)
+                event.geo_location = geo_location_json
+            
+                session.commit()
+                
+                time.sleep(1)
+
+        except:
+            print 'Error Getting Geo Location For Event: %s' % event.name
+            
+
+    return
 
 def addTeamToEvent(session, event, team, commit=False):
     entry = None
@@ -766,7 +899,6 @@ def dump_database_as_csv_file(session, global_config, attr_definitions, competit
     try:
         for key, value in attr_dict.items():
             attr_order[(int(float(value['Column_Order']))-1)] = value
-            #attr_order[(int(value['Column_Order'])-1)] = value
     except Exception, e:
         print 'Exception: %s' % str(e)
 

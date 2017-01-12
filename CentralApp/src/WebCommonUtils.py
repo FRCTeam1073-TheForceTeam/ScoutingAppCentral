@@ -1,8 +1,11 @@
 import os
+import json
+
 import AttributeDefinitions
 import DbSession
 import DataModel
 import CompAlias
+import FileSync
 import WebEventData
 import WebTeamData
 import WebAttributeDefinitions
@@ -338,3 +341,125 @@ def get_district_string():
         district_string = 'District'
         
     return district_string
+
+def get_geo_location_json( include_teams=True, include_events=True ):
+
+    geo_locations = {}
+    filename = 'geo_coordinates_for'
+        
+    my_config = ScoutingAppMainWebServer.global_config
+    session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
+    
+    if include_events:
+        filename += '_Events'
+        events = session.query(DataModel.EventInfo).all()
+        for event in events:
+            if event.geo_location is not None:
+                geo_locations[event.event_key] = json.loads(event.geo_location)
+    
+    if include_teams:
+        filename += '_Teams'
+        teams = session.query(DataModel.TeamInfo).all()
+        for team in teams:
+            if team.geo_location is not None:
+                team_key = 'frc%d' % team.team
+                geo_locations[team_key] = json.loads(team.geo_location)
+    
+    geo_location_json = json.dumps(geo_locations)
+    geo_location_js = 'var %s = \'%s\';' % (filename,geo_location_json)
+
+    # store the geo location information to a file, too
+    try:
+        FileSync.put( my_config, 'GlobalData/%s.json' % (filename), 'text', geo_location_json)
+        FileSync.put( my_config, 'GlobalData/%s.js' % (filename), 'text', geo_location_js)
+    except:
+        raise
+    
+    return geo_location_json
+
+def get_team_participation_json():
+
+    team_participation = {}
+    filename = 'team_participation'
+        
+    my_config = ScoutingAppMainWebServer.global_config
+    session = DbSession.open_db_session(my_config['db_name'] + my_config['this_season'])
+    
+    teams = session.query(DataModel.TeamInfo).all()
+    for team in teams:
+        team_key = 'frc%d' % team.team
+        if team.first_competed is not None:
+            info = {}
+            info['first_competed'] = team.first_competed
+            info['last_competed'] = team.last_competed
+            team_participation[team_key] = info
+    
+    team_participation_json = json.dumps(team_participation)
+    team_participation_js = 'var %s = \'%s\';' % (filename,team_participation_json)
+
+    # store the geo location information to a file, too
+    try:
+        FileSync.put( my_config, 'GlobalData/%s.json' % (filename), 'text', team_participation_json)
+        FileSync.put( my_config, 'GlobalData/%s.js' % (filename), 'text', team_participation_js)
+    except:
+        raise
+    
+    return team_participation_json
+
+def handle_geo_overlap( geo_dict, geo_location_str, direction_flag=True ):
+    
+    try:
+         location = json.loads(geo_dict[geo_location_str])
+         print 'Overlapping location: %s' % str(location)
+         if direction_flag:
+             location["lng"] += .01
+         else:
+             location["lat"] += .01
+             
+         return handle_geo_overlap(geo_dict, json.dumps(location), direction_flag)
+    except:
+         geo_dict[geo_location_str] = geo_location_str
+         return json.loads(geo_location_str)
+
+
+if __name__ == "__main__":
+    
+    geo_locations = {}
+    filename = 'geo_coordinates_for'
+        
+    db_name = 'scouting2016'
+    session = DbSession.open_db_session(db_name)
+    
+    filename += '_Events'
+    events = session.query(DataModel.EventInfo).all()
+    
+    event_geo_info = {}
+    team_geo_info = {}
+    
+    for event in events:
+        if event.geo_location is not None:
+            try:
+                event_year_info = event_geo_info[event.event_year]
+                geo_locations[event.event_key] = handle_geo_overlap( event_year_info, event.geo_location, True )
+            except:
+                event_geo_info[event.event_year] = {}
+                event_geo_info[event.event_year][event.geo_location] = event.geo_location 
+                geo_locations[event.event_key] = json.loads(event.geo_location)
+    
+
+    filename += '_Teams'
+    teams = session.query(DataModel.TeamInfo).all()
+    for team in teams:
+        if team.geo_location is not None:
+            team_key = 'frc%d' % team.team
+            geo_locations[team_key] = handle_geo_overlap( team_geo_info, team.geo_location, False )
+    
+    geo_location_json = json.dumps(geo_locations)
+    geo_location_js = 'var %s = \'%s\';' % (filename,geo_location_json)
+
+    # store the geo location information to a file, too
+    FileSync.put( {}, 'GlobalData/%s.json' % (filename), 'text', geo_location_json)
+    FileSync.put( {}, 'GlobalData/%s.js' % (filename), 'text', geo_location_js)
+
+
+

@@ -84,6 +84,16 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
                 publishProgress( "Sending Files To Server" );
                	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
     	        
+    		} else if ( syncControl.equalsIgnoreCase("Retrieve_Files")) {
+        		
+                publishProgress( "Retrieving File From Server" );
+        		boolean error = retrieveFileFromServer(paths[i]);
+            	if ( error ) {
+            		publishProgress( "Error Retrieving File From Server: " + paths[i]);
+            	} else {
+            		numFilesRetrieved += 1;
+            	}		    	        
+
     		} else {
         		HashSet<String> fileSetToRetrieve = new HashSet<String>();
         		List<String> filesToSend = new ArrayList<String>();
@@ -183,6 +193,57 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 		}
 		return filesTransferred;
 	}
+
+	private Boolean retrieveFileFromServer( String fileToRetrieve) {
+		
+		String[] filePathSegments = fileToRetrieve.split("/");
+		String basepath="";
+		int i;
+		for ( i=0; i<(filePathSegments.length-1);i++) {
+			basepath += "/" + filePathSegments[i];
+		}
+		String filename = filePathSegments[i];
+		File myDir = new File(directory + basepath );
+		Boolean error = false;
+		
+		myDir.mkdirs();
+
+		publishProgress( "Receiving File From Server" );
+
+		// Retrieve the file from the server using an HTTP formatted
+		// request
+		try {		        
+	        URL url = new URL(baseUrl + fileToRetrieve);
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	        
+	        // just want to do an HTTP GET here
+	        connection.setRequestMethod("GET");
+	        // give it 15 seconds to respond
+	        connection.setReadTimeout(15*1000);
+	        connection.connect();
+			int responseCode = connection.getResponseCode();
+
+			if (responseCode >= 200 && responseCode <= 202) {
+				File myFile = new File(myDir, filename);					
+				InputStream input = connection.getInputStream();
+                byte[] buffer = new byte[4096];
+                int bytesRead = - 1;
+
+                OutputStream output = new FileOutputStream( myFile );
+                while ( (bytesRead = input.read(buffer)) != -1) {
+                	if (bytesRead > 0) {
+                		output.write(buffer, 0, bytesRead);
+                	}
+                }
+                output.close();					
+			}
+		} catch(Exception e) { 
+			publishProgress( "Error Transferring File: " + fileToRetrieve );
+			error = true;
+		}
+	
+		return error;
+	}	
 
 	private Integer retrieveFilesFromServer( String path, List<String> filesToRetrieve) {	
 		File myDir = new File(directory + "/" + path);

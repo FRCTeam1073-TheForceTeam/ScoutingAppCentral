@@ -4,5 +4,8 @@
     <string name="app_name">Scouting Application: 2016 Base Application</string>
     <string name="app_label">Scouter App</string>
     <string name="discard_string">Clear</string>
-
+    
+    <string name="match_plus">Next</string>
+    <string name="match_minus">Prev</string>
+    
 </resources>

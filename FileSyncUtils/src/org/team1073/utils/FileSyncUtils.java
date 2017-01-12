@@ -401,7 +401,7 @@ public class FileSyncUtils {
 	}
 		
 
-	private boolean retrieveFileFromServer( String filepath ) {
+	public boolean retrieveFileFromServer( String filepath ) {
 		boolean error = false;
 		
 		// Retrieve the file from the server using an HTTP formatted request

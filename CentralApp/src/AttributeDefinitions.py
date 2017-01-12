@@ -8,6 +8,8 @@ import csv
 import xlrd
 import os
 
+import UiGeneratorMatchGroup
+
 tmpfile = 'attr-tmp.csv'
 attrdef_overrides_filename = './config/attrdef_overrides.txt'
 
@@ -74,6 +76,15 @@ class AttrDefinitions:
                 # order will be the same as the order of the rows of the spreadsheet
                 definition['Column_Order'] = row_number
 
+                # if there is no Order column in the attribute definition, then insert an Order term
+                # into the definition and set it to the row_number. The above Column_Order and 
+                # this Order attribute should be combined to eliminate any lingering confusion over
+                # their use. In the early days, there were two separate purposes for these columns, but
+                # there really is no reason to keep them separate. The order of the attributes when 
+                # creating the tablet UI is based on the row ordering in the spreadsheet itself.
+                if not definition.has_key('Order'):
+                    definition['Order'] = row_number
+
                 #print 'attribute definition: ', definition
                 sheet_qualifier = definition['Sheet']
                 
@@ -133,7 +144,23 @@ class AttrDefinitions:
                         definition['Type'] = 'Map_Integer'
                         # set the control to use numeric values in the generated CSV file
                         definition['Display_Numeric'] = 'Yes'
+                    elif definition['Control'] == 'Match_Group':
+                        expanded_definitions = UiGeneratorMatchGroup.GetMatchGroupControlDefs(definition)
 
+                        # check for name conflicts in the expanded definitions that were added as part
+                        # of the match group expansion
+                        for expanded_def_name in expanded_definitions.keys():
+                            if self._attr_names.has_key(expanded_def_name):
+                                raise Exception('ERROR: Duplicate Name In Match Group Attribute Expansion, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
+                            else:
+                                self._attr_names[expanded_def_name] = expanded_def_name
+
+                        self._attrdefinitions.update(expanded_definitions)
+                                                
+                        # reset the row_number based on the currrent order of this definition. It has
+                        # been incremented by the number of expanded definitions
+                        row_number = definition['Order']
+                        
             row_number += 1
 
         extra_column_order = float(len(self._attrdefinitions) + 1)            

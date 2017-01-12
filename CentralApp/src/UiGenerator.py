@@ -13,6 +13,9 @@ from UiGeneratorScoringMatrix import ScoringMatrixUiGenControl
 from UiGeneratorSeparator import LineSeparatorUiGenControl 
 from UiGeneratorButton import ButtonUiGenControl 
 from UiGeneratorHeading import HeadingFieldUiGenControl
+from UiGeneratorMatchGroup import MatchGroupUiGenControl
+
+import UiGeneratorDebriefApp
 
 def gen_java_reload_handlers_termstr():
     java_str = "                }\n"
@@ -29,7 +32,16 @@ def attr_order_compare( left, right ):
         right_order = int(float(right['Order']))
     return cmp( left_order, right_order )
 
-def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=False ):
+def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=False, use_custom_buttons=False ):
+    if sheet_type in ('Pit','Match'):
+        return gen_scouting_sheet_ui(global_config, attrdef_filename, sheet_type, create_fragment_file, use_custom_buttons)
+    elif sheet_type in ('Debrief'):
+        return gen_debrief_sheet_ui(global_config, attrdef_filename, sheet_type, create_fragment_file, use_custom_buttons)
+    else:
+        err_str = 'Unsupported sheet type: %s' % (sheet_type)
+        raise Exception(err_str)
+        
+def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=False, use_custom_buttons=False ):
     # Build the attribute definition dictionary from the definitions spreadsheet file
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename, sheet_type)
@@ -52,6 +64,7 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
     java_discard_handlers = ''
     java_save_handlers = ''
     java_reload_handlers = ''
+    java_helper_functions = ''
 
     # initialize the build_filename string to include the team number and the scouting sheet type into
     # the filename that contains the collected scouting data
@@ -65,7 +78,10 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
         for item in attr_order:
             ctrl_gen = None
             if item['Order'] != '' and int(float(item['Order'])) != 0:
-                if item['Control'] == 'Text':
+                if item['Control'] == 'None':
+                    # skip any attribute that has no control defined
+                    continue
+                elif item['Control'] == 'Text':
                     ctrl_gen = TextFieldUiGenControl(item)
                 elif item['Control'] == 'Radio':
                     ctrl_gen = RadioButtonUiGenControl(item)
@@ -79,7 +95,12 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
                     ctrl_gen = HeadingFieldUiGenControl(item)
                 elif item['Control'] == 'Button':
                     ctrl_gen = ButtonUiGenControl(item)
+                elif item['Control'] == 'Match_Group':
+                    ctrl_gen = MatchGroupUiGenControl(item)
     
+                if use_custom_buttons:
+                    ctrl_gen.enable_custom_buttons()
+
                 xml_string += ctrl_gen.gen_xml_string(above_name)
                 xml_string = xml_string.replace('ABOVELabel', above_name)
                 xml_string = xml_string.replace('NAME', item['Name'])
@@ -101,6 +122,9 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
     
                 java_reload_handlers += ctrl_gen.gen_java_reload_handler()
                 java_reload_handlers = java_reload_handlers.replace('NAME', item['Name'])
+                
+                java_helper_functions += ctrl_gen.gen_java_helper_functions()
+                java_helper_functions = java_helper_functions.replace('NAME', item['Name'])
                 
                 if (item['Control'] == 'Scoring_Matrix'):
                     above_name = ctrl_gen.get_last_label()
@@ -145,6 +169,8 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
         fo.write( java_reload_handlers )
         fo.write( '\n======================= java discard handlers code fragments ======================\n\n')
         fo.write( java_discard_handlers )
+        fo.write( '\n======================= java helper function code fragments ======================\n\n')
+        fo.write( java_helper_functions )
         fo.write( '\n======================= java build_filename() code fragment ======================\n\n')
         fo.write( java_build_filename_string )
         fo.close()
@@ -160,6 +186,126 @@ def gen_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=Fa
     gen_fragments['UIGEN:HANDLERS'] = java_button_handlers
     gen_fragments['UIGEN:XML_FIELDS'] = xml_string
     gen_fragments['UIGEN:BUILD_FILENAME'] = java_build_filename_string
+    gen_fragments['UIGEN:HELPER_FUNCTIONS'] = java_helper_functions
+    
+    return gen_fragments
+
+def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=False, use_custom_buttons=False ):
+    # Build the attribute definition dictionary from the definitions spreadsheet file
+    attr_definitions = AttributeDefinitions.AttrDefinitions()
+    attr_definitions.parse(attrdef_filename, sheet_type)
+
+    attr_dict = attr_definitions.get_definitions()
+    num_attr = len(attr_dict)
+    attr_order = [{} for i in range(len(attr_dict))]
+    
+    i=0
+    for key, value in attr_dict.items():
+        attr_order[i] = value
+        i += 1
+        
+    attr_order.sort(attr_order_compare)
+
+    # TODO: load the list of taskgroups from some file
+    taskgroups = UiGeneratorDebriefApp.taskgroups
+    categories = UiGeneratorDebriefApp.categories
+    
+    xml_string = ''
+    java_list_declaration_snippet = ''
+    java_load_snippet = ''
+    
+    java_checkbox_declaration_snippets = {}
+    java_discard_handler_snippets = {}
+    java_save_handler_snippets = {}
+    java_reload_handler_snippets = {}
+    java_checkbox_init_snippets = {}
+    java_is_checked_snippets = {}
+    for category in categories:
+        java_checkbox_declaration_snippets[category] = ''
+        java_discard_handler_snippets[category] = ''
+        java_save_handler_snippets[category] = ''
+        java_reload_handler_snippets[category] = ''
+        java_checkbox_init_snippets[category] = ''
+        java_is_checked_snippets[category] = ''
+
+    # initialize the build_filename string to include the team number and the scouting sheet type into
+    # the filename that contains the collected scouting data
+    java_build_filename_string_rewritten = False
+    java_build_filename_string = '                    final String filename = buildFilename( TeamEntry, "' + \
+                                 sheet_type + '", "" );\n'
+    
+    above_name = 'Issue1_SummaryEntry'
+
+    try:
+        for item in attr_order:
+            # generate the XML snippets...
+            ctrl_gen = CheckboxUiGenControl(item)
+            xml_string += ctrl_gen.gen_xml_string(above_name)
+            xml_string = xml_string.replace('ABOVELabel', above_name)
+            xml_string = xml_string.replace('NAME', item['Name'])
+            above_name = item['Name'] + 'Label'
+            
+        for item in taskgroups:
+    
+            java_list_declaration_snippet += UiGeneratorDebriefApp.gen_list_declaration_snippet(item)
+            java_load_snippet += UiGeneratorDebriefApp.gen_load_taskgroups_snippet(item)
+            
+            for category in categories:
+                java_checkbox_declaration_snippets[category] += UiGeneratorDebriefApp.gen_checkbox_declaration_snippet(category,item)
+                java_discard_handler_snippets[category] += UiGeneratorDebriefApp.gen_discard_handler_snippet(category,item)
+                java_save_handler_snippets[category] += UiGeneratorDebriefApp.gen_save_handler_snippet(category,item)
+                java_reload_handler_snippets[category] += UiGeneratorDebriefApp.gen_reload_handler_snippet(category,item)
+                java_checkbox_init_snippets[category] += UiGeneratorDebriefApp.gen_checkbox_init_snippet(category,item)
+                java_is_checked_snippets[category] += UiGeneratorDebriefApp.gen_is_checked_snippet(category,item)
+                
+    except:
+        err_str = 'Error generating %s control: %s, check Map_Values string "%s" or Options string "%s" for proper formatting' % \
+                  (item['Control'],item['Name'],item['Map_Values'],item['Options'])
+        raise Exception(err_str)
+        
+         
+    if create_fragment_file == True:
+        # write out the xml file fragment
+        outputFilename = './tmp/gen-ui-' + sheet_type + '.txt'
+        fo = open(outputFilename, "w+")
+        fo.write( '\n======================= main.xml code fragments ======================\n\n')
+        fo.write( xml_string )
+        fo.write( '\n======================= java list declarations code fragments ======================\n\n')
+        fo.write( java_list_declaration_snippet )
+        fo.write( '\n======================= java load code fragments ======================\n\n')
+        fo.write( java_load_snippet )
+        fo.write( '\n======================= java checkbox declarations code fragments ======================\n\n')    
+        for category in categories:
+             fo.write( java_checkbox_declaration_snippets[category] )
+        fo.write( '\n======================= java save handlers code fragments ======================\n\n')
+        for category in categories:
+            fo.write( java_save_handler_snippets[category] )
+        fo.write( '\n======================= java reload handlers code fragments ======================\n\n')
+        for category in categories:
+            fo.write( java_reload_handler_snippets[category] )
+        fo.write( '\n======================= java discard handlers code fragments ======================\n\n')
+        for category in categories:
+            fo.write( java_discard_handler_snippets[category] )
+        fo.write( '\n======================= java checkbos init code fragments ======================\n\n')
+        for category in categories:
+            fo.write( java_checkbox_init_snippets[category] )
+        fo.write( '\n======================= java is checked code fragments ======================\n\n')
+        for category in categories:
+            fo.write( java_is_checked_snippets[category] )
+        fo.close()
+    
+    # create a dictionary of all the generated code fragments to return to the 
+    # caller
+    gen_fragments = {}
+    gen_fragments['UIGEN:LIST_DECLARE'] = java_list_declaration_snippet
+    gen_fragments['UIGEN:LIST_LOAD'] = java_load_snippet
+    gen_fragments['UIGEN:CHECKBOX_DECLARE'] = java_checkbox_declaration_snippets
+    gen_fragments['UIGEN:SAVE'] = java_save_handler_snippets
+    gen_fragments['UIGEN:RELOAD'] = java_reload_handler_snippets
+    gen_fragments['UIGEN:DISCARD'] = java_discard_handler_snippets
+    gen_fragments['UIGEN:CHECKBOX_INIT'] = java_checkbox_init_snippets
+    gen_fragments['UIGEN:IS_CHECKED'] = java_is_checked_snippets
+    gen_fragments['UIGEN:XML_FIELDS'] = xml_string
     
     return gen_fragments
 

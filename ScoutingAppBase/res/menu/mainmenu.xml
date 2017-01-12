@@ -6,5 +6,7 @@
     <item android:id="@+id/LoadCompetitionSettings" android:title="Load Competition Settings"></item>
     <item android:id="@+id/RetrieveEventData" android:title="Retrieve Event Data"></item>
     <item android:id="@+id/RetrieveTeamData" android:title="Retrieve Team Data"></item>
+    <item android:id="@+id/RetrieveMatchSchedule" android:title="Retrieve March Schedule"></item>
+    <item android:id="@+id/LoadMatchSchedule" android:title="Load Match Schedule"></item>
     
 </menu>

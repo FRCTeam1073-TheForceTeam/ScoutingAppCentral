@@ -82,10 +82,13 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "    <Button\n"
             xml_str += "        android:id=\"@+id/" + minus_label + "\"\n"
             xml_str += "        android:layout_width=\"wrap_content\"\n"
-            #xml_str += "        android:layout_height=\"wrap_content\"\n"
-            # Custom Button
-            xml_str += "        android:layout_height=\"47dp\"\n"
-            xml_str += "        android:background=\"@layout/custom_button\"\n"
+
+            if self.custom_buttons:
+                xml_str += "        android:layout_height=\"47dp\"\n"
+                xml_str += "        android:background=\"@layout/custom_button\"\n"
+            else:
+                xml_str += "        android:layout_height=\"wrap_content\"\n"
+
             if first_level == True:
                 left_label = minus_label
                 #xml_str += "        android:layout_marginLeft=\"130dp\"\n"
@@ -101,10 +104,13 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "    <Button\n"
             xml_str += "        android:id=\"@+id/" + plus_label + "\"\n"
             xml_str += "        android:layout_width=\"wrap_content\"\n"
-            #xml_str += "        android:layout_height=\"wrap_content\"\n"
-            # Custom Button
-            xml_str += "        android:layout_height=\"47dp\"\n"
-            xml_str += "        android:background=\"@layout/custom_button\"\n"
+
+            if self.custom_buttons:
+                xml_str += "        android:layout_height=\"47dp\"\n"
+                xml_str += "        android:background=\"@layout/custom_button\"\n"
+            else:
+                xml_str += "        android:layout_height=\"wrap_content\"\n"
+
             if first_level == True:
                 xml_str += "        android:layout_marginTop=\"20dp\"\n"
             xml_str += "        android:layout_toRightOf=\"@+id/" + minus_label + "\"\n"

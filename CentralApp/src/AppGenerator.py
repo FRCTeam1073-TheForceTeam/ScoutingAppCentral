@@ -152,11 +152,19 @@ def prepare_destination_project( base_project_path, base_projectname, dest_proje
         shutil.move(os.path.join(dest_project_path, 'res', 'values', 'strings.xml.tmp'),os.path.join(dest_project_path, 'res', 'values', 'strings.xml'))
 
 # Modify the main.xml file to include the generated UI code
-def update_generated_xml_code(dest_project_path, gen_fragments):
+def update_generated_xml_code(dest_project_path, gen_fragments, use_custom_buttons=False):
     xml_infile = open(os.path.join(dest_project_path, 'res', 'layout', 'main.xml'), 'r')
     xml_outfile = open(os.path.join(dest_project_path, 'res', 'layout', 'main.xml.tmp'), 'w')
     discard_line = False
     for line in xml_infile:
+        # if we're using the custom buttons, strip off the UIGEN tag to uncomment
+        # the custom button layout
+        if 'UIGEN_CUSTOM_BUTTONS' in line:
+            if use_custom_buttons and 'xmlns' not in line:    
+                line = line.replace('UIGEN_CUSTOM_BUTTONS','android')
+                xml_outfile.write(line)
+            continue
+
         # check for the end marker that indicates that need to disable 
         # the line discard mode
         marker_token = get_uigen_token(line)
@@ -203,7 +211,7 @@ def update_generated_xml_code(dest_project_path, gen_fragments):
             # label from the comment line
             tokens = line.split(':')
             label = tokens[1].split('-->')[0].replace(' ', '')
-            label_above_notes_field = "        android:layout_below=\"@+id/" + label + "\n"
+            label_above_notes_field = "        android:layout_below=\"@+id/" + label + "\"\n"
 
         if editing_notes_label == True:
             if line.find('android:layout_below=') != -1:

@@ -114,6 +114,15 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		                publishProgress( "Sending Files To Server" );
 		               	numFilesSent += syncHelper.sendFilesToServer( paths[i], filesToSend);
 		    	        
+	        		} else if ( syncControl.equalsIgnoreCase("Retrieve_Files")) {
+	        					        		
+		                publishProgress( "Retrieving File From Server" );
+		        		boolean error = syncHelper.retrieveFileFromServer(paths[i]);
+		            	if ( error ) {
+		            		publishProgress( "Error Retrieving File From Server: " + paths[i]);
+		            	} else {
+		            		numFilesRetrieved += 1;
+		            	}		    	        
 	        		} else {
 	        			
 		        		HashSet<String> fileSetToRetrieve = new HashSet<String>();

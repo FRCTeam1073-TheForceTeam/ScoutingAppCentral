@@ -10,15 +10,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 def open_db_session( db_name, db_model=None ):
-    if db_name.endswith('.db') == False:
+    if db_name.endswith('.db') is False:
         db_name = db_name + '.db'
-    db_connect='sqlite:///%s'%(db_name)
+    db_path = 'db/' + db_name
+    db_connect='sqlite:///%s'%(db_path)
     my_db = create_engine(db_connect)
     Session = sessionmaker(bind=my_db)
     session = Session()
 
     # Create the database if it doesn't already exist and the model is provided
-    if not os.path.exists('./' + db_name) and db_model is not None:    
+    if not os.path.exists('./' + db_path) and db_model is not None:
         db_model.create_db_tables(my_db)
 
     return session

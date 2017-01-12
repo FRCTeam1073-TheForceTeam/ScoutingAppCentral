@@ -20,8 +20,8 @@ class RadioButtonUiGenControl( UiGenControl ):
                     option_name, option_value = option.split('=')
                     self.config[option_name] = option_value
                 else:
-                    # option with no value is treated as a boolean, set to True string
-                    self.config[option] = 'True'
+                    # option with no value is treated as a boolean, set to True
+                    self.config[option] = True
 
     def gen_xml_string(self, above_name):
     
@@ -56,7 +56,7 @@ class RadioButtonUiGenControl( UiGenControl ):
             name, token_val = token.split('=')
             xml_str = xml_str.replace('BUTTON',name) 
     
-        if self.attr_def['Options'] == 'Clear':
+        if self.config.has_key('Clear'):
             xml_str += "        <RadioButton\n"
             xml_str += "            android:id=\"@+id/NAMEClearRadioButton\"\n"
             xml_str += "            android:layout_width=\"wrap_content\"\n"
@@ -77,7 +77,7 @@ class RadioButtonUiGenControl( UiGenControl ):
             name, token_val = token.split('=')
             java_str = java_str.replace('BUTTON',name) 
     
-        if self.attr_def['Options'] == 'Clear':
+        if self.config.has_key('Clear'):
             java_str += "    private RadioButton NAMEClearRadioButton;\n"
         return java_str
 
@@ -90,13 +90,13 @@ class RadioButtonUiGenControl( UiGenControl ):
             name, token_val = token.split('=')
             java_str = java_str.replace('BUTTON',name)
     
-        if self.attr_def['Options'] == 'Clear':
+        if self.config.has_key('Clear'):
             java_str += "        NAMEClearRadioButton = (RadioButton) findViewById(R.id.NAMEClearRadioButton);\n"
         return java_str
 
     def gen_java_button_handler(self):
         java_str = ''
-        if (self.attr_def['Options'] == 'Clear'):      
+        if self.config.has_key('Clear'):
             java_str += '        NAMERadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {\n\n'
             java_str += '            @Override\n'
             java_str += '            public void onCheckedChanged(RadioGroup group, int checkedId) {\n'
@@ -109,41 +109,57 @@ class RadioButtonUiGenControl( UiGenControl ):
         return java_str
 
     def gen_java_discard_handler(self):
-        java_str = "        NAMERadioGroup.clearCheck();\n"
+        if self.config.has_key('NoDiscard'):
+            java_str = ''
+        else:
+            java_str = "        NAMERadioGroup.clearCheck();\n"
         return java_str
 
     def gen_java_save_handler(self):
-        java_str = "\n        String NAMESelection = \"NAME:\";\n"
+        java_str = "\n        String NAMELabel = \"NAME:\";\n"
+        # if a default value has been specified for this control, then initialize
+        # the selection with the 'Default' token
+        if self.config.has_key('Default'):
+            java_str += "        String NAMESelection = \"Default\";\n"
+        else:
+            java_str += "        String NAMESelection = \"\";\n"
         map_values = self.attr_def['Map_Values']
         tokens = map_values.split(':')
         first = True
         for token in tokens:
-            if (first == True):
+            if first is True:
                 first = False
                 java_str += "        if (NAMEBUTTONRadioButton.isChecked())\n"
-                java_str += "            buffer.append(NAMESelection + NAMEBUTTONRadioButton.getText().toString() + eol);\n"
+                java_str += "            NAMESelection = NAMEBUTTONRadioButton.getText().toString();\n"
             else:
                 java_str += "        else if (NAMEBUTTONRadioButton.isChecked())\n"
-                java_str += "            buffer.append(NAMESelection + NAMEBUTTONRadioButton.getText().toString() + eol);\n"
+                java_str += "            NAMESelection = NAMEBUTTONRadioButton.getText().toString();\n"
             name, token_val = token.split('=')
             java_str = java_str.replace('BUTTON',name)
+
+        java_str += "        if ( !NAMESelection.equals(\"\"))\n"
+        java_str += "            buffer.append(NAMELabel + NAMESelection + eol);\n"
+        
         return java_str
     
     def gen_java_reload_handler(self):
-        java_str = "                } else if ( token.equalsIgnoreCase(\"NAME\")) {\n"
-        java_str += "                    String valueStr = tokenizer.nextToken();\n"
-        map_values = self.attr_def['Map_Values']
-        tokens = map_values.split(':')
-        first = True
-        for token in tokens:
-            if (first == True):
-                first = False
-                java_str += "                    if ( valueStr.equalsIgnoreCase(\"BUTTON\") )\n"
-                java_str += "                        NAMERadioGroup.check(R.id.NAMEBUTTONRadioButton);\n"
-            else:
-                java_str += "                    else if ( valueStr.equalsIgnoreCase(\"BUTTON\") )\n"
-                java_str += "                        NAMERadioGroup.check(R.id.NAMEBUTTONRadioButton);\n"
-            name, token_val = token.split('=')
-            java_str = java_str.replace('BUTTON',name) 
+        if self.config.has_key('NoReload'):
+            java_str = ''
+        else:
+            java_str = "                } else if ( token.equalsIgnoreCase(\"NAME\")) {\n"
+            java_str += "                    String valueStr = tokenizer.nextToken();\n"
+            map_values = self.attr_def['Map_Values']
+            tokens = map_values.split(':')
+            first = True
+            for token in tokens:
+                if (first == True):
+                    first = False
+                    java_str += "                    if ( valueStr.equalsIgnoreCase(\"BUTTON\") )\n"
+                    java_str += "                        NAMERadioGroup.check(R.id.NAMEBUTTONRadioButton);\n"
+                else:
+                    java_str += "                    else if ( valueStr.equalsIgnoreCase(\"BUTTON\") )\n"
+                    java_str += "                        NAMERadioGroup.check(R.id.NAMEBUTTONRadioButton);\n"
+                name, token_val = token.split('=')
+                java_str = java_str.replace('BUTTON',name) 
         return java_str
 

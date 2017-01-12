@@ -11,6 +11,7 @@ import sys
 import traceback
 import datetime
 import subprocess
+import json
 
 import DbSession
 import DataModel
@@ -104,6 +105,9 @@ urls = (
     '/downloads',           'DownloadsPage',
     '/upload/',             'Upload',
     '/eventgallery/(.*)',   'EventGallery',
+    '/teamattrrank(.*)',    'TeamAttributeRanking',
+
+    '/scoutingapp',         'ScoutingAppPage',
     
     '/eventdata/(.*)',      'JsonEventFile',
     '/teamdata2/(.*)',      'JsonTeamFile',
@@ -117,15 +121,17 @@ urls = (
     '/api/teamscore/(.+)',          'TeamScoreJson',
     '/api/teams/(.*)',              'TeamListJson',
     '/api/teaminfo/(.*)',           'TeamInfoJson',
+    '/api/teamyears/(.*)',          'TeamYearsJson',
     '/api/teamdatafiles/(.+)',      'TeamDataFilesJson',
     '/api/teammediafiles/(.+)',     'TeamMediaFilesJson',
     '/api/teamnotes/(.+)',          'TeamDataNotesJson',
+    '/api/teamattrrank/(.+)',       'TeamAttributeRankingsJson',
     '/api/eventinfo/(.*)',          'EventInfoJson',
     '/api/eventstandings/(.*)',     'EventStandingsJson',
     '/api/eventranklist/(.*)',      'EventRanklistJson',
     '/api/eventresults/(.+)',       'EventResultsJson',
     '/api/eventstats/(.+)',         'EventStatsJson',
-    '/api/eventschedule/(.+)',      'MatchScheduleJson',
+    '/api/eventschedule/(.+)',      'EventScheduleJson',
     '/api/events',                  'EventsJson',
     '/api/district/rankings',       'DistrictRankingsJson',
     '/api/issue/(.*)',              'IssueJson',
@@ -134,12 +140,15 @@ urls = (
     '/api/users',                   'UsersJson',
     '/api/attrlist(.*)',            'AttributesJson',
     '/api/attrfilter/(.*)',         'AttributesFilter',
+    '/api/geolocation',             'GeoLocationJson',
+    '/api/teamparticipation',       'TeamParticipationJson',
     
-    '/images/(.*)','Images',
+    '/images/(.*)',                 'Images',
     
-    '/testpage(.*)',        'TestPage',
+    '/testpage(.*)',                'TestPage',
         
-    '/sync/(.*)',           'Sync'
+    '/static/(.*)',                 'FileRequest',
+    '/sync/(.*)',                   'Sync'
 )
 
 
@@ -240,7 +249,8 @@ class TestPage(object):
             comp = params[1]
             attr = params[2]
         return render.attrRank(comp,attr)
-    
+
+
 class AttrRankPage(object):
 
     def GET(self, param_str):
@@ -256,9 +266,9 @@ class AttrRankPage(object):
             if numparams > 2:
                 if len(params[2]) > 0:
                     competition = params[2]
-        return render.attrRank(season,competition)
-
+        return render.attrRank(season,competition)    
     
+
 class AllianceSelectionPage(object):
 
     def GET(self, param_str):
@@ -335,6 +345,36 @@ class TeamInfoJson(object):
 
         result = WebTeamData.get_team_info_json(global_config, comp, name)
         return result
+                           
+    def POST(self, param_str):
+        #user_info = WebLogin.check_access(global_config,10)
+
+        params = param_str.split('/')
+        numparams = len(params)
+        name = None
+        if numparams == 1:
+            if params[0] != '':
+                name = params[0]
+
+        #WebTeamData.load_team_info(global_config, name)
+        
+        WebTeamData.set_team_geo_location(global_config, name)
+        return 
+                           
+class TeamYearsJson(object):
+
+    def POST(self, param_str):
+        #user_info = WebLogin.check_access(global_config,10)
+
+        params = param_str.split('/')
+        numparams = len(params)
+        name = None
+        if numparams == 1:
+            if params[0] != '':
+                name = params[0]
+        
+        WebTeamData.load_team_participation_years(global_config, name)
+        return 
                            
 class TeamScoutingDataSummaryJson(object):
 
@@ -504,7 +544,7 @@ class TeamRankingJson(object):
             comp = global_config['this_competition'] + global_config['this_season']
         else:
             comp = params[1]
-        query_data = web.input(filter=None,queryname=None)
+        query_data = web.input(filter=None,queryname=None,thumbnails=None)
         if query_data.filter is None:
             if query_data.queryname is None:
                 filter_name = None
@@ -515,9 +555,14 @@ class TeamRankingJson(object):
         else:
             filter_name = 'Filter_%d' % hash(query_data.filter)
             attr_filter = query_data.filter.split()
-    
+
+        thumbnails = False
+        if query_data.thumbnails is not None:
+            if query_data.thumbnails == 'True' or query_data.thumbnails == 'Yes':
+                thumbnails = True
+                
         web.header('Content-Type', 'application/json')
-        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter, filter_name)
+        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter, filter_name, thumbnails)
 
 class TeamPicklistJson(object):
 
@@ -554,7 +599,44 @@ class TeamUpdatePicklistJson(object):
         web.header('Content-Type', 'application/json')
         return WebTeamData.update_picklist_json(global_config, int(query_data.fromPosition), int(query_data.toPosition), comp, store_json_file=True)
 
+class TeamAttributeRanking(object):
 
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        season = global_config['this_season']
+        competition = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
+        return render.attrRankPage2(season,competition)
+
+
+class TeamAttributeRankingsJson(object):
+
+    def GET(self, param_str):
+        username, access_level = WebLogin.check_access(global_config,10)
+        params = param_str.split('/')
+        numparams = len(params)
+        attr_name = 'Unknown'
+
+        if numparams == 1:
+            comp = global_config['this_competition'] + global_config['this_season']
+            attr_name = params[0]
+        elif numparams >= 2:
+            comp = params[0]
+            attr_name = params[1]
+        else:
+            return None
+
+        web.header('Content-Type', 'application/json')
+        return WebTeamData.get_team_attr_rankings_json(global_config, comp, attr_name)
+        
+    
 class TeamRanking(object):
 
     def GET(self, param_str):
@@ -603,7 +685,6 @@ class TeamDataFileJson(object):
         web.header('Content-Type', 'application/json')
         result = WebTeamData.get_team_datafile_json(global_config, filename)
         return result
-
 
 class RecalculateRankings(object):
 
@@ -726,6 +807,12 @@ class EventInfoJson(object):
             
         web.header('Content-Type', 'application/json')
         return result
+    
+    def POST(self, name):
+        #WebEventData.load_event_info(global_config, name)
+        
+        WebEventData.get_event_geo_location(global_config)
+        return
                   
 class EventStandingsJson(object):
 
@@ -758,6 +845,25 @@ class EventResultsJson(object):
                 team_str = None
             result = WebEventData.get_event_matchresults_json(global_config, year, event_code, round_str, team_str)
             
+            web.header('Content-Type', 'application/json')
+            
+        return result
+
+class EventScheduleJson(object):
+
+    def GET(self, param_str):
+        WebLogin.check_access(global_config,10)
+        result = ''
+        params = param_str.split('/')
+        if len(params) >= 1:
+            year = params[0][0:4]
+            event_code = params[0][4:]
+            if len(params)==2:
+                team_str = params[1]
+            else:
+                team_str = None
+            result = WebEventData.get_event_matchschedule_json(global_config, year, event_code, team_str)
+                        
             web.header('Content-Type', 'application/json')
             
         return result
@@ -800,23 +906,36 @@ class EventResults(object):
         event_code = name[4:]
         result = WebEventData.get_event_results_page(global_config, year, event_code)
         return render.page('FIRST Robotics Event Match Results - %s' % event_code.upper(), result)                           
-    
-class MatchScheduleJson(object):
 
-    def GET(self, param_str):
-        WebLogin.check_access(global_config,10)
-        result = ''
-        params = param_str.split('/')
-        if len(params) == 2:
-            year = params[0][0:4]
-            event_code = params[0][4:]
-            which_round = params[1]
-            result = WebEventData.get_event_matchschedule_json(global_config, year, event_code, which_round)
+class GeoLocationJson(object):
+    def GET(self):
+        #WebLogin.check_access(global_config,10)
+                        
+        query_data = web.input()
+        
+        try:
+            if query_data.teams == 'Yes':
+                include_teams = True
+            else:
+                include_teams = False
+        except:
+            include_teams = False
             
-            web.header('Content-Type', 'application/json')
+        try:
+            if query_data.events == 'Yes':
+                include_events = True
+            else:
+                include_events = False
+        except:
+            include_events = False
+        
+        return WebCommonUtils.get_geo_location_json(include_teams,include_events)
 
-        return result
-         
+class TeamParticipationJson(object):
+    def GET(self):
+        #WebLogin.check_access(global_config,10)
+                                
+        return WebCommonUtils.get_team_participation_json()
 
 class AttributesJson(object):
 
@@ -890,6 +1009,12 @@ class DownloadsPage(object):
     def GET(self):
         user_info = WebLogin.check_access(global_config,10)
         return render.downloadPage('/static/downloads')
+                           
+class ScoutingAppPage(object):
+
+    def GET(self):
+        user_info = WebLogin.check_access(global_config,10)
+        return render.scoutingAppMain('Match')
                            
 class GenUi(object):
     
@@ -1289,6 +1414,24 @@ class TaskGroups(object):
     def GET(self):     
         raise web.notfound('Taskgroup Management Not Yet Available')
 
+class FileRequest(object):
+    def GET(self, request_path):
+        request_path = request_path.lstrip('/')
+        query_str = web.input(checksum=None)
+
+        if query_str.checksum is None:
+            response_body = FileSync.get(global_config, request_path)
+        else:
+            response_body = FileSync.get(global_config, request_path, with_checksum=True)
+
+        return response_body
+        
+    def PUT(self, request_path):
+        request_path = request_path.lstrip('/')
+        content_type = web.ctx.env['CONTENT_TYPE']
+        FileSync.put(global_config, request_path, content_type, web.data())
+        return
+
 class Sync(object):
     def GET(self, request_path):
         request_path = request_path.lstrip('/')
@@ -1466,6 +1609,7 @@ def process_files_timer_callback(cmd):
     global command_running
     # check to see if there is already a file process invocation underway. If so, 
     # then do not start another one and just return.
+    print 'Checking command_running flag - %d' % int(command_running)
     if command_running == False:
         command_running = True
         # launch the file process command using the subprocess call function. This
@@ -1473,6 +1617,7 @@ def process_files_timer_callback(cmd):
         process_file_subprocess = subprocess.call(['python', cmd])
         print 'Subprocess returned - %s' % str(process_file_subprocess)
         command_running = False
+        print 'Resetting command_running flag - %d' % int(command_running)
     else:
         print 'Process files command already running'
 
@@ -1507,7 +1652,7 @@ if __name__ == "__main__":
     (options,args) = parser.parse_args()
 
     logger.debug("Running the Scouting App Web Server")
-    
+
     season = global_config['this_season']
     db_name          = global_config['db_name'] + season
     issues_db_name   = global_config['issues_db_name'] + season
@@ -1558,11 +1703,12 @@ if __name__ == "__main__":
     
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
-    if global_config['attr_definitions'] != None:
-        attrdef_filename = './config/' + global_config['attr_definitions']
-        if os.path.exists(attrdef_filename):
+    attrdef_filename = global_config['attr_definitions']
+    if attrdef_filename != None and len(attrdef_filename) > 0:
+        attrdef_pathname = './config/' + attrdef_filename
+        if os.path.exists(attrdef_pathname):
             attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-            attr_definitions.parse(attrdef_filename)
+            attr_definitions.parse(attrdef_pathname)
             
             # WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
             WebAttributeDefinitions.init_attr_def_forms(attr_definitions)

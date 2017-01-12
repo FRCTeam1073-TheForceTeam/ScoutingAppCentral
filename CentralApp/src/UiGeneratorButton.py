@@ -27,7 +27,13 @@ class ButtonUiGenControl( UiGenControl ):
         xml_str += "    <Button\n"
         xml_str += "        android:id=\"@+id/NAMELabel\"\n"
         xml_str += "        android:layout_width=\"wrap_content\"\n"
-        xml_str += "        android:layout_height=\"wrap_content\"\n"
+
+        if self.custom_buttons:
+            xml_str += "        android:layout_height=\"47dp\"\n"
+            xml_str += "        android:background=\"@layout/custom_button\"\n"
+        else:
+            xml_str += "        android:layout_height=\"wrap_content\"\n"
+
         if self.config['Align'] == 'Left':
             xml_str += "        android:layout_alignParentLeft=\"true\"\n"
         elif self.config['Align'] == 'Center':

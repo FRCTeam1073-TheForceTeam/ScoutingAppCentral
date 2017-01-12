@@ -14,6 +14,9 @@ import FileSync
 import WebTeamData
 import CompAlias
 import TbaIntf
+import GoogleMapsIntf
+import DbSession
+import DataModel
 
 from BeautifulSoup import BeautifulSoup
 import re
@@ -560,7 +563,157 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
         except:
             raise
     return json_str    
-    #return get_data_from_first(global_config, year, event_code, 'matchresults', round_str, table_to_parse)
+
+'''
+def get_event_matchschedule_json(global_config, year, event_code, team_str = None):
+        
+    global_config['logger'].debug( 'GET Event Schedule Json' )
+
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+
+    store_data_to_file = False
+    result = []
+    
+    result.append('{ "event" : "%s",\n' % (event_code.lower()))
+    
+    if team_str is None:
+        exp_filename = ''
+        event_matches = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+    else:
+        exp_filename = '_%s' % team_str
+        event_matches = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
+        
+    if len(event_matches):
+
+        # matches is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        
+        result.append('  "columns" : [ ')
+        result.append('"Round", "Match", "Red_1", "Red_2", "Red_3", "Blue_1", "Blue_2", "Blue_3"')
+
+        result.append(' ],\n')
+        result.append('  "matchschedule" : [\n')
+    
+        # the entire match set is returned from TBA, filter out the matches for the desired round
+        for match in event_matches:
+            
+            result.append('       [ ')
+            
+            result.append( '"%s", ' % str(match['comp_level']) )
+            result.append( '"%s", ' % str(match['match_number']) )
+
+            # Red alliance teams
+            result.append( '"%s", ' % str(match['alliances']['red']['teams'][0]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['red']['teams'][1]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['red']['teams'][2]).lstrip('frc') )
+            
+            # Blue alliance teams
+            result.append( '"%s", ' % str(match['alliances']['blue']['teams'][0]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['blue']['teams'][1]).lstrip('frc') )
+            result.append( '"%s"' % str(match['alliances']['blue']['teams'][2]).lstrip('frc') )                
+            
+            result.append(' ],\n')
+            store_data_to_file = True
+
+        if store_data_to_file is True:
+            result = result[:-1]
+            result.append(' ]\n')
+            
+        result.append(' ]\n')
+
+    else:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/matchschedule%s.json' % (competition,exp_filename) )
+        if stored_file_data != '':
+            return stored_file_data
+    
+    result.append(' }\n')
+    json_str = ''.join(result)
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/matchschedule%s.json' % (competition,exp_filename), 'text', json_str)
+        except:
+            raise
+    return json_str    
+'''
+
+def get_event_matchschedule_json(global_config, year, event_code, team_str = None):
+        
+    global_config['logger'].debug( 'GET Event Schedule Json' )
+
+    # derive our competition name from the FIRST event code 
+    competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
+
+    store_data_to_file = False
+    result = []
+    
+    if team_str is None:
+        exp_filename = ''
+        event_matches = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+    else:
+        exp_filename = '_%s' % team_str
+        event_matches = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
+        
+    match_schedule = dict()
+    
+    match_schedule['event'] = event_code.lower()
+    match_schedule['columns'] = [ 'Round', 'Match', 'Red_1', 'Red_2', 'Red_3', 'Blue_1', 'Blue_2', 'Blue_3' ]
+    match_schedule['qualification'] = []
+    match_schedule['quarter_finals'] = []
+    match_schedule['semi_finals'] = []
+    match_schedule['finals'] = []
+    if len(event_matches):
+
+        # matches is now a list of lists, with the first element of the list being the list of column headings
+        # take the list of columngs and apply to each of the subsequent rows to build the json response
+        
+        # the entire match set is returned from TBA, filter out the matches for the desired round
+        for match in event_matches:
+            comp_level = match['comp_level']
+            if comp_level in ('qf', 'sf'):
+                match_str = '%s-%s' % (match['set_number'],match['match_number'])
+            else:
+                match_str = str(match['match_number'])
+                
+            match_entry = [ comp_level, match_str,
+                            match['alliances']['red']['teams'][0].lstrip('frc'),
+                            match['alliances']['red']['teams'][1].lstrip('frc'),
+                            match['alliances']['red']['teams'][2].lstrip('frc'),
+                            match['alliances']['blue']['teams'][0].lstrip('frc'),
+                            match['alliances']['blue']['teams'][1].lstrip('frc'),
+                            match['alliances']['blue']['teams'][2].lstrip('frc') ]
+            
+            if comp_level == 'qm':
+                match_schedule['qualification'].append(match_entry)
+            elif comp_level == 'qf':
+                match_schedule['quarter_finals'].append(match_entry)
+            elif comp_level == 'sf':
+                match_schedule['semi_finals'].append(match_entry)
+            elif comp_level == 'f':
+                match_schedule['finals'].append(match_entry)
+                
+        store_data_to_file = True
+        
+        # the qualification match schedule needs to be sorted, the sort will be done by the second
+        # element of each row, which is the match number
+        match_schedule['qualification'].sort(key=lambda match_list: int(match_list[1]))      
+    else:
+        # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
+        # information, otherwise we will return an empty json payload
+        stored_file_data = FileSync.get( global_config, '%s/EventData/matchschedule%s.json' % (competition,exp_filename) )
+        if stored_file_data != '':
+            return stored_file_data
+    
+    json_str = json.dumps(match_schedule)
+    
+    if store_data_to_file:
+        try:
+            FileSync.put( global_config, '%s/EventData/matchschedule%s.json' % (competition,exp_filename), 'text', json_str)
+        except:
+            raise
+    return json_str    
 
 def get_event_stats_json(global_config, year, event_code, stat_type):
         
@@ -592,16 +745,19 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
         result.append(' ],\n')
         result.append('  "stats" : [\n')
     
-        stats_dict = event_stats[stat_type]
-        
-        for key, value in stats_dict.iteritems():
-            result.append( '       ["%s", %.2f' % (get_team_hyperlink( competition, key ),value) )
-            result.append(' ],\n')
-            store_data_to_file = True
-
-        if store_data_to_file is True:
-            result = result[:-1]
-            result.append(' ]\n')
+        try:
+            stats_dict = event_stats[stat_type]
+            
+            for key, value in stats_dict.iteritems():
+                result.append( '       ["%s", %.2f' % (get_team_hyperlink( competition, key ),value) )
+                result.append(' ],\n')
+                store_data_to_file = True
+    
+            if store_data_to_file is True:
+                result = result[:-1]
+                result.append(' ]\n')
+        except:
+            global_config['logger'].debug( 'No Statistics Data For %s' % stat_type )
             
         result.append(' ]\n')
 
@@ -639,18 +795,6 @@ def get_match_hyperlink( competition, match ):
         (competition,match_number,red_alliance,blue_alliance,filter_name,match_number)
         
     return match_hyperlink
-
-def get_event_matchschedule_json(global_config, year, event_code, round_str):
-        
-    global_config['logger'].debug( 'GET Event Results Json - %s' % round_str )
-    
-    if round_str == 'qual':
-        round_str = 'qualifications'
-    elif round_str == 'elim':
-        round_str = 'playoffs'
-
-    #return get_data_from_first(global_config, year, event_code, round_str )
-    return ''
 
 def need_team_hyperlink(heading):
     if (heading.find('Team') != -1) or \
@@ -762,8 +906,45 @@ def update_event_data_files( global_config, year, event, directory ):
         get_event_matchresults_json(global_config, year, event_code, 'quarters', my_team)
         get_event_matchresults_json(global_config, year, event_code, 'semis', my_team)
         get_event_matchresults_json(global_config, year, event_code, 'finals', my_team)
+        get_event_matchschedule_json(global_config, year, event_code, my_team)
+        get_event_matchschedule_json(global_config, year, event_code)
         
         result = True
         
     return result
         
+def load_event_info(global_config, year_str):
+    
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+    
+    if year_str.lower() == 'all':
+        # get all events since the beginning of time
+        year = 1992
+        done = False
+        while not done: 
+            url_str = '/api/v2/events/%d' % year
+            events_data = TbaIntf.get_from_tba_parsed(url_str)
+            
+            if len(events_data) == 0:
+                done = True
+            else:
+                for event_data in events_data:
+                    #print 'Event: %s' % event_data['key']
+                    DataModel.addOrUpdateEventInfo(session, event_data)
+                year += 1
+    else:
+        url_str = '/api/v2/events/%s' % year_str
+        events_data = TbaIntf.get_from_tba_parsed(url_str)
+        
+        for event_data in events_data:
+            print 'Event: %s' % event_data['key']
+            DataModel.addOrUpdateEventInfo(session, event_data)
+            
+    session.commit()
+
+def get_event_geo_location(global_config, event_key=None):
+    
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+    
+    DataModel.setEventsGeoLocation(session, event_key)
+               

@@ -11,10 +11,13 @@ from threading import Thread
     to be unsuccessful
 '''
 try:
-    from bluetooth import *
+    import lightblue
 except:
-    print "Bluetooth drivers NOT installed"
-    pass
+    try:
+        from bluetooth import *
+    except:
+        print "Bluetooth drivers NOT installed"
+        pass
 
 import FileSync
 import WebCommonUtils
@@ -41,6 +44,8 @@ class BluetoothSyncServer(Thread):
         self.shutdown = True
         
     def run(self):
+        
+        '''
         server_sock=BluetoothSocket( RFCOMM )
         server_sock.bind(("",PORT_ANY))
         server_sock.listen(1)
@@ -53,6 +58,15 @@ class BluetoothSyncServer(Thread):
                            service_id = uuid,
                            service_classes = [ uuid, SERIAL_PORT_CLASS ],
                            profiles = [ SERIAL_PORT_PROFILE ] )
+        '''
+        
+        server_sock = lightblue.socket()
+        server_sock.bind(("", 0))    # bind to 0 to bind to a dynamically assigned channel
+        server_sock.listen(1)
+        lightblue.advertise("TTTService", server_sock, lightblue.RFCOMM)
+        port = server_sock.getsockname()[1]
+        print "Advertised and listening on channel %d..." % server_sock.getsockname()[1]
+        
                            
         while not self.shutdown:
             
@@ -167,6 +181,16 @@ class BluetoothSyncServer(Thread):
                         
                     elif request_type == "GET":
                                                 
+                        # Parse any params attached to this GET request
+                        params = request_params.split(';')
+                        for param in params:
+                            # split the parameter into the tag and value
+                            parsed_param = param.split('=')
+                            tag = parsed_param[0]
+                            value = parsed_param[1]
+                            
+                            # process the parameter
+                        
                         # check to see if the requested path exists. We may need to handle that
                         # condition separately, treating non-existent directories as empty (as
                         # opposed to sending a 404 not found.

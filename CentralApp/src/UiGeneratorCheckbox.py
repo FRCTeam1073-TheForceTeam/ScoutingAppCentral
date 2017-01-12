@@ -21,8 +21,8 @@ class CheckboxUiGenControl( UiGenControl ):
                     option_name, option_value = option.split('=')
                     self.config[option_name] = option_value
                 else:
-                    # option with no value is treated as a boolean, set to True string
-                    self.config[option] = 'True'
+                    # option with no value is treated as a boolean, set to True
+                    self.config[option] = True
 
     def gen_xml_string(self, above_name):
     
@@ -106,23 +106,23 @@ class CheckboxUiGenControl( UiGenControl ):
         return java_str
 
     def gen_java_save_handler(self):
-        java_str = "\n        String NAMESelection = \"NAME:\";\n"
+        java_str = "\n        String NAMELabel = \"NAME:\";\n"
         java_str += "        boolean NAMEIsChecked = false;\n"
         map_values = self.attr_def['Map_Values']
         tokens = map_values.split(':')
         first = True
         for token in tokens:
-            if (first == True):
+            if first is True:
                 first = False
                 java_str += "        if (NAMEBUTTONCheckBox.isChecked()) {\n"
                 java_str += "            NAMEIsChecked = true;\n"
-                java_str += "            buffer.append(NAMESelection + NAMEBUTTONCheckBox.getText().toString());\n"
+                java_str += "            buffer.append(NAMELabel + NAMEBUTTONCheckBox.getText().toString());\n"
                 java_str += "        }\n"
             else:
                 java_str += "        if (NAMEBUTTONCheckBox.isChecked()) {\n"
                 java_str += "            if (!NAMEIsChecked) {\n"
                 java_str += "                NAMEIsChecked = true;\n"
-                java_str += "                buffer.append(NAMESelection + NAMEBUTTONCheckBox.getText().toString());\n"
+                java_str += "                buffer.append(NAMELabel + NAMEBUTTONCheckBox.getText().toString());\n"
                 java_str += "            } else {\n"
                 java_str += "                buffer.append(\",\" + NAMEBUTTONCheckBox.getText().toString());\n"
                 java_str += "            }\n"
@@ -130,8 +130,12 @@ class CheckboxUiGenControl( UiGenControl ):
     
             name, token_val = token.split('=')
             java_str = java_str.replace('BUTTON',name)
+            
         java_str += "        if ( NAMEIsChecked )\n"        
         java_str += "            buffer.append(eol);\n"        
+        if self.config.has_key('Default'):
+            java_str += "        else\n"        
+            java_str += "            buffer.append(NAMELabel + \"Default\" + eol);\n"        
     
         return java_str
 
