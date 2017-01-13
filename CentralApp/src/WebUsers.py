@@ -96,7 +96,7 @@ def get_user_form(global_config, username):
         form[user_access_level_label].value = 10
         form[user_role_label].value = 'Guest'
 
-    session.close()
+    session.remove()
 
     return form
 
@@ -146,7 +146,7 @@ def process_user_form(global_config, form, username, my_access_level, new_user=F
     UsersDataModel.updateUserTaskgroups(session, username, taskgroups)
         
     session.commit()
-    session.close()
+    session.remove()
     return '/users'
 
 def get_delete_user_form(global_config):
@@ -162,7 +162,7 @@ def get_delete_user_form(global_config):
     form[user_username_label].args = username_list
     form[user_username_label].args = username_list
 
-    session.close()
+    session.remove()
 
     return form
 
@@ -173,7 +173,7 @@ def process_delete_user_form(global_config, form):
     username = form[user_username_label].value
     UsersDataModel.deleteUser(session, username)
     session.commit()
-    session.close()
+    session.remove()
 
     return '/users'
 
@@ -183,7 +183,7 @@ def process_delete_user(global_config, username):
     session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
     UsersDataModel.deleteUser(session, username)
     session.commit()
-    session.close()
+    session.remove()
 
     return '/users'
 
@@ -205,7 +205,7 @@ def get_userprofile_form(global_config, username):
     form[user_contact_mode_label].value = user.contact_mode
     form[user_nickname_label].value = user.altname
 
-    session.close()
+    session.remove()
 
     return form
 
@@ -244,7 +244,7 @@ def process_userprofile_form(global_config, form, username):
                                           display_name, role, contact_mode, nickname,
                                           access_level, state)
     session.commit()
-    session.close()
+    session.remove()
 
     return '/home'
 
@@ -267,7 +267,7 @@ def process_load_user_form(global_config, form):
 
     UsersDataModel.add_users_from_file(session, users_file)
     
-    session.close()
+    session.remove()
     
     return '/users'
 
@@ -329,7 +329,7 @@ def get_user_list_page(global_config):
     user_list = UsersDataModel.getUserList(session)
     result += insert_users_table(user_list)
 
-    session.close()
+    session.remove()
     return result
 
 def get_user_list_json(global_config):
@@ -338,7 +338,7 @@ def get_user_list_json(global_config):
     session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
 
     user_list = UsersDataModel.getUserList(session)
-    session.close()
+    session.remove()
     
     web.header('Content-Type', 'application/json')
     result = []

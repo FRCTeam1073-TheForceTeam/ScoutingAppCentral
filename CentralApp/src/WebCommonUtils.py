@@ -132,6 +132,7 @@ def get_team_comp_list(this_comp, team):
             # but not as we define the complist itself
             if comp != this_comp.upper():
                 complist.append(comp)
+        session.remove()
                 
     else:
         for comp in team_complist:
@@ -154,6 +155,8 @@ def get_team_info_str(team):
         team_info_str.append(('Location',team_info.location,'string'))
         team_info_str.append(('Rookie Season',team_info.rookie_season,'string'))
         team_info_str.append(('Website',team_info.website,'link'))
+
+    session.remove()
     return team_info_str
 
 def get_issue_types():
@@ -165,13 +168,15 @@ def get_attr_list():
     my_config = ScoutingAppMainWebServer.global_config
     attr_list = list()
     
-    attrdef_filename = './config/' + my_config['attr_definitions']
-    if os.path.exists(attrdef_filename):
-        attr_definitions = AttributeDefinitions.AttrDefinitions(my_config)
-        attr_definitions.parse(attrdef_filename)
-        attr_dict = attr_definitions.get_definitions()
-        attr_list = attr_dict.keys()
-        attr_list.sort()
+    # make sure that an attribute definitions file has been configured
+    if len(my_config['attr_definitions']):
+        attrdef_filename = './config/' + my_config['attr_definitions']
+        if os.path.exists(attrdef_filename):
+            attr_definitions = AttributeDefinitions.AttrDefinitions(my_config)
+            attr_definitions.parse(attrdef_filename)
+            attr_dict = attr_definitions.get_definitions()
+            attr_list = attr_dict.keys()
+            attr_list.sort()
                 
     return attr_list
 
@@ -375,6 +380,7 @@ def get_geo_location_json( include_teams=True, include_events=True ):
     except:
         raise
     
+    session.remove()
     return geo_location_json
 
 def get_team_participation_json():
@@ -404,6 +410,7 @@ def get_team_participation_json():
     except:
         raise
     
+    session.remove()
     return team_participation_json
 
 def handle_geo_overlap( geo_dict, geo_location_str, direction_flag=True ):
@@ -461,5 +468,6 @@ if __name__ == "__main__":
     FileSync.put( {}, 'GlobalData/%s.json' % (filename), 'text', geo_location_json)
     FileSync.put( {}, 'GlobalData/%s.js' % (filename), 'text', geo_location_js)
 
+    session.remove()
 
 

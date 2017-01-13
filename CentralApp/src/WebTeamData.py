@@ -61,11 +61,12 @@ def get_datafiles(input_dir, pattern, recursive,logger):
 def get_team_datafiles_page(global_config, name, display_notes=True):
     
     global_config['logger'].debug( 'GET Team Data Files: %s', name )
-    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
 
     if global_config['attr_definitions'] == None:
         return None
     
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
+
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
@@ -196,6 +197,7 @@ def get_team_datafiles_page(global_config, name, display_notes=True):
         
         page += '</ul>'
     
+    session.remove()
     return page
 
 def get_team_server_page(global_config, name):
@@ -215,6 +217,7 @@ def get_team_server_page(global_config, name):
     if len(team_attributes) > 0:
         result = result[:-1]
     result.append(']}')
+    session.remove()
     return ''.join(result)
 
 def get_team_score_page(global_config, name):
@@ -234,6 +237,7 @@ def get_team_score_page(global_config, name):
     if len(team_score) > 0:
         result = result[:-1]
     result.append(']}')
+    session.remove()
     return ''.join(result)
 
 def get_team_notes_page(global_config, name):
@@ -248,6 +252,7 @@ def get_team_notes_page(global_config, name):
     team_notes = DataModel.getTeamNotes(session, name, comp)
     for note in team_notes:
         notes_string += note.data + '\n'
+    session.remove()
     return notes_string
 
 def get_team_rankings_page(global_config, comp=None):
@@ -272,6 +277,7 @@ def get_team_rankings_page(global_config, comp=None):
     if len(team_rankings) > 0:
         result = result[:-1]
     result.append(']}')
+    session.remove()
     return ''.join(result)
 
 def get_team_rankings_array(global_config):
@@ -292,6 +298,7 @@ def get_team_rankings_array(global_config):
     if len(team_rankings) > 0:
         result = result[:-1]
     result.append(']')
+    session.remove()
     return ''.join(result)
 
 
@@ -331,6 +338,7 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
         result = result[:-1]
         result.append('\n')
     result.append(']}')
+    session.remove()
     return ''.join(result)
 
 def get_team_score_breakdown_json(global_config, name, comp=None, store_json_file=False):
@@ -383,6 +391,7 @@ def get_team_score_breakdown_json(global_config, name, comp=None, store_json_fil
         except:
             raise
         
+    session.remove()
     return json_str
 
 
@@ -427,6 +436,7 @@ def get_team_attributes_page(global_config):
         result = result[:-1]
         result.append('\n')
     result.append(']}')
+    session.remove()
     return ''.join(result)
 
 def get_team_datafile_page(global_config, filename):
@@ -540,6 +550,7 @@ def get_team_info_json(global_config, comp, name, store_json_file=False):
             except:
                 raise
         
+    session.remove()
     return json_str
 
      
@@ -572,6 +583,7 @@ def get_team_score_json(global_config, name, comp, store_json_file=False):
         except:
             raise
         
+    session.remove()
     return json_str
 
 def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[], filter_name=None, store_json_file=False):
@@ -638,6 +650,7 @@ def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[
         except:
             raise
         
+    session.remove()
     return json_str
 
 def get_team_scouting_datafiles_json(global_config, comp, name, store_json_file=False):
@@ -759,6 +772,7 @@ def get_team_scouting_notes_json(global_config, comp, name, store_json_file=Fals
         except:
             raise
         
+    session.remove()
     return json_str
 
 def get_team_scouting_thumbnails_json_snippet(global_config, comp, name):
@@ -833,6 +847,7 @@ def get_team_list_json(global_config, comp, store_json_file=False):
         except:
             raise
         
+    session.remove()
     return json_str
 
 def get_team_list_json_from_tba(global_config, comp):
@@ -964,6 +979,7 @@ def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_nam
         except:
             raise
         
+    session.remove()
     return json_str
 
 def get_team_attr_rankings_json(global_config, comp=None, attr_name=None):
@@ -1042,6 +1058,7 @@ def get_team_attr_rankings_json(global_config, comp=None, attr_name=None):
         except:
             raise
         
+    session.remove()
     return json_str
     
 
@@ -1111,6 +1128,7 @@ def create_picklist_json(global_config, comp=None, store_json_file=False):
         except:
             raise
         
+    session.remove()
     return json_str
     
 def update_picklist_json(global_config, from_position, to_position, comp=None, store_json_file=True):
@@ -1208,6 +1226,7 @@ def update_team_data_files( global_config, year, event, directory, team=None ):
                 get_team_scouting_data_summary_json(global_config, comp, team_entry.team, attr_filter=[], filter_name=None, store_json_file=True)
         result = True
         
+    session.remove()
     return result
 
 def load_team_info( global_config, name=None):
@@ -1235,12 +1254,15 @@ def load_team_info( global_config, name=None):
             for team_data in teams_data:
                 setTeamInfoFromTba(session, team_data)
         '''
+    session.remove()
         
 def set_team_geo_location(global_config, team_key=None):
     
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     DataModel.setTeamGeoLocation(session, team_key)
+
+    session.remove()
 
 def load_team_participation_years( global_config, team_number=None):
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
@@ -1269,6 +1291,8 @@ def load_team_participation_years( global_config, team_number=None):
                 team.first_competed = team_data[0]
                 team.last_competed = team_data[-1]
                 session.commit()
+
+    session.remove()
             
     return
     

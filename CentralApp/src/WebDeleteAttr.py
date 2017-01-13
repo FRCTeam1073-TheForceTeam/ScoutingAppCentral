@@ -72,6 +72,7 @@ def process_delete_attr_form(global_config, form):
             except ValueError as reason:   
                 result = 'Error Removing Scouting Data Attribute Value %s From %s: %s' % (old_value,attr_name,reason)
                 
+    session.remove()
     return result
 
 def get_delete_file_form(global_config):
@@ -111,4 +112,5 @@ def process_delete_file_form(global_config, form):
             except ValueError as reason:   
                 result = 'Error Removing Scouting Data File %s: %s' % (data_filename, reason)
     
+    session.remove()
     return result

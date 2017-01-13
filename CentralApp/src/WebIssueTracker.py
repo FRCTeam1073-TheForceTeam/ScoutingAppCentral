@@ -97,6 +97,7 @@ def get_new_issue_form(global_config, platform_type=None):
     #       database and override the form with the contents
     #       IssueTrackerDataModel.getSubgroupList() and getTaskgroupList()
     
+    users_session.remove()
     return form
 
 def process_new_issue_form(global_config, form):
@@ -139,6 +140,7 @@ def process_new_issue_form(global_config, form):
         competition = global_config['this_competition'] + global_config['this_season']
         issue.create_file('./static/data/%s/ScoutingData' % competition)
     session.commit()
+    session.remove()
     
     return '/issue/%s' % issue_id            
 
@@ -182,6 +184,8 @@ def get_issue_form(global_config, issue_id):
     form[issue_submitter_label].value = issue.submitter
     form[issue_description_label].value = issue.description
 
+    users_session.remove()
+    session.remove()
     return form
 
 def process_issue_form(global_config, form, issue_id, username):
@@ -227,6 +231,7 @@ def process_issue_form(global_config, form, issue_id, username):
                                                       username, timestamp,
                                                       comment)
     session.commit()
+    session.remove()
     
     return '/issue/%s' % issue_id            
 
@@ -250,11 +255,13 @@ def process_issue_comment_form(global_config, form, issue_id, username):
                                                       username, timestamp,
                                                       comment)
         session.commit()
+    session.remove()
     return '/issue/%s' % issue_id            
 
 def get_issue_page(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
+    result = None
     if issue:
         result = ''
         result += '<hr>'
@@ -351,13 +358,14 @@ def get_issue_page(global_config, issue_id, allow_update=False):
             result += table_str   
         result += '<hr>'
       
-        return result    
-    else:
-        return None
+    session.remove()
+    return result    
     
 def get_issue_json(global_config, issue_id, allow_update=False):
     session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     issue = IssueTrackerDataModel.getIssue(session, issue_id)
+
+    session.remove()
     if issue:
         return issue.json()
     else:
@@ -425,6 +433,7 @@ def get_issues_home_page(global_config, allow_create=False):
         result += '<br>'
     result += '<hr>'
     
+    session.remove()
     return result
 
 
@@ -450,6 +459,7 @@ def get_platform_issues_home_page(global_config, platform_type, allow_create=Fal
     closed_issues = IssueTrackerDataModel.getIssuesByPlatformAndMultipleStatus(session, platform_type, 'Closed', 'Resolved')
     result += insert_issues_table('Closed', closed_issues)
 
+    session.remove()
     return result
 
 
@@ -478,6 +488,7 @@ def get_platform_issues(global_config, platform_type, status=''):
         result.append('\n')
     result.append(']}')
     
+    session.remove()
     return ''.join(result)
 
 
@@ -487,4 +498,5 @@ def delete_comment(global_config, issue_id, tag):
     
     IssueTrackerDataModel.deleteIssueCommentsByTag(session, issue_id, tag)
     session.commit()
+    session.remove()
     return '/issue/%s' % issue_id

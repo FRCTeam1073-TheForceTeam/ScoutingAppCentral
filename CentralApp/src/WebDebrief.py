@@ -39,6 +39,7 @@ def process_match_comment_form(global_config, form, competition, match_str, user
                                                username, timestamp,
                                                comment)
     session.commit()
+    session.remove()
     return '/debrief/%s' % match_str            
 
 
@@ -49,6 +50,7 @@ def get_debrief_page(global_config, competition, match_str, allow_update=False):
     debrief_issues = DebriefDataModel.getDebriefIssues(session, competition, int(match_str))
     issues_session = DbSession.open_db_session(global_config['issues_db_name'] + global_config['this_season'])
     
+    result = None
     if debrief != None:
         result = ''
         result += '<hr>'
@@ -117,9 +119,8 @@ def get_debrief_page(global_config, competition, match_str, allow_update=False):
             result += table_str    
         result += '<hr>'
     
-        return result
-    else:
-        return None
+    session.remove()
+    return result
     
 def insert_debrief_table(debriefs,competition):
     table_str = ''
@@ -156,6 +157,7 @@ def get_debriefs_home_page(global_config, competition):
     match_debriefs = DebriefDataModel.getDebriefsInNumericOrder(session,competition)
     result += insert_debrief_table(match_debriefs,competition)
     
+    session.remove()
     return result
 
 def get_competition_debriefs(global_config, competition):
@@ -178,6 +180,7 @@ def get_competition_debriefs(global_config, competition):
         result.append('\n')
     result.append(']}')
     
+    session.remove()
     return ''.join(result)
 
 def delete_comment(global_config, competition, match_str, tag):
@@ -186,4 +189,5 @@ def delete_comment(global_config, competition, match_str, tag):
     
     DebriefDataModel.deleteDebriefCommentsByTag(session, competition, match_str, tag)
     session.commit()
+    session.remove()
     return '/debrief/%s/%s' % (competition,match_str)

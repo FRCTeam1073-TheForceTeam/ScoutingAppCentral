@@ -158,7 +158,7 @@ def process_files(global_config, attr_definitions, input_dir, recursive=True):
         print log_msg
         global_config['logger'].debug( '%s - %s' % (process_files.__name__,log_msg))
             
-    session.close()
+    session.remove()
         
 def process_file(global_config, session, attr_definitions, data_filename):
     print 'processing %s'%data_filename
@@ -351,8 +351,8 @@ def process_issue_files(global_config, input_dir, recursive=True):
             
     debrief_session.commit()
     issues_session.commit()
-    debrief_session.close()
-    issues_session.close()
+    debrief_session.remove()
+    issues_session.remove()
     
     
 def process_debrief_files(global_config, input_dir, recursive=True):
@@ -529,8 +529,8 @@ def process_debrief_files(global_config, input_dir, recursive=True):
     
     issues_session.commit()
     debrief_session.commit()
-    debrief_session.close()
-    issues_session.close()
+    debrief_session.remove()
+    issues_session.remove()
 
 def read_ignore_filelist_cfg(ignore_filename):
     ignore_filelist = []
@@ -615,6 +615,8 @@ if __name__ == "__main__":
             time.sleep(int(options.processloop))
         else:
             done = True
+
+    session.remove()
 
 
 

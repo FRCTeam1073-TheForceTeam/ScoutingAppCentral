@@ -830,7 +830,6 @@ def dump_db_tables(my_db):
     meta.drop_all()
 
 def recalculate_scoring(global_config, competition=None, attr_definitions=None):
-    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     
     if competition is None:
         competition = global_config['this_competition'] + global_config['this_season']
@@ -847,13 +846,14 @@ def recalculate_scoring(global_config, competition=None, attr_definitions=None):
         attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
         attr_definitions.parse(attrdef_filename)
 
+    session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     team_rankings = getTeamsInRankOrder(session, competition)
     for team_entry in team_rankings:
         score = calculateTeamScore(session, team_entry.team, competition, attr_definitions)
         setTeamScore(session, team_entry.team, competition, score)
     session.commit()
     dump_database_as_csv_file(session, global_config, attr_definitions, competition)
-    session.close()
+    session.remove()
 
 def format_string_attr_for_csv(attr):
     attr_string = ''

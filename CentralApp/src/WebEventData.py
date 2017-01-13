@@ -941,6 +941,7 @@ def load_event_info(global_config, year_str):
             DataModel.addOrUpdateEventInfo(session, event_data)
             
     session.commit()
+    session.remove()
 
 def get_event_geo_location(global_config, event_key=None):
     
@@ -948,3 +949,4 @@ def get_event_geo_location(global_config, event_key=None):
     
     DataModel.setEventsGeoLocation(session, event_key)
                
+    session.remove()

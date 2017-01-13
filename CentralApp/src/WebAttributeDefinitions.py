@@ -104,6 +104,10 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
     
     global_config['logger'].debug( 'GET Attribute Definitions Tree JSON' )
 
+    # make sure that an attribute definitions file has been configured
+    if not len(global_config['attr_definitions']):
+        return None
+
     attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)

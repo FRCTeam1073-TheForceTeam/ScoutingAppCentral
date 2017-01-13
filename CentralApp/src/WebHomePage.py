@@ -61,5 +61,6 @@ def get_page(global_config, access_level):
         for entry in team_list:
             page += '<li><a href="/teamdata/' + str(entry.team) + '">' + 'Team ' + str(entry.team) + '</a></li>'
     page += '</ul>'
+    session.remove()
     return page
 

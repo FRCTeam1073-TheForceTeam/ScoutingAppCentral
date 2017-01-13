@@ -64,5 +64,6 @@ def process_form(global_config, form):
             except ValueError as reason:   
                 result = 'Error Modifying Scouting Addribute %s For Team %s: %s' % (attr_name,team,reason)
     
+    session.remove()
     return result
     

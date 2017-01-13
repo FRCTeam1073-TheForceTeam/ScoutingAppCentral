@@ -34,6 +34,7 @@ def auth_user(global_config, desired_path='/home'):
         else:
             session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
             user = UsersDataModel.getUser(session, username)
+            session.remove()
             if user:
                 if user.state == 'Disabled':
                     raise web.seeother('/accountdisabled')
@@ -80,6 +81,7 @@ def check_access(global_config, access_level):
         # user is authorized to access this page.
         session = DbSession.open_db_session(global_config['users_db_name'] + global_config['this_season'])
         user = UsersDataModel.getUser(session, username)
+        session.remove()
         if user:
             if user.check_access_level(access_level) == True:
                 return (username,user.access_level)
