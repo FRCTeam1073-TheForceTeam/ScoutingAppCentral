@@ -1,0 +1,328 @@
+$def with (season,short_comp)
+
+$# This snippet of python code will retrieve the list of attribute types
+$# This list will then be used to dynamically create the select dropdown for
+$# attribute rank display
+$code:
+    comp = short_comp + season
+    event_code = utils.map_comp_to_event_code(comp)
+    season_list = utils.get_season_list()
+    comp_list = utils.get_comp_and_eventcode_list(season)
+    event_info = utils.get_event_info_str(event_code)
+    myteam = utils.get_myteam()
+    attrlist = utils.get_attr_list()
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: Attribute Ranking
+
+
+<link rel="stylesheet" type="text/css" href="/static/media/js/dhtmlxTree/skins/web/dhtmlxtree.css"/>
+<script src="/static/media/js/dhtmlxTree/codebase/dhtmlxtree.js"></script>
+
+<script type="text/javascript">
+
+var saved_filters = {};
+
+$$(document).ready(function () {
+
+    filter_init();
+    build_filter_dropdown();
+
+    $$('#plotData').attr('onClick', 'plotData()');
+    $$('#clearFilter').attr('onClick', 'clearFilter()');
+    $$('#saveFilter').attr('onClick', 'saveFilter()');
+    $$('#loadFilter').attr('onClick', 'loadFilter()');
+    $$('#deleteFilter').attr('onClick', 'deleteFilter()');
+
+    $$('#filterlist').on('click', '.dropdown-menu li a', function () {
+        setFilter( $$(this).text() );
+    });
+    
+});
+
+
+function filteredTable( filter ) {
+    var jqxhr_district_rankings = $$.getJSON( "/api/teamattrrank/$comp/Defenses_Crossed", function(json_data) {
+
+          function drawTable( json_data ) {
+            $$('#attr_rankings').dataTable( {
+                "destroy": true,
+                "bSort": false,
+                "bAutoWidth": false,
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]],
+                "iDisplayLength": 100,
+                "aaData": json_data.rankings,
+                "aoColumns": json_data.columns
+            } );
+          }
+
+          drawTable( json_data );
+
+    } );
+}
+
+function filter_init(){
+    
+    tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+    tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+    tree.enableCheckBoxes(1);
+    tree.enableThreeStateCheckboxes(true);
+    tree.openAllItems(1);
+
+    currFilter = localStorage.getItem('currFilter');
+    if ( currFilter == null || currFilter == '' ) {
+	    tree.loadJSON("/api/attrlist", function(){ plotByFilterData(); } );
+        console.log( "No Current Filter" );
+    } else {
+        tree.loadJSON("/api/attrlist/" + currFilter, function(){ plotByFilterData(); } );
+        filter_name_label = document.getElementById('filterName');
+        filter_name_label.value = currFilter;
+        console.log( "Current Filter: " + currFilter );
+    }
+
+}
+
+function build_filter_dropdown() {
+
+    // load the set of saved filters into this page
+    var jqxhr = $$.getJSON( '/api/attrfilter/', function(json_data) {
+        saved_filters = json_data.filters;
+
+        for ( i=0; i<saved_filters.length; i++ ) {
+            filter_name = saved_filters[i].name;
+            $$('#filterlist ul').append('<li><a href="#compselect" id="setFilter' + filter_name + '">' + filter_name + '</a></li>');
+        }
+    } );
+
+}	
+
+
+function getFilterString() {
+    filter = '';
+    var checked_items = tree.getAllChecked().split(",");
+    console.log( "Checked Items : " + checked_items );
+
+    var baseCheckboxState = tree.isItemChecked(1);
+
+    if ( baseCheckboxState == 0 ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Attributes Selected!</div>';
+        return filter;
+    } else if ( baseCheckboxState == 1 ) {
+        console.log( "Displaying All Attributes" );
+    } else {
+        for(var i=0; i<checked_items.length; i++) {
+            var checked_item = checked_items[i];
+            var add_item = true;
+            // skip this item if the item begins with the skip token
+            if ( checked_item.lastIndexOf("Skip_", 0) == 0 ) 
+                add_item = false;
+
+            // look to see if this item is a specific leaf value
+            if ( checked_item.indexOf("=") != -1 ) {
+                item_basename = checked_item.split("=")[0];
+                // now see if the base item is already in the filter, if so, then skip
+                // this item since all items at this level will be checked
+                filter_items = filter.split("+");
+                for ( var j=0;j<filter_items.length;j++ ) {
+                    if ( filter_items[j] == item_basename ) {
+                        add_item = false;
+                    }
+                }
+            }
+
+            if ( add_item == true ) {
+                if ( filter.length > 0 )
+                    filter += '+';
+                filter += checked_item;
+            }
+        }
+    }
+
+    document.getElementById('NoAttrAlert').innerHTML = '';
+    console.log( "Filter String : " + filter );
+
+    return filter;
+}
+
+function plotByFilterData(){
+
+    filter = getFilterString();
+    filteredTable(filter);
+}			
+
+function plotData() {
+
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    plotByFilterData();
+
+}
+
+function setFilter(name) {
+    console.log( 'Filter Name: ' + name );
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = name;
+    loadFilter();
+}
+
+function saveFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+    filter = getFilterString();
+    $$.post( "/api/attrfilter/" + filter_name, { "filter" : filter }, function(data,status){ plotByFilterData(); location.reload() });
+}
+
+function clearFilter() {
+    localStorage.setItem('currFilter', '');
+    filter_name_label = document.getElementById('filterName');
+    filter_name_label.value = '';
+    tree.deleteChildItems(0);
+    tree.deleteItem(0, true);
+	tree.loadJSON("/api/attrlist/", function(){ plotByFilterData(); } );
+}
+
+function loadFilter() {
+
+    filter_name = document.getElementById('filterName').value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    localStorage.setItem('currFilter', filter_name);
+
+    tree.destructor();
+	tree=new dhtmlXTreeObject("attr_tree","100%","100%",0);	
+	tree.setImagePath("/static/media/js/dhtmlxTree/codebase/imgs/dhxtree_skyblue/");
+	tree.enableCheckBoxes(1);
+	tree.enableThreeStateCheckboxes(true);
+	tree.openAllItems(1);
+	tree.loadJSON("/api/attrlist/" + filter_name, function(){ plotByFilterData(); } );
+
+}
+
+function deleteFilter() {
+    filter_name_label = document.getElementById('filterName');
+    filter_name = filter_name_label.value;
+    if (filter_name == null || filter_name == '' ) {
+        document.getElementById('NoAttrAlert').innerHTML = '<div class="alert alert-danger" role="alert">No Filter Name Entered!</div>';
+        return;
+    }
+    filter_name_label.value = '';
+    $$.ajax({
+        url: '/api/attrfilter/' + filter_name,
+        type: 'DELETE',
+        success: function(result) { localStorage.setItem('currFilter', ''); location.reload(); }
+    });
+}
+
+
+</script>
+
+
+  <div class="article">
+  
+    <div id="title">
+		<div class="col-sm-11" align="center">							
+        <h1>Scouting Data Analysis</h1>
+        </div>
+    </div>
+
+	<div class="row">
+    <div id="compselect" class="col-sm-11" align="left">							
+
+    <!-- provide a dropdown to select the season to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $season
+          <span class="caret"></span>
+        </a>
+
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for season_entry in season_list:
+            <li><a href="/attrrank/$season_entry">$season_entry</a></li>
+        </ul>
+    </div>
+
+    <!-- provide a dropdown to select the competition to display on the home page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $short_comp
+          <span class="caret"></span>
+        </a>
+
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for comp_entry in comp_list:
+            <li><a href="/attrrank/$season/$comp_entry[0]">$comp_entry[0]</a></li>
+        </ul>
+    </div>
+
+    </div>
+    </div>
+    
+
+	<div class="row">
+
+        <br>
+		<div class="col-sm-3">							
+
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Filter name..." id="filterName">
+
+                <div id="filterlist" class="input-group-btn">
+                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"><span class="caret"></span></button>
+                  <ul class="dropdown-menu pull-right" role="menu"> 
+                  </ul>
+                </div>
+            </div>
+            <div class="btn-group btn-block">
+                  <button class="btn btn-default col-lg-3" type="button" id="plotData">Plot</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="saveFilter">Save</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="deleteFilter">Delete</button>
+                  <button class="btn btn-default col-lg-3" type="button" id="clearFilter">Clear </button>
+            </div>
+            
+            <br>
+
+			<div class="tree well" id="attr_tree" style="height:300px; padding: 8px 10px;">
+				<div id="NoAssignmentAlert"></div>
+			</div><!-- well -->
+
+		</div><!-- col-3 -->
+
+		<div class="col-sm-8">							
+        <div class="container-fluid">
+
+        <div id="NoAttrAlert"></div>
+
+        <div class="tabbable">
+          <ul class="nav nav-tabs">
+              <li class="active"><a href="#pane_district_rankings"    data-toggle="tab">Defenses_Crossed</a></li>
+          </ul>
+
+          <div class="tab-content">
+              <div id="pane_attr_rankings" class="tab-pane active">
+              <ul>
+              <table id="attr_rankings" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info">
+                  <thead> </thead>
+                  <tbody> </tbody>
+              </table>
+              </ul>
+              </div>
+
+          </div>
+        </div>
+
+        </div>
+		</div><!-- col-8 -->
+
+	</div><!-- row -->
+
+  </div>  
+
