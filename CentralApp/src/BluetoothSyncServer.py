@@ -45,7 +45,6 @@ class BluetoothSyncServer(Thread):
         
     def run(self):
         
-        '''
         server_sock=BluetoothSocket( RFCOMM )
         server_sock.bind(("",PORT_ANY))
         server_sock.listen(1)
@@ -65,8 +64,10 @@ class BluetoothSyncServer(Thread):
         server_sock.listen(1)
         lightblue.advertise("TTTService", server_sock, lightblue.RFCOMM)
         port = server_sock.getsockname()[1]
+	'''
+
         print "Advertised and listening on channel %d..." % server_sock.getsockname()[1]
-        
+
                            
         while not self.shutdown:
             
@@ -110,6 +111,8 @@ class BluetoothSyncServer(Thread):
                         request_params = request_path[params_offset:]
                         request_params = request_params.lstrip('?')
                         request_path = request_path[0:params_offset]
+		    else:
+		        request_params = ''
                     
                     request_path = request_path.lstrip('/')
     
@@ -182,14 +185,15 @@ class BluetoothSyncServer(Thread):
                     elif request_type == "GET":
                                                 
                         # Parse any params attached to this GET request
-                        params = request_params.split(';')
-                        for param in params:
-                            # split the parameter into the tag and value
-                            parsed_param = param.split('=')
-                            tag = parsed_param[0]
-                            value = parsed_param[1]
+			if len(request_params) > 0:
+                            params = request_params.split(';')
+                            for param in params:
+                                # split the parameter into the tag and value
+                                parsed_param = param.split('=')
+                                tag = parsed_param[0]
+                                value = parsed_param[1]
                             
-                            # process the parameter
+                                # process the parameter
                         
                         # check to see if the requested path exists. We may need to handle that
                         # condition separately, treating non-existent directories as empty (as
