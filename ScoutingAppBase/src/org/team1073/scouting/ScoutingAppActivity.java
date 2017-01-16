@@ -58,7 +58,9 @@ startActivity(emailIntent);
 public class ScoutingAppActivity extends Activity {
 	private String device_name="unknown";
 	private String device_id="un";
-	private String competition_directory="Test2016";
+	private String competition_season="2017";
+	private String competition_name="Test";
+	private String competition_directory= competition_name + competition_season;
 	private String host_addr = "";
 	private String sync_method = "Bluetooth";
 	private String sync_control = "Upload_Only";
@@ -115,13 +117,20 @@ public class ScoutingAppActivity extends Activity {
 				String token = tokenizer.nextToken();
 				
                 if ( token.equalsIgnoreCase("Competition")) {
-                	competition_directory = tokenizer.nextToken();
-                	
-                	// augment the application title with the competition name
-                	String app_title_base = getString(R.string.app_label) + " - ";
-                	ScoutingAppActivity.this.setTitle(app_title_base + competition_directory);
+                	competition_name = tokenizer.nextToken();
+    				competition_directory = competition_name + competition_season;
                 }
+                if ( token.equalsIgnoreCase("Season")) {
+                	competition_season = tokenizer.nextToken();
+    				competition_directory = competition_name + competition_season;
+                }
+                	
 			}
+			
+           	// augment the application title with the competition name
+        	String app_title_base = getString(R.string.app_label) + " - ";
+        	ScoutingAppActivity.this.setTitle(app_title_base + competition_directory);
+    		
 			reader.close();
     	} catch (Exception e) {
     		showDialog = true;
@@ -137,8 +146,10 @@ public class ScoutingAppActivity extends Activity {
 	        dialog.setCancelable(true);
 	        Button button = (Button) dialog.findViewById(R.id.CompOkButton);
 	        final EditText CompetitionNameEntry = (EditText) dialog.findViewById(R.id.CompetitionNameEntry);     
+	        final EditText CompetitionSeasonEntry = (EditText) dialog.findViewById(R.id.CompetitionSeasonEntry);     
 
-	        CompetitionNameEntry.setText(competition_directory);
+	        CompetitionNameEntry.setText(competition_name);
+	        CompetitionSeasonEntry.setText(competition_season);
 	        
 	        button.setOnClickListener(new OnClickListener() {
 	        @Override
@@ -155,8 +166,15 @@ public class ScoutingAppActivity extends Activity {
 	                    StringBuffer buffer = new StringBuffer();
 	                    String eol = System.getProperty("line.separator");
 	                    
-	                    if ( !CompetitionNameEntry.getText().toString().isEmpty() )
-	                        buffer.append("Competition=" + CompetitionNameEntry.getText().toString() + eol);
+	                    if ( !CompetitionSeasonEntry.getText().toString().isEmpty() ) {
+	                    	competition_season = CompetitionSeasonEntry.getText().toString();
+	                        buffer.append("Season=" + competition_season + eol);
+	                    }
+	                    if ( !CompetitionNameEntry.getText().toString().isEmpty() ) {
+	                    	competition_name = CompetitionNameEntry.getText().toString();
+	                        buffer.append("Competition=" + competition_name + eol);
+	                    }
+	                    competition_directory = competition_name + competition_season;
 	                    
 						// write the formatted buffer to the file
 						writer.write(buffer.toString());
@@ -700,11 +718,16 @@ public class ScoutingAppActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+
         // Look for a device configuration file and prompt the user for settings if
         // there isn't a file there.
         LoadDeviceConfiguration(false);
         LoadCompetitionConfiguration(false);
 
+        // once the device configuration is loaded, here's where we could modify the
+        // background or other styling effects
+        //getWindow().getDecorView().setBackgroundColor(Color.RED);
+        
         // declare field variables for everything we care about on the user interface
         SaveButton = (Button) findViewById(R.id.SaveButton);
         ReloadButton = (Button) findViewById(R.id.ReloadButton);
