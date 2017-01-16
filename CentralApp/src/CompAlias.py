@@ -35,13 +35,17 @@ def get_event_by_alias( event_alias ):
         
     return event_info
 
+#
+# map the event alias to the event_code. if there is no alias,
+# then return the alias as the event_code
+#
 def get_eventcode_by_alias( event_alias ):
     try:
         event_info = event_alias_table[event_alias.upper()]
         event_code = event_info.event_code
     except:
         event_info = None
-        event_code = 'Unknown'
+        event_code = event_alias.upper()
         
     return event_code
 

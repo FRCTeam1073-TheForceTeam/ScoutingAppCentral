@@ -264,9 +264,9 @@ def map_event_code_to_comp(event_name, season=None):
         comp = event_name
     event_info = CompAlias.get_event_by_code(comp)
     if event_info != None:
-        comp = event_info.event_alias
-           
-    return comp + season        
+        comp = event_info.event_alias           
+    
+    return comp + season
 
 def map_event_code_to_short_comp(event_name, season=None):
     my_config = ScoutingAppMainWebServer.global_config
@@ -301,7 +301,7 @@ def map_comp_to_event_code(comp):
     
     if len(comp) > 4:
         season_str = comp[-4:]
-        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+        if season_str.startswith( '201' ):
             comp = comp[0:-4]
             
     event_info = CompAlias.get_event_by_alias(comp)
@@ -318,7 +318,7 @@ def map_comp_to_season(comp):
     # now overwrite the season if the competition string has an embedded year
     if len(comp) > 4:
         season_str = comp[-4:]
-        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+        if season_str.startswith( '201' ):
             season = season_str
     
     return season
@@ -327,10 +327,16 @@ def split_comp_str(comp):
     valid_season = False
 
     if len(comp) > 4:
-        comp_str = comp[0:(len(comp)-4)]
-        season_str = comp[-4:]
-        if season_str[0] == '2' and season_str[1] == '0' and season_str[2] == '1':
+        # check if the competition starts with the year, like how FIRST does it (e.g. 2017mabos)
+        if comp.startswith( '201' ):
+            season_str = comp[0:4]
+            comp_str = comp[4:]
             valid_season = True
+        else:
+            comp_str = comp[0:(len(comp)-4)]
+            season_str = comp[-4:]
+            if season_str.startswith( '201' ):
+                valid_season = True
     if valid_season:
         return (comp_str, season_str)
     else:

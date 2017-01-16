@@ -93,7 +93,7 @@ def write_config(config_dict, config_filename):
 def write_tablet_config(config_dict, config_filename):
     cfg_file = open(config_filename, 'w+')
     competition = 'Test'
-    season = '2014'
+    season = '2017'
     for key, value in config_dict.iteritems():
         
         # write out any of the competition configuration required by the tablets to
@@ -106,7 +106,10 @@ def write_tablet_config(config_dict, config_filename):
                 season = value
 
             
-    line = 'Competition=%s\n' % (competition+season)
+    line = 'Competition=%s\n' % (competition)
+    cfg_file.write(line)
+
+    line = 'Season=%s\n' % (season)
     cfg_file.write(line)
 
     cfg_file.close()

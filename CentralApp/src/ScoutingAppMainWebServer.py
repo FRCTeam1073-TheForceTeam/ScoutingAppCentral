@@ -157,8 +157,8 @@ logger = Logger.init_logger('./config', 'logging.conf', 'scouting.webapp')
 global_config = { 'my_team'            : '1073',
                   'my_district'        : 'District',
                   'my_website'         : 'www.usfirst.org',
-                  'this_season'        : '2015',
-                  'this_competition'   : 'Test2015', 
+                  'this_season'        : '2017',
+                  'this_competition'   : 'Test', 
                   'other_competitions' : '', 
                   'db_name'            : 'scouting', 
                   'issues_db_name'     : 'issues',
@@ -509,8 +509,10 @@ class TeamListJson(object):
         else:
             comp = params[0].lower()
             
+        event, season = WebCommonUtils.split_comp_str(comp)
+            
         web.header('Content-Type', 'application/json')
-        return WebTeamData.get_team_list_json(global_config, comp)
+        return WebTeamData.get_team_list_json(global_config, season, event)
 
         
 class TeamScoreBreakdown(object):
@@ -562,7 +564,10 @@ class TeamRankingJson(object):
                 thumbnails = True
                 
         web.header('Content-Type', 'application/json')
-        return WebTeamData.get_team_rankings_json(global_config, comp, attr_filter, filter_name, thumbnails)
+        
+        event, season = WebCommonUtils.split_comp_str(comp)
+        
+        return WebTeamData.get_team_rankings_json(global_config, season, event, attr_filter, filter_name, thumbnails)
 
 class TeamPicklistJson(object):
 

@@ -806,12 +806,13 @@ def get_team_scouting_thumbnails_json_snippet(global_config, comp, name):
     
     return json_str
 
-def get_team_list_json(global_config, comp, store_json_file=False):
+def get_team_list_json(global_config, season, event, store_json_file=False):
     global team_info_dict
     
-    global_config['logger'].debug( 'GET Team List For Competition %s', comp )
+    global_config['logger'].debug( 'GET Team List For Competition %s', event )
 
-    season = WebCommonUtils.map_comp_to_season(comp)
+    comp = WebCommonUtils.map_event_code_to_comp(event, season)
+    
     session = DbSession.open_db_session(global_config['db_name'] + season)
 
     result = []
@@ -871,17 +872,13 @@ def get_team_list_json_from_tba(global_config, comp):
     result.append('  }\n')
     return ''.join(result)
     
-def get_team_rankings_json(global_config, comp=None, attr_filters=[], filter_name=None, 
+def get_team_rankings_json(global_config, season, event, attr_filters=[], filter_name=None, 
                            thumbnails = False, store_json_file=False):
         
     global_config['logger'].debug( 'GET Team Rankings Json' )
     store_data_to_file = False
     
-    if comp == None:
-        comp = global_config['this_competition'] + global_config['this_season']
-        season = global_config['this_season']
-    else:
-        season = WebCommonUtils.map_comp_to_season(comp)
+    comp = WebCommonUtils.map_event_code_to_comp(event, season)
 
     session = DbSession.open_db_session(global_config['db_name'] + season)
 
@@ -1182,14 +1179,14 @@ def update_team_event_files( global_config, year, event, directory ):
         # call each of the get_event_xxx() functions to attempt to retrieve the json data. This action
         # will also store the json payload to the EventData directory completing the desired 
         # operation
-        get_team_rankings_json( global_config, event+year, attr_filters=[], filter_name=None, thumbnails=True, store_json_file=True )
-        get_team_list_json( global_config, event+year, store_json_file=True )
+        get_team_rankings_json( global_config, year, event, attr_filters=[], filter_name=None, thumbnails=True, store_json_file=True )
+        get_team_list_json( global_config, year, event, store_json_file=True )
        
         # then update the JSON data files for each of the defined filters 
         filter_list = WebAttributeDefinitions.get_filter_list()
         for name in filter_list:
             attr_filter = WebAttributeDefinitions.get_saved_filter(name)
-            get_team_rankings_json( global_config, event+year, attr_filters=attr_filter, filter_name=name, thumbnails=True, store_json_file=True )
+            get_team_rankings_json( global_config, year, event, attr_filters=attr_filter, filter_name=name, thumbnails=True, store_json_file=True )
 
         result = True
         
