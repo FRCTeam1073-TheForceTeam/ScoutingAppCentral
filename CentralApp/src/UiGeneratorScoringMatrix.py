@@ -49,6 +49,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         xml_str += "        android:layout_alignParentLeft=\"true\"\n"
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:gravity=\"center_vertical|right\"\n"
+        xml_str += "        android:textColor=\"@color/white\"\n"
         xml_str += "        android:text=\"NAME:\" />\n\n"
     
         xml_str += "    <!--  Scoring Matrix -->\n"
@@ -68,6 +69,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_width=\"80dp\"\n"
             xml_str += "        android:layout_height=\"50dp\"\n"
             xml_str += "        android:gravity=\"center_vertical|right\"\n"
+            xml_str += "        android:textColor=\"@color/white\"\n"
             xml_str += "        android:layout_below=\"@+id/" + above_minus_label + "\"\n"
             if first_level == True:
                 left_level_label = level_label
@@ -169,6 +171,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_height=\"wrap_content\"\n"
             xml_str += "        android:layout_alignRight=\"@+id/" + misses_label + "\"\n"
             xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
+            xml_str += "        android:textColor=\"@color/white\"\n"
             xml_str += "        android:text=\"Misses\" />\n\n"
          
         xml_str += "    <TextView\n"
@@ -177,6 +180,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
         xml_str += "        android:layout_height=\"wrap_content\"\n"
         xml_str += "        android:layout_alignRight=\"@+id/" + score_label + "\"\n"
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
+        xml_str += "        android:textColor=\"@color/white\"\n"
         xml_str += "        android:text=\"" + self.config['Type'] + "\" />\n\n"
 
         # determine where the totals field should go based on the number of levels there
@@ -198,6 +202,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_alignBottom=\"@+id/NAME_" + label + "_Misses\"\n"
             xml_str += "        android:layout_toRightOf=\"@+id/NAME_Misses\"\n"
             xml_str += "        android:layout_marginLeft=\"20dp\"\n"
+            xml_str += "        android:textColor=\"@color/white\"\n"
             xml_str += "        android:text=\"Total\" />\n\n"
         else:
             xml_str += "    <TextView\n"
@@ -208,6 +213,7 @@ class ScoringMatrixUiGenControl( UiGenControl ):
             xml_str += "        android:layout_alignBottom=\"@+id/NAME_" + label + "\"\n"
             xml_str += "        android:layout_toRightOf=\"@+id/NAME_" + self.config['Type'] + "Tag\"\n"
             xml_str += "        android:layout_marginLeft=\"20dp\"\n"
+            xml_str += "        android:textColor=\"@color/white\"\n"
             xml_str += "        android:text=\"Total\" />\n\n"
          
         xml_str += "    <EditText\n"

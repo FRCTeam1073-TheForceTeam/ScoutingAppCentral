@@ -32,6 +32,7 @@ class TextFieldUiGenControl( UiGenControl ):
         else:
             xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:gravity=\"center_vertical|right\"\n"
+        xml_str += "        android:textColor=\"@color/white\"\n"
         xml_str += "        android:text=\"NAME:\" />\n"
         xml_str += "\n"
         xml_str += "    <EditText\n"

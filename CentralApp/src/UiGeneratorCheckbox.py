@@ -38,6 +38,7 @@ class CheckboxUiGenControl( UiGenControl ):
             xml_str += "        android:layout_height=\"40dp\"\n"            
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:gravity=\"center_vertical|right\"\n"
+        xml_str += "        android:textColor=\"@color/white\"\n"
         xml_str += "        android:text=\"NAME:\" />\n"
         xml_str += "\n"
         map_values = self.attr_def['Map_Values']

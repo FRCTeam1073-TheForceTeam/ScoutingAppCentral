@@ -102,6 +102,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         else:
             xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:gravity=\"center_vertical|right\"\n"
+        xml_str += "        android:textColor=\"@color/white\"\n"
         xml_str += "        android:text=\"NAME:\" />\n"
         xml_str += "\n"
         xml_str += "    <EditText\n"
@@ -132,6 +133,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:layout_toRightOf=\"@+id/NAMEEntry\"\n"
         xml_str += "        android:text=\"@string/match_plus\"/>\n"
+
         xml_str += "    <Button\n"
         xml_str += "        android:id=\"@+id/NAMEMinusButton\"\n"
         xml_str += "        android:layout_width=\"wrap_content\"\n"
@@ -146,6 +148,20 @@ class MatchGroupUiGenControl( UiGenControl ):
         xml_str += "        android:layout_toRightOf=\"@+id/NAMEPlusButton\"\n"
         xml_str += "        android:text=\"@string/match_minus\" />\n"
 
+        xml_str += "    <Button\n"
+        xml_str += "        android:id=\"@+id/NAMESelectButton\"\n"
+        xml_str += "        android:layout_width=\"wrap_content\"\n"
+
+        if self.custom_buttons:
+            xml_str += "        android:layout_height=\"47dp\"\n"
+            xml_str += "        android:background=\"@layout/custom_button\"\n"
+        else:
+            xml_str += "        android:layout_height=\"wrap_content\"\n"
+
+        xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
+        xml_str += "        android:layout_toRightOf=\"@+id/NAMEMinusButton\"\n"
+        xml_str += "        android:text=\"@string/match_select\" />\n"
+
         # Add in the plus/minus buttons...        
         xml_str += "    <!-- End NAME field match group -->\n\n"
         
@@ -155,6 +171,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         java_str = '    private EditText NAMEEntry;\n'
         java_str += '    private Button NAMEPlusButton;\n'
         java_str += '    private Button NAMEMinusButton;\n'
+        java_str += '    private Button NAMESelectButton;\n'
         
         return java_str
 
@@ -162,6 +179,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         java_str = '        NAMEEntry = (EditText) findViewById(R.id.NAMEEntry);\n'
         java_str += '        NAMEPlusButton = (Button) findViewById(R.id.NAMEPlusButton);\n'
         java_str += '        NAMEMinusButton = (Button) findViewById(R.id.NAMEMinusButton);\n'
+        java_str += '        NAMESelectButton = (Button) findViewById(R.id.NAMESelectButton);\n'
 
         return java_str
 
@@ -170,12 +188,10 @@ class MatchGroupUiGenControl( UiGenControl ):
         
         java_str += '        NAMEPlusButton.setOnClickListener(new OnClickListener(){\n'
         java_str += '            public void onClick(View v){\n'
-        java_str += '                Integer value;\n'
+        java_str += '                Integer value=1;\n'
         java_str += '                if ( !NAMEEntry.getText().toString().isEmpty() ) {\n'
         java_str += '                    value = Integer.parseInt(NAMEEntry.getText().toString());\n'
         java_str += '                    value += 1;\n'
-        java_str += '                } else {\n'
-        java_str += '                    value = 1;\n'
         java_str += '                }\n'
         java_str += '                SetTeamFromFields( value );\n'
         java_str += '            }\n'
@@ -183,13 +199,23 @@ class MatchGroupUiGenControl( UiGenControl ):
         java_str += '\n'
         java_str += '        NAMEMinusButton.setOnClickListener(new OnClickListener(){\n'
         java_str += '            public void onClick(View v){\n'
-        java_str += '                Integer value;\n'
+        java_str += '                Integer value=1;\n'
         java_str += '                if ( !NAMEEntry.getText().toString().isEmpty() ) {\n'
         java_str += '                    value = Integer.parseInt(NAMEEntry.getText().toString());\n'
-        java_str += '                    if ( value > 0 )\n'
+        java_str += '                    if ( value > 1 )\n'
         java_str += '                        value -= 1;\n'
-        java_str += '                } else {\n'
-        java_str += '                    value = 1;\n'
+        java_str += '                }\n'
+        java_str += '                SetTeamFromFields( value );\n'
+        java_str += '            }\n'
+        java_str += '        });\n'
+        java_str += '\n'        
+        java_str += '        NAMESelectButton.setOnClickListener(new OnClickListener(){\n'
+        java_str += '            public void onClick(View v){\n'
+        java_str += '                Integer value=1;\n'
+        java_str += '                if ( !NAMEEntry.getText().toString().isEmpty() ) {\n'
+        java_str += '                    value = Integer.parseInt(NAMEEntry.getText().toString());\n'
+        java_str += '                    if ( value == 0 )\n'
+        java_str += '                        value = 1;\n'
         java_str += '                }\n'
         java_str += '                SetTeamFromFields( value );\n'
         java_str += '            }\n'
