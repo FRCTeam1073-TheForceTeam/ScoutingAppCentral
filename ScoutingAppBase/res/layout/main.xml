@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- The UIGEN_CUSTOM_BUTTONS namespace is created to allow the base application to contain placeholder
+<!-- The UIGEN CUSTOM BUTTONS namespace is created to allow the base application to contain placeholder
      tags that the UI generator code can identify and manipulate in order to enable the multi-colored
      buttons that the application now supports. When custom buttons are enabled, the UI generator 
      will replace the namespace with 'android' to insert the custom buttons into the generated
@@ -18,8 +18,7 @@
     android:id="@+id/Layout"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:isScrollContainer="true" 
-    android:background="@color/black">
+    android:isScrollContainer="true"> 
 
     <TextView
         android:id="@+id/ScouterLabel"

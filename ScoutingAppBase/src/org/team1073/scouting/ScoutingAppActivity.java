@@ -1025,7 +1025,7 @@ public class ScoutingAppActivity extends Activity {
 		offset += (position-1);
 		
 		if ( matchSchedule != null) {
-			if ( round.equals("Quals") ) {
+			if ( round.equals("Qual") ) {
 				int match = Integer.parseInt(match_str);
 				matchEntry = matchSchedule.qualification.get(match-1);
 			} else if ( round.equals("Quarters") ) {
@@ -1046,7 +1046,20 @@ public class ScoutingAppActivity extends Activity {
 			}
 			
 		} else {
-	        Toast.makeText(ScoutingAppActivity.this, "No Match Schedule Loaded", Toast.LENGTH_SHORT).show();
+            new AlertDialog.Builder(ScoutingAppActivity.this)
+            .setTitle("No Match Schedule Loaded")
+            .setMessage("Do You Want To Load The Match Schedule?")
+            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    Toast.makeText(ScoutingAppActivity.this, "Cannot Set Team From Schedule", Toast.LENGTH_LONG).show();
+                }
+            })
+            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                	LoadMatchSchedule();
+                }
+            })
+            .show();                      
 		}
 		
 		return team;

@@ -7,5 +7,6 @@
     
     <string name="match_plus">Next</string>
     <string name="match_minus">Prev</string>
+    <string name="match_select">Set</string>
     
 </resources>
