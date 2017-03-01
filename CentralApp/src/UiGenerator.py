@@ -78,25 +78,29 @@ def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_f
         for item in attr_order:
             ctrl_gen = None
             if item['Order'] != '' and int(float(item['Order'])) != 0:
-                if item['Control'] == 'None':
+                control = item['Control']
+                if control == 'None':
                     # skip any attribute that has no control defined
                     continue
-                elif item['Control'] == 'Text':
+                elif control == 'Text':
                     ctrl_gen = TextFieldUiGenControl(item)
-                elif item['Control'] == 'Radio':
+                elif control == 'Radio':
                     ctrl_gen = RadioButtonUiGenControl(item)
-                elif item['Control'] == 'Checkbox':
+                elif control == 'Checkbox':
                     ctrl_gen = CheckboxUiGenControl(item)
-                elif item['Control'] == 'Scoring_Matrix':
+                elif control == 'Scoring_Matrix':
                     ctrl_gen = ScoringMatrixUiGenControl(item)
-                elif item['Control'] == 'Line_Separator':
+                elif control == 'Line_Separator':
                     ctrl_gen = LineSeparatorUiGenControl(item)
-                elif item['Control'] == 'Heading':
+                elif control == 'Heading':
                     ctrl_gen = HeadingFieldUiGenControl(item)
-                elif item['Control'] == 'Button':
+                elif control == 'Button':
                     ctrl_gen = ButtonUiGenControl(item)
-                elif item['Control'] == 'Match_Group':
+                elif control == 'Match_Group':
                     ctrl_gen = MatchGroupUiGenControl(item)
+                else:
+                    'Unexpected Control Type Field: %s' % control
+                    raise
     
                 if use_custom_buttons:
                     ctrl_gen.enable_custom_buttons()
@@ -126,9 +130,9 @@ def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_f
                 java_helper_functions += ctrl_gen.gen_java_helper_functions()
                 java_helper_functions = java_helper_functions.replace('NAME', item['Name'])
                 
-                if (item['Control'] == 'Scoring_Matrix'):
+                if (control == 'Scoring_Matrix'):
                     above_name = ctrl_gen.get_last_label()
-                elif item['Control'] == 'Text': 
+                elif control == 'Text': 
                     above_name = item['Name'] + 'Entry'
                 else:
                     above_name = item['Name'] + 'Label'

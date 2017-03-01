@@ -69,7 +69,19 @@ class AttrDefinitions:
                     if self.global_config.has_key('legacy_tablet_ui') and self.global_config['legacy_tablet_ui'].lower() == 'yes':
                         definition[header_row[index]] = item
                     else:
-                        definition[header_row[index]] = item.title()
+                        # strip out any leading or trailing whitespace characters. We have had cases where the spreadsheet
+                        # has <CR> or spaces in the fields, causing weird behavior when we try to generate the UI applications.
+                        # so, we will strip whitespace left and right, and within the field itself
+                        # then capitalize the first character of the field
+                        item = item.lstrip().strip()
+                        item = item.replace(' ','')
+                        item = item.title()
+                        definition[header_row[index]] = item
+
+                # if the name field of the attribute is empty, then assume an empty line and skip it
+                if definition['Name'] == '':
+                    print 'Empty attribute row, skipping...'
+                    continue
 
                 # set the Column_Order attribute to the row number, doing away with the troublesome
                 # column that has proven to be error prone. With this change, the column display
