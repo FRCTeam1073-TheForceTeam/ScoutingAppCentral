@@ -17,13 +17,12 @@ import java.util.List;
 
 import org.team1073.utils.FileSyncUtils;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.widget.Toast;
 
 public class HttpSyncTask extends AsyncTask<String, String, Integer> {
-	Activity activity;
+	ActivityBase activity;
 	String clientName;
 	String syncControl;
 	Integer numFilesTransferred=0;
@@ -36,7 +35,7 @@ public class HttpSyncTask extends AsyncTask<String, String, Integer> {
 	String baseUrl;
 	FileSyncUtils syncHelper;
 
-	public HttpSyncTask(Activity activity, String clientName, String hostAddr, String syncControl) {
+	public HttpSyncTask(ActivityBase activity, String clientName, String hostAddr, String syncControl) {
 		this.activity = activity;
 		this.clientName = clientName;
 		this.syncControl = syncControl;

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -19,7 +18,7 @@ import android.os.Environment;
 import android.widget.Toast;
 
 public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
-	Activity activity;
+	ActivityBase activity;
 	String clientName;
 	String syncControl;
 	Integer numFilesTransferred=0;
@@ -30,7 +29,7 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 	Boolean connectionEstablished;
 	File directory = Environment.getExternalStorageDirectory();
 	
-	public BluetoothSyncTask(Activity activity, String clientName, String syncControl) {
+	public BluetoothSyncTask(ActivityBase activity, String clientName, String syncControl) {
 		this.activity = activity;
 		this.clientName = clientName;
 		this.syncControl = syncControl;
@@ -188,26 +187,39 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
 		bluetoothAdapter.cancelDiscovery();
 
 		// Client discovers the MAC address of server, if one exists
-		if (pairedDevices.size() == 0) {
+        if (pairedDevices.size() == 0) {
             publishProgress( "No Paired Devices" );
-		}
-		else {
-            // Loop through paired devices
-            for (BluetoothDevice device : pairedDevices) {
-            	publishProgress( "Connecting to " + device.getName() );
-				try {
-					socket = device.createRfcommSocketToServiceRecord(SYNC_SERVICE_ID);
-					socket.connect();
-					connected = true;
-	            	publishProgress( "Connected to " + device.getName() );
-					break;
-				} catch (Exception e) {
-	            	publishProgress( "Error connecting to " + device.getName() + " Msg: " + e.getMessage() );					
-				}
+        } else {
+            // Loop through paired devices in a 2-pass way. In the first pass,
+            // only try the device that the tablet last connected to, and if that
+            // connection attempt fails, then make a second pass and try all paired
+            // devices until one succeeds 
+            int connectPass = 0;
+            String lastConnectedServer = activity.getLastConnectedServer();
+            while ( !connected && (connectPass < 2) ) {
+                for (BluetoothDevice device : pairedDevices) {
+                    if ( (connectPass==0) && (!device.getName().equals(lastConnectedServer)) ) {
+                        continue;
+                    }
+
+                    publishProgress( "Connecting to " + device.getName() );
+                    try {
+                        socket = device.createRfcommSocketToServiceRecord(SYNC_SERVICE_ID);
+                        socket.connect();
+                        connected = true;
+                        activity.setLastConnectedServer( device.getName() );
+                        if ( connectPass > 0 )
+                            activity.SaveDeviceConfiguration();
+                        publishProgress( "Connected to " + device.getName() );
+                        break;
+                    } catch (Exception e) {
+                        //publishProgress( "Error connecting to " + device.getName() + " Msg: " + e.getMessage() );
+                    }
+                }
+                connectPass++;
             }
-		}
-		
-		return connected;
+        }
+        return connected;
     }
     
     private void disconnectFromBluetoothServer() {
