@@ -1,15 +1,12 @@
-week0,WEEK0,Week Zero
-nhgrs,NHGRS,New Hampshire Granite State District
-mabos,BU,Boston District
-nhdur,UNH,UNH District
-rismi,RI,Rhode Island District
-marea,READING,Reading District
-nhnas,NASHUA,Nashua District
 ctwat,WATERBURY,Waterbury District
-maspr,PIONEER,Pioneer Valley District
-manda,UMASS,UMass Dartmouth District
+nhgrs,NHGRS,Granite State District
+mawor,WPI,Worcester District
+mabri,BRIDGEWATER,SE Mass District
+mabos,BOSTON,Greater Boston District
+marea,READING,North Shore District
+nhbed,BEDFORD,Southern NH District
+ripro,RI,Rhode Island District
 melew,PINETREE,Pine Tree District
 cthar,HARTFORD,Hartford District
 necmp,NECMP,New England District Championships
-mawpi,BATTLECRY,Battlecry at WPI
-mosl,STLRQu,St. Louis Regional
+week0,WEEK0,Week Zero
