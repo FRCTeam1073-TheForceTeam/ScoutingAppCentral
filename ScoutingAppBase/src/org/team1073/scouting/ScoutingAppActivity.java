@@ -8,7 +8,6 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -33,6 +32,7 @@ import android.widget.Toast;
 
 import org.team1073.utils.BluetoothSyncTask;
 import org.team1073.utils.HttpSyncTask;
+import org.team1073.utils.ActivityBase;
 
 import com.google.gson.Gson;
 
@@ -55,7 +55,7 @@ startActivity(emailIntent);
 
 
 
-public class ScoutingAppActivity extends Activity {
+public class ScoutingAppActivity extends ActivityBase {
 	private String device_name="unknown";
 	private String device_id="un";
 	private String competition_season="2017";
@@ -68,6 +68,8 @@ public class ScoutingAppActivity extends Activity {
 	private Boolean sync_media_files = false;
 	private Boolean unsavedChanges = false;
 	private MatchSchedule matchSchedule = null;
+	private String allianceColor = "";
+	private String alliancePosition = "";
 	
     final String tmpFile = "ScoutingData.tmp";
     
@@ -227,6 +229,8 @@ public class ScoutingAppActivity extends Activity {
 	            		sync_media_files = true;
 	            	else
 	            		sync_media_files = false;
+	            } else if ( token.equalsIgnoreCase("LastConnectedServer")) {
+	            	setLastConnectedServer(tokenizer.nextToken());
 	            }
 			}
 			reader.close();
@@ -298,6 +302,8 @@ public class ScoutingAppActivity extends Activity {
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Only_RadioButton.getText().toString() + eol);
 	                    else if (SyncControl_Upload_Download_RadioButton.isChecked())
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Download_RadioButton.getText().toString() + eol);
+	                    if ( !getLastConnectedServer().isEmpty() )
+	                        buffer.append("LastConnectedServer=" + getLastConnectedServer() + eol);
 	                    if (TextFileTypeCheckBox_Checkbox.isChecked())
 	                        buffer.append("SyncTextFiles=Yes" + eol);
 	                    else
@@ -320,7 +326,48 @@ public class ScoutingAppActivity extends Activity {
 	        dialog.show();
     	}
 	}
-    
+
+	public void SaveDeviceConfiguration() {
+		try {
+
+    		File directory = Environment.getExternalStorageDirectory();
+			File myDir = new File(directory + "/ScoutingConfig");
+			myDir.mkdirs();
+			File myFile = new File(myDir, "ScoutingConfig.txt");	
+	        FileWriter myWriter = new FileWriter(myFile);
+			BufferedWriter writer = new BufferedWriter(myWriter);
+	        
+            StringBuffer buffer = new StringBuffer();
+            String eol = System.getProperty("line.separator");
+            if ( !device_name.isEmpty() )
+            	buffer.append("DeviceName=" + device_name + eol);
+            if ( !device_id.isEmpty() )
+                buffer.append("DeviceId=" + device_id + eol);
+            if ( !host_addr.isEmpty() )
+                buffer.append("HostAddr=" + host_addr + eol);
+            if ( !sync_method.isEmpty() )
+            	buffer.append("SyncMethod=" + sync_method + eol);
+            if ( !sync_control.isEmpty() )
+                buffer.append("SyncControl=" + sync_control + eol);
+             if ( !getLastConnectedServer().isEmpty() )
+                buffer.append("LastConnectedServer=" + getLastConnectedServer() + eol);
+            if (sync_text_files == true)
+                buffer.append("SyncTextFiles=Yes" + eol);
+            else
+                buffer.append("SyncTextFiles=No" + eol);
+            if (sync_media_files)
+                buffer.append("SyncMediaFiles=Yes" + eol);
+            else
+                buffer.append("SyncMediaFiles=No" + eol);
+            
+			// write the formatted buffer to the file
+			writer.write(buffer.toString());
+			writer.close();
+		} catch (Exception e) {
+	        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+		}
+	}
+	
     // Helper function to build up the filename based on the team and match number. 
 	// We may ultimately want to add some other attribute (like date/time,
 	// or a sequence number) to the filenames to help keep the file names unique
@@ -332,7 +379,7 @@ public class ScoutingAppActivity extends Activity {
 		
         return filename;
 	}
-
+	
     // helper function to process click actions for Checkbox fields
     public void onCheckboxClicked(View view) {
     	unsavedChanges = true;
