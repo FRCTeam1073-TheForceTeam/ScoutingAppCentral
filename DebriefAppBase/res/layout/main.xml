@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- The UIGEN CUSTOM BUTTONS namespace is created to allow the base application to contain placeholder
+     tags that the UI generator code can identify and manipulate in order to enable the multi-colored
+     buttons that the application now supports. When custom buttons are enabled, the UI generator 
+     will replace the namespace with 'android' to insert the custom buttons into the generated
+     XML layout file. -->
+     
+<ScrollView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:UIGEN_CUSTOM_BUTTONS="http://uigenerator.custombuttontag.com"
+    android:id="@+id/Scroller"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fillViewport="true" >
+
+<RelativeLayout
+    android:id="@+id/Layout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:isScrollContainer="true"> 
+
+    <TextView
+        android:id="@+id/ScouterLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:textColor="@color/white"
+        android:gravity="center_vertical|right"
+        android:text="Scouter:" />
+
+    <EditText
+        android:id="@+id/ScouterEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/ScouterLabel"
+        android:background="@android:drawable/editbox_background"
+        android:textColor="@color/black" />
+
+    <TextView
+        android:id="@+id/TeamLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/ScouterLabel"
+        android:gravity="center_vertical|right"
+        android:text="Team:" />
+
+    <EditText
+        android:id="@+id/TeamEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/ScouterEntry"
+        android:layout_toRightOf="@+id/TeamLabel"
+        android:background="@android:drawable/editbox_background"
+        android:numeric="integer"
+        android:textColor="@color/black" />
+
+    <Button
+        android:id="@+id/PitSyncButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/TeamEntry"
+        android:text="Pit Sync" />
+    
+    <Button
+        android:id="@+id/CloudSyncButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/PitSyncButton"
+        android:text="Cloud Sync" />
+    
+    <!-- Begin Match field text label and entry field -->
+    <TextView
+        android:id="@+id/MatchLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/TeamLabel"
+        android:gravity="center_vertical|right"
+        android:text="Match:" />
+
+    <EditText
+        android:id="@+id/MatchEntry"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:numeric="integer"
+        android:textColor="@color/black"
+        android:layout_below="@+id/TeamLabel"
+        android:layout_toRightOf="@+id/MatchLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Match field text label and entry field -->
+
+    <!-- Begin Top_Separator line separator -->
+    <View
+        android:id="@+id/Top_SeparatorLabel"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_below="@+id/MatchEntry"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/darker_gray" />
+
+    <!-- End Top_Separator line separator -->
+
+    <!-- Begin Issue1_Notify button -->
+    <Button
+        android:id="@+id/Issue1_NotifyLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/Top_SeparatorLabel"
+        android:text="Notify" />
+    <!-- End Issue1_Notify line separator -->
+
+    <!-- Begin Issue1_Summary field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue1_SummaryLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue1_NotifyLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue1_Summary:" />
+
+    <EditText
+        android:id="@+id/Issue1_SummaryEntry"
+        android:layout_width="460dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue1_NotifyLabel"
+        android:layout_toRightOf="@+id/Issue1_SummaryLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue1_Summary field text label and entry field -->
+
+    <!-- UIGEN:ISSUE1_XML_FIELDS_BEGIN -->
+    <!-- Begin Issue1_Taskgroup field text label and checkbox group -->
+    <TextView
+        android:id="@+id/Issue1_TaskgroupLabel"
+        android:layout_width="140dp"
+        android:layout_height="120dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue1_SummaryEntry"
+        android:gravity="center_vertical|right"
+        android:text="Issue1_Taskgroup:" />
+    <!-- End Issue1_Taskgroup field text label and checkbox group -->
+    
+    <!-- Begin Issue1_Taskgroup_Separator line separator -->
+    <View
+        android:id="@+id/Issue1_Taskgroup_Separator"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:layout_below="@+id/Issue1_TaskgroupLabel"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/black" />
+    <!-- End Issue1_Taskgroup_Separator line separator -->    
+    <!-- UIGEN:ISSUE1_XML_FIELDS_END -->
+
+    <!-- Begin Issue1_Priority field text label and radio group -->
+    <TextView
+        android:id="@+id/Issue1_PriorityLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue1_Taskgroup_Separator"
+        android:gravity="center_vertical|right"
+        android:text="Issue1_Priority:" />
+
+    <RadioGroup
+        android:id="@+id/Issue1_PriorityRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/Issue1_Taskgroup_Separator"
+        android:layout_toRightOf="@+id/Issue1_PriorityLabel"
+        android:layout_alignTop="@+id/Issue1_PriorityLabel"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/Issue1_PriorityPriority_1RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_1" />
+
+        <RadioButton
+            android:id="@+id/Issue1_PriorityPriority_2RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_2" />
+
+        <RadioButton
+            android:id="@+id/Issue1_PriorityPriority_3RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_3" />
+
+    </RadioGroup>
+    <!-- End Issue1_Priority field text label and radio group -->
+
+    <!-- Begin Issue1_Description field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue1_DescriptionLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue1_PriorityLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue1_Description:" />
+
+    <EditText
+        android:id="@+id/Issue1_DescriptionEntry"
+        android:layout_width="460dp"
+        android:layout_height="80dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue1_PriorityLabel"
+        android:layout_toRightOf="@+id/Issue1_DescriptionLabel"
+        android:gravity="top|left"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue1_Description field text label and entry field -->
+
+    <!-- Begin Issue1_Separator line separator -->
+    <View
+        android:id="@+id/Issue1_SeparatorLabel"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_below="@+id/Issue1_DescriptionEntry"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/darker_gray" />
+
+    <!-- End Issue1_Separator line separator -->
+
+    <!-- Begin Issue2_Notify button -->
+    <Button
+        android:id="@+id/Issue2_NotifyLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/Issue1_SeparatorLabel"
+        android:text="Notify" />
+    <!-- End Issue2_Notify line separator -->
+
+    <!-- Begin Issue2_Summary field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue2_SummaryLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue2_NotifyLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue2_Summary:" />
+
+    <EditText
+        android:id="@+id/Issue2_SummaryEntry"
+        android:layout_width="460dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue2_NotifyLabel"
+        android:layout_toRightOf="@+id/Issue2_SummaryLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue2_Summary field text label and entry field -->
+
+    <!-- UIGEN:ISSUE2_XML_FIELDS_BEGIN -->
+    <!-- Begin Issue2_Taskgroup field text label and checkbox group -->
+    <TextView
+        android:id="@+id/Issue2_TaskgroupLabel"
+        android:layout_width="140dp"
+        android:layout_height="120dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue2_SummaryEntry"
+        android:gravity="center_vertical|right"
+        android:text="Issue2_Taskgroup:" />
+    <!-- End Issue2_Taskgroup field text label and checkbox group -->
+    
+    <!-- Begin Issue2_Taskgroup_Separator line separator -->
+    <View
+        android:id="@+id/Issue2_Taskgroup_Separator"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:layout_below="@+id/Issue2_TaskgroupLabel"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/black" />
+    <!-- End Issue2_Taskgroup_Separator line separator -->    
+    <!-- UIGEN:ISSUE2_XML_FIELDS_END -->
+
+    <!-- Begin Issue2_Priority field text label and radio group -->
+    <TextView
+        android:id="@+id/Issue2_PriorityLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue2_Taskgroup_Separator"
+        android:gravity="center_vertical|right"
+        android:text="Issue2_Priority:" />
+
+    <RadioGroup
+        android:id="@+id/Issue2_PriorityRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/Issue2_Taskgroup_Separator"
+        android:layout_toRightOf="@+id/Issue2_PriorityLabel"
+        android:layout_alignTop="@+id/Issue2_PriorityLabel"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/Issue2_PriorityPriority_1RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_1" />
+
+        <RadioButton
+            android:id="@+id/Issue2_PriorityPriority_2RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_2" />
+
+        <RadioButton
+            android:id="@+id/Issue2_PriorityPriority_3RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_3" />
+
+    </RadioGroup>
+    <!-- End Issue2_Priority field text label and radio group -->
+
+    <!-- Begin Issue2_Description field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue2_DescriptionLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue2_PriorityLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue2_Description:" />
+
+    <EditText
+        android:id="@+id/Issue2_DescriptionEntry"
+        android:layout_width="460dp"
+        android:layout_height="80dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue2_PriorityLabel"
+        android:layout_toRightOf="@+id/Issue2_DescriptionLabel"
+        android:gravity="top|left"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue2_Description field text label and entry field -->
+
+    <!-- Begin Issue2_Separator line separator -->
+    <View
+        android:id="@+id/Issue2_SeparatorLabel"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_below="@+id/Issue2_DescriptionEntry"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/darker_gray" />
+
+    <!-- End Issue2_Separator line separator -->
+
+    <!-- Begin Issue3_Notify button -->
+    <Button
+        android:id="@+id/Issue3_NotifyLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/Issue2_SeparatorLabel"
+        android:text="Notify" />
+    <!-- End Issue3_Notify line separator -->
+
+    <!-- Begin Issue3_Summary field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue3_SummaryLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue3_NotifyLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue3_Summary:" />
+
+    <EditText
+        android:id="@+id/Issue3_SummaryEntry"
+        android:layout_width="460dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue3_NotifyLabel"
+        android:layout_toRightOf="@+id/Issue3_SummaryLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue3_Summary field text label and entry field -->
+
+    <!-- UIGEN:ISSUE3_XML_FIELDS_BEGIN -->
+    <!-- Begin Issue3_Taskgroup field text label and checkbox group -->
+    <TextView
+        android:id="@+id/Issue3_TaskgroupLabel"
+        android:layout_width="140dp"
+        android:layout_height="120dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue3_SummaryEntry"
+        android:gravity="center_vertical|right"
+        android:text="Issue3_Taskgroup:" />
+    <!-- End Issue3_Taskgroup field text label and checkbox group -->
+    
+    <!-- Begin Issue3_Taskgroup_Separator line separator -->
+    <View
+        android:id="@+id/Issue3_Taskgroup_Separator"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:layout_below="@+id/Issue3_TaskgroupLabel"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/black" />
+    <!-- End Issue3_Taskgroup_Separator line separator -->    
+    <!-- UIGEN:ISSUE3_XML_FIELDS_END -->
+
+    <!-- Begin Issue3_Priority field text label and radio group -->
+    <TextView
+        android:id="@+id/Issue3_PriorityLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue3_Taskgroup_Separator"
+        android:gravity="center_vertical|right"
+        android:text="Issue3_Priority:" />
+
+    <RadioGroup
+        android:id="@+id/Issue3_PriorityRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/Issue3_Taskgroup_Separator"
+        android:layout_toRightOf="@+id/Issue3_PriorityLabel"
+        android:layout_alignTop="@+id/Issue3_PriorityLabel"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/Issue3_PriorityPriority_1RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_1" />
+
+        <RadioButton
+            android:id="@+id/Issue3_PriorityPriority_2RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_2" />
+
+        <RadioButton
+            android:id="@+id/Issue3_PriorityPriority_3RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority_3" />
+
+    </RadioGroup>
+    <!-- End Issue3_Priority field text label and radio group -->
+
+    <!-- Begin Issue3_Description field text label and entry field -->
+    <TextView
+        android:id="@+id/Issue3_DescriptionLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue3_PriorityLabel"
+        android:gravity="center_vertical|right"
+        android:text="Issue3_Description:" />
+
+    <EditText
+        android:id="@+id/Issue3_DescriptionEntry"
+        android:layout_width="460dp"
+        android:layout_height="80dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue3_PriorityLabel"
+        android:layout_toRightOf="@+id/Issue3_DescriptionLabel"
+        android:gravity="top|left"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Issue3_Description field text label and entry field -->
+
+    <!-- Begin Issue3_Separator line separator -->
+    <View
+        android:id="@+id/Issue3_SeparatorLabel"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_below="@+id/Issue3_DescriptionEntry"
+        android:gravity="center_vertical|right"
+        android:background="@android:color/darker_gray" />
+
+    <!-- End Issue3_Separator line separator -->
+
+    <!-- Begin Match_Summary field text label and entry field -->
+    <TextView
+        android:id="@+id/Match_SummaryLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Issue3_SeparatorLabel"
+        android:gravity="center_vertical|right"
+        android:text="Match_Summary:" />
+
+    <EditText
+        android:id="@+id/Match_SummaryEntry"
+        android:layout_width="460dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Issue3_SeparatorLabel"
+        android:layout_toRightOf="@+id/Match_SummaryLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Match_Summary field text label and entry field -->
+
+    
+    <!-- UICUSTOM:XML_FIELDS_BEGIN - insert custom XML code -->
+    <!-- UICUSTOM:XML_FIELDS_END -->
+    
+    <!-- Begin Notes field text label and entry field -->
+    <TextView
+        android:id="@+id/NotesLabel"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:textColor="@color/white"
+        android:layout_below="@+id/Match_SummaryLabel"
+        android:gravity="center_vertical|right"
+        android:text="Notes:" />
+
+    <EditText
+        android:id="@+id/NotesEntry"
+        android:layout_width="460dp"
+        android:layout_height="120dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/Match_SummaryLabel"
+        android:layout_toRightOf="@+id/NotesLabel"
+        android:gravity="top|left"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End Notes field text label and entry field -->
+
+ 
+    <Button
+        android:id="@+id/SaveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_alignParentLeft="true"
+        android:text="  Save  "/>
+
+    <Button
+        android:id="@+id/DiscardButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_centerInParent="true"        
+        android:text="@string/discard_string"/>
+
+    <Button
+        android:id="@+id/ReloadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        UIGEN_CUSTOM_BUTTONS:background="@layout/custom_button"
+        android:layout_below="@+id/NotesEntry"
+        android:layout_alignParentRight="true"
+        android:text="Reload"/>
+
+</RelativeLayout>
+
+</ScrollView>    
+    
+
+    

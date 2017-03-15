@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Debrie Application: 2017 Base Application</string>
+    <string name="app_label">Debrief App</string>
+    <string name="discard_string">Clear</string>
+    
+    <string name="match_plus">Next</string>
+    <string name="match_minus">Prev</string>
+    <string name="match_select">Set</string>
+    
+</resources>

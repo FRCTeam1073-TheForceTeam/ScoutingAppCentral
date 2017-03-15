@@ -179,10 +179,26 @@ def update_generated_xml_code(dest_project_path, gen_fragments, use_custom_butto
         # the generated code and set the discard mode to replace any existing 
         # generated code between the markers
         if marker_token != None and marker_token[1] == 'BEGIN':
+            if marker_token[0].find( 'ISSUE' ) != -1:
+                tokens = marker_token[0].split('ISSUE')
+                index = int(tokens[1][0])
+                tokens[1] = tokens[1][2:]
+                indexed_marker = tokens[0] + tokens[1]
+                discard_line = True
+                if gen_fragments.has_key(indexed_marker):
+                    xml_outfile.write(gen_fragments[indexed_marker][index])                
+            else:
+                discard_line = True
+                if gen_fragments.has_key(marker_token[0]):
+                    xml_outfile.write(gen_fragments[marker_token[0]])
+
+        '''
+        if marker_token != None and marker_token[1] == 'BEGIN':
             discard_line = True
             if gen_fragments.has_key(marker_token[0]):
                 xml_outfile.write(gen_fragments[marker_token[0]])
-            
+        '''
+        
     xml_infile.close()
     xml_outfile.close()
     shutil.move(os.path.join(dest_project_path, 'res', 'layout', 'main.xml.tmp'),os.path.join(dest_project_path, 'res', 'layout', 'main.xml'))
@@ -262,9 +278,22 @@ def update_generated_java_code(base_projectname, dest_project_path, dest_activit
         # the generated code and set the discard mode to replace any existing 
         # generated code between the markers
         if marker_token != None and marker_token[1] == 'BEGIN':
-            discard_line = True
-            if gen_fragments.has_key(marker_token[0]):
-                java_outfile.write(gen_fragments[marker_token[0]])
+            # if the marker token has the word ISSUE in it, then it is part of a series
+            if marker_token[0].find( 'ISSUE' ) != -1:
+                tokens = marker_token[0].split('ISSUE')
+                index = int(tokens[1][0])
+                tokens[1] = tokens[1][2:]
+                indexed_marker = tokens[0] + tokens[1]
+                if gen_fragments.has_key(indexed_marker):
+                    discard_line = True
+                    java_outfile.write(gen_fragments[indexed_marker][index])                
+            else:
+                if gen_fragments.has_key(marker_token[0]):
+                    discard_line = True
+                    fragment = gen_fragments[marker_token[0]]
+                    java_outfile.write(fragment)
+                else:
+                    print 'Missing fragment for %s' % marker_token[0]
             
     java_infile.close()
     java_outfile.close()

@@ -318,7 +318,8 @@ class MatchGroupUiGenControl( UiGenControl ):
         
         String matchStr = match.toString();
         String teamStr = GetTeamFromMatchSchedule( compRound, alliance, position, matchStr );
-        TeamEntry.setText(teamStr);
+        if ( !teamStr.equals("0") )
+            TeamEntry.setText(teamStr);
         NAMEEntry.setText(matchStr);
     }
 '''

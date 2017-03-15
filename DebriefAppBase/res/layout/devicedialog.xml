@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:isScrollContainer="true" 
+    android:background="@color/black">
+    
+    <!-- Begin DeviceName field text label and entry field -->
+    <TextView
+        android:id="@+id/DeviceNameLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical|right"
+        android:text="Device Name:" />
+
+    <EditText
+        android:id="@+id/DeviceNameEntry"
+        android:layout_width="160dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/DeviceNameLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End DeviceName field text label and entry field -->
+
+    <!-- Begin DeviceId field text label and entry field -->
+    <TextView
+        android:id="@+id/DeviceIdLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/DeviceNameLabel"
+        android:gravity="center_vertical|right"
+        android:text="Device Id:" />
+
+    <EditText
+        android:id="@+id/DeviceIdEntry"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/DeviceNameLabel"
+        android:layout_toRightOf="@+id/DeviceIdLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End DeviceId field text label and entry field -->
+
+    <!-- Begin HostAddr field text label and entry field -->
+    <TextView
+        android:id="@+id/HostAddrLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/DeviceIdLabel"
+        android:gravity="center_vertical|right"
+        android:text="Host IP Address:" />
+
+    <EditText
+        android:id="@+id/HostAddrEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/DeviceIdLabel"
+        android:layout_toRightOf="@+id/HostAddrLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End HostAddr field text label and entry field -->
+
+    <!-- Begin SyncMethod field text label and radio group -->
+    <TextView
+        android:id="@+id/SyncMethodLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/HostAddrLabel"
+        android:gravity="center_vertical|right"
+        android:text="Sync_Method:" />
+
+    <RadioGroup
+        android:id="@+id/SyncMethodRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/HostAddrLabel"
+        android:layout_toRightOf="@+id/SyncMethodLabel"
+        android:layout_alignTop="@+id/SyncMethodLabel"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/SyncMethod_Bluetooth_RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bluetooth" />
+
+        <RadioButton
+            android:id="@+id/SyncMethod_Wifi_3g_RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wifi_3G" />
+
+    </RadioGroup>
+    <!-- End SyncMethod field text label and radio group -->
+
+    <!-- Begin SyncControl field text label and radio group -->
+    <TextView
+        android:id="@+id/SyncControlLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/SyncMethodLabel"
+        android:gravity="center_vertical|right"
+        android:text="Sync_Control:" />
+
+    <RadioGroup
+        android:id="@+id/SyncControlRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/SyncMethodLabel"
+        android:layout_toRightOf="@+id/SyncControlLabel"
+        android:layout_alignTop="@+id/SyncControlLabel"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/SyncControl_Upload_Only_RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload_Only" />
+
+        <RadioButton
+            android:id="@+id/SyncControl_Upload_Download_RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload_Download" />
+
+    </RadioGroup>
+    <!-- End SyncControl field text label and radio group -->
+
+    <!-- Begin Transfer types field text label and checkbox group -->
+    <TextView
+        android:id="@+id/FileTypesLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/SyncControlRadioGroup"
+        android:gravity="center_vertical|right"
+        android:text="File_Types:" />
+
+        <CheckBox
+            android:id="@+id/TextFileTypeCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/FileTypesLabel"
+            android:layout_alignTop="@+id/FileTypesLabel"
+            android:layout_marginTop="0dp"
+            android:text="Text" />
+
+        <CheckBox
+            android:id="@+id/MediaFileTypeCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/TextFileTypeCheckBox"
+            android:layout_alignTop="@+id/FileTypesLabel"
+            android:layout_marginTop="0dp"
+            android:text="Pictures" />
+
+
+    <!-- End Role field text label and checkbox group -->
+
+    <Button
+        android:id="@+id/DeviceOkButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/FileTypesLabel"
+        android:layout_centerHorizontal="true"
+        android:text="Ok"/>
+
+</RelativeLayout>
+

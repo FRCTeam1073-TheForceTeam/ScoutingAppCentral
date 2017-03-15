@@ -194,13 +194,33 @@ def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_f
     
     return gen_fragments
 
-def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=False, use_custom_buttons=False ):
+def gen_debrief_sheet_ui( global_config, attrdef_filename, sheet_type, create_fragment_file=False, use_custom_buttons=False ):
+    '''
+    # For 2017, we have moved away from the spreadsheet driven layout for the debrief app, using a simple text
+    # file for the definition of the taskgroups instead. The layout itself will only alter the taskgroup section 
+    # of the debrief app so there is no need to have the full spreadsheet layout, like we do for the scouting
+    # apps themselves.
+    
     # Build the attribute definition dictionary from the definitions spreadsheet file
     attr_definitions = AttributeDefinitions.AttrDefinitions()
+    
     attr_definitions.parse(attrdef_filename, sheet_type)
-
     attr_dict = attr_definitions.get_definitions()
+    '''
+    
+    # TODO: load the list of taskgroups from some file
+    taskgroups = UiGeneratorDebriefApp.load_taskgroups(attrdef_filename)
+    categories = UiGeneratorDebriefApp.load_categories(attrdef_filename)
+    
+    # generate the variable parts of the debrief app based on the taskgroups that have been 
+    # defined
+    attr_dict = UiGeneratorDebriefApp.get_debrief_app_control_defs(taskgroups)
+    
+    # now, sort the attributes definitions according to the 'Order' within each attribute. This is
+    # an artifact of when we loaded the layout from a spreadsheet file. We'll keep this behavior
+    # in case we go back to the spreadsheet over time
     num_attr = len(attr_dict)
+
     attr_order = [{} for i in range(len(attr_dict))]
     
     i=0
@@ -210,12 +230,9 @@ def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=Fal
         
     attr_order.sort(attr_order_compare)
 
-    # TODO: load the list of taskgroups from some file
-    taskgroups = UiGeneratorDebriefApp.taskgroups
-    categories = UiGeneratorDebriefApp.categories
-    
-    xml_string = ''
+    xml_string = {}
     java_list_declaration_snippet = ''
+    java_list_alloc_snippet = ''
     java_load_snippet = ''
     
     java_checkbox_declaration_snippets = {}
@@ -241,17 +258,28 @@ def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=Fal
     above_name = 'Issue1_SummaryEntry'
 
     try:
+        
+        category = 1        
         for item in attr_order:
             # generate the XML snippets...
-            ctrl_gen = CheckboxUiGenControl(item)
-            xml_string += ctrl_gen.gen_xml_string(above_name)
-            xml_string = xml_string.replace('ABOVELabel', above_name)
-            xml_string = xml_string.replace('NAME', item['Name'])
-            above_name = item['Name'] + 'Label'
+            above_name = 'Issue%d_SummaryEntry' % category
+            ctrl_gen = CheckboxUiGenControl(item, left_margin=140)
+            xml_string[category] = ctrl_gen.gen_xml_string(above_name)
+            xml_string[category] = xml_string[category].replace('ABOVELabel', above_name)
+            xml_string[category] = xml_string[category].replace('NAME', item['Name'])
+            
+            # add in the separator field, too.
+            item_label = 'Issue%d_Taskgroup' % category
+            above_item = 'Issue%d_Taskgroup%sCheckBox' % (category, taskgroups[-1])
+            separator_ctrl = LineSeparatorUiGenControl()
+            xml_string[category] += separator_ctrl.gen_hidden_xml_string(item_label,above_item)
+            
+            category += 1
             
         for item in taskgroups:
     
             java_list_declaration_snippet += UiGeneratorDebriefApp.gen_list_declaration_snippet(item)
+            java_list_alloc_snippet += UiGeneratorDebriefApp.gen_list_alloc_snippet(item)
             java_load_snippet += UiGeneratorDebriefApp.gen_load_taskgroups_snippet(item)
             
             for category in categories:
@@ -267,15 +295,18 @@ def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=Fal
                   (item['Control'],item['Name'],item['Map_Values'],item['Options'])
         raise Exception(err_str)
         
-         
     if create_fragment_file == True:
         # write out the xml file fragment
         outputFilename = './tmp/gen-ui-' + sheet_type + '.txt'
         fo = open(outputFilename, "w+")
         fo.write( '\n======================= main.xml code fragments ======================\n\n')
-        fo.write( xml_string )
+        for category in categories:
+            fo.write( xml_string[category] )
+            
         fo.write( '\n======================= java list declarations code fragments ======================\n\n')
         fo.write( java_list_declaration_snippet )
+        fo.write( '\n======================= java list allocation code fragments ======================\n\n')
+        fo.write( java_list_alloc_snippet )
         fo.write( '\n======================= java load code fragments ======================\n\n')
         fo.write( java_load_snippet )
         fo.write( '\n======================= java checkbox declarations code fragments ======================\n\n')    
@@ -302,6 +333,7 @@ def gen_debrief_sheet_ui( attrdef_filename, sheet_type, create_fragment_file=Fal
     # caller
     gen_fragments = {}
     gen_fragments['UIGEN:LIST_DECLARE'] = java_list_declaration_snippet
+    gen_fragments['UIGEN:LIST_ALLOC'] = java_list_alloc_snippet
     gen_fragments['UIGEN:LIST_LOAD'] = java_load_snippet
     gen_fragments['UIGEN:CHECKBOX_DECLARE'] = java_checkbox_declaration_snippets
     gen_fragments['UIGEN:SAVE'] = java_save_handler_snippets

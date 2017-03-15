@@ -5,7 +5,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import android.app.AlertDialog;
@@ -32,6 +35,7 @@ import android.widget.Toast;
 
 import org.team1073.utils.BluetoothSyncTask;
 import org.team1073.utils.HttpSyncTask;
+import org.team1073.utils.SlackIntfTask;
 import org.team1073.utils.ActivityBase;
 
 import com.google.gson.Gson;
@@ -55,7 +59,7 @@ startActivity(emailIntent);
 
 
 
-public class ScoutingAppActivity extends ActivityBase {
+public class DebriefAppActivity extends ActivityBase {
 	private String device_name="unknown";
 	private String device_id="un";
 	private String competition_season="2017";
@@ -72,6 +76,13 @@ public class ScoutingAppActivity extends ActivityBase {
 	private String alliancePosition = "";
 	
     final String tmpFile = "ScoutingData.tmp";
+
+    //// UIGEN:LIST_DECLARE_BEGIN - insert generated code for email list declarations
+    
+    //// UIGEN:LIST_DECLARE_END
+    
+    private String[] Master_list;
+    private String[] Cc_list;
     
     /*private void StartFileSyncTask( String sync_control, String path) {
     	String[] paths = path.split("");
@@ -81,9 +92,9 @@ public class ScoutingAppActivity extends ActivityBase {
 		// Create an asynchronous task to transfer the files to/from the server
 		// Use either the Bluetooth or HTTP service based on the device configuration
 		if (sync_method.equalsIgnoreCase("Bluetooth")) {
-    		new BluetoothSyncTask(ScoutingAppActivity.this, device_name, sync_control).execute(path);
+    		new BluetoothSyncTask(DebriefAppActivity.this, device_name, sync_control).execute(path);
 		} else {
-    		new HttpSyncTask(ScoutingAppActivity.this, device_name, host_addr, sync_control).execute(path);
+    		new HttpSyncTask(DebriefAppActivity.this, device_name, host_addr, sync_control).execute(path);
 		}
     }
 
@@ -131,7 +142,7 @@ public class ScoutingAppActivity extends ActivityBase {
 			
            	// augment the application title with the competition name
         	String app_title_base = getString(R.string.app_label) + " - ";
-        	ScoutingAppActivity.this.setTitle(app_title_base + competition_directory);
+        	DebriefAppActivity.this.setTitle(app_title_base + competition_directory);
     		
 			reader.close();
     	} catch (Exception e) {
@@ -142,7 +153,7 @@ public class ScoutingAppActivity extends ActivityBase {
     		// The configuration file is not there, so create a pop up dialog
     		// to prompt the user for the necessary device configuration information
     		// needed to continue with the application.
-	        Dialog dialog = new Dialog(ScoutingAppActivity.this);
+	        Dialog dialog = new Dialog(DebriefAppActivity.this);
 	        dialog.setContentView(R.layout.competitiondialog);
 	        dialog.setTitle("Please Enter Competition Information");
 	        dialog.setCancelable(true);
@@ -182,7 +193,7 @@ public class ScoutingAppActivity extends ActivityBase {
 						writer.write(buffer.toString());
 						writer.close();
 					} catch (Exception e) {
-				        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+				        Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
 					}
 	                finish();
 	            }
@@ -242,7 +253,7 @@ public class ScoutingAppActivity extends ActivityBase {
     		// The configuration file is not there, so create a pop up dialog
     		// to prompt the user for the necessary device configuration information
     		// needed to continue with the application.
-	        Dialog dialog = new Dialog(ScoutingAppActivity.this);
+	        Dialog dialog = new Dialog(DebriefAppActivity.this);
 	        dialog.setContentView(R.layout.devicedialog);
 	        dialog.setTitle("Please Enter Device Information");
 	        dialog.setCancelable(true);
@@ -317,7 +328,7 @@ public class ScoutingAppActivity extends ActivityBase {
 						writer.write(buffer.toString());
 						writer.close();
 					} catch (Exception e) {
-				        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+				        Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
 					}
 	                finish();
 	            }
@@ -364,11 +375,60 @@ public class ScoutingAppActivity extends ActivityBase {
 			writer.write(buffer.toString());
 			writer.close();
 		} catch (Exception e) {
-	        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+	        Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
 		}
 	}
 	
-    // Helper function to build up the filename based on the team and match number. 
+	private void LoadTaskGroupLists() {
+		
+	    //// UIGEN:LIST_ALLOC_BEGIN - insert generated code for email list declarations
+	    //// UIGEN:LIST_ALLOC_END
+
+		Master_list = new String[1];
+	    Cc_list = new String[1];
+		
+    	try {
+    		// This code block will attempt to read the device configuration
+    		// file containing the device name, id, and other configuration 
+    		// parameters. If the file is there, the information is read and
+    		// stored for later access by the application itself
+    		File directory = Environment.getExternalStorageDirectory();
+    		
+    		// TODO: Move the competition configuration from the base directory to the directory
+    		//       for each competition. When this is complete, then restore the commented out
+    		//       line.
+			//File myDir = new File(directory + "/" + competition_directory + "/ScoutingConfig");
+			File myDir = new File(directory + "/" + "/ScoutingConfig");
+			File myFile = new File(myDir, "TaskGroupEmailLists.txt");
+	        FileReader myReader = new FileReader(myFile);
+			BufferedReader reader = new BufferedReader(myReader);
+			String line;
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer tokenizer = new StringTokenizer(line, "=\t\n\r\f");
+				String token = tokenizer.nextToken();
+				
+				try {
+	                if ( token.equalsIgnoreCase("Cc_email_list") ) {
+	                	Cc_list = tokenizer.nextToken().split(";");
+	                //// UIGEN:LIST_LOAD_BEGIN - insert fragments to load email lists from file contents
+	                	
+	                //// UIGEN:LIST_LOAD_END
+	                } else if ( token.equalsIgnoreCase("Master_email_list")) {
+	                    Master_list = tokenizer.nextToken().split(";");
+	                }
+				} catch (Exception e) {
+				}
+			}
+			
+    		Toast.makeText(DebriefAppActivity.this, "Taskgroup List Loaded", Toast.LENGTH_LONG).show();
+    		
+    	} catch (Exception e) {
+    	}
+    	
+	}
+
+	
+	// Helper function to build up the filename based on the team and match number. 
 	// We may ultimately want to add some other attribute (like date/time,
 	// or a sequence number) to the filenames to help keep the file names unique
 	private String buildFilename(EditText teamEntry, String type, String otherKey){
@@ -404,7 +464,7 @@ public class ScoutingAppActivity extends ActivityBase {
 		
         return filename;
 	}
-	
+
 	private String buildDebriefFilename(String type, String label, String otherKey){
 
 		String filename = type + "_" + label + otherKey + "_" +
@@ -413,6 +473,26 @@ public class ScoutingAppActivity extends ActivityBase {
         return filename;
 	}
 
+/*
+	private String buildDebriefFilename(String type, String label, String otherKey){
+
+		Integer count=1;
+		boolean found=false;
+		String filename="";
+		while ( !found ) {
+			String count_str = String.format("%03d", count);
+			filename = type + "_" + label + otherKey + "_" + count_str + "_" +
+					   device_id + ".txt";
+			if ( !doesFileExist(filename) )
+				found = true;
+			else
+				count++;
+		}
+		
+		
+        return filename;
+	}
+*/
 	
 	// helper function to process key actions for an EditText field
 	private boolean onKey(View v, int keyCode, KeyEvent event, EditText entry) {
@@ -421,7 +501,7 @@ public class ScoutingAppActivity extends ActivityBase {
    		if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
    			(keyCode == KeyEvent.KEYCODE_ENTER)) {
    				// For now, we'll just make a toast with the entered data
-   				Toast.makeText(ScoutingAppActivity.this, entry.getText(), Toast.LENGTH_SHORT).show();
+   				Toast.makeText(DebriefAppActivity.this, entry.getText(), Toast.LENGTH_SHORT).show();
    				return true;
    		}
    		return false;
@@ -500,7 +580,7 @@ public class ScoutingAppActivity extends ActivityBase {
 			// And, close the file
 			writer.close();
 		} catch (Exception e) {
-	        Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+	        Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
 		}
     }
     
@@ -561,10 +641,43 @@ public class ScoutingAppActivity extends ActivityBase {
     private EditText ScouterEntry;
     private EditText TeamEntry;
     private EditText NotesEntry;
-    private Button videoButton;
-    private Button cameraButton;      
-    private Button syncButton;
+    private Button PitSyncButton;
+    private Button CloudSyncButton;
 
+    private EditText MatchEntry;
+    private Button Issue1_NotifyButton;
+    private EditText Issue1_SummaryEntry;
+    private RadioGroup Issue1_PriorityRadioGroup;
+    private RadioButton Issue1_PriorityPriority_1RadioButton;
+    private RadioButton Issue1_PriorityPriority_2RadioButton;
+    private RadioButton Issue1_PriorityPriority_3RadioButton;
+    private EditText Issue1_DescriptionEntry;
+    private Button Issue2_NotifyButton;
+    private EditText Issue2_SummaryEntry;
+    private RadioGroup Issue2_PriorityRadioGroup;
+    private RadioButton Issue2_PriorityPriority_1RadioButton;
+    private RadioButton Issue2_PriorityPriority_2RadioButton;
+    private RadioButton Issue2_PriorityPriority_3RadioButton;
+    private EditText Issue2_DescriptionEntry;
+    private Button Issue3_NotifyButton;
+    private EditText Issue3_SummaryEntry;
+    private RadioGroup Issue3_PriorityRadioGroup;
+    private RadioButton Issue3_PriorityPriority_1RadioButton;
+    private RadioButton Issue3_PriorityPriority_2RadioButton;
+    private RadioButton Issue3_PriorityPriority_3RadioButton;
+    private EditText Issue3_DescriptionEntry;
+    private EditText Match_SummaryEntry;
+
+    //// UIGEN:ISSUE1_CHECKBOX_DECLARE_BEGIN - insert generated code for taskgroup checkbox variables declarations
+    //// UIGEN:ISSUE1_CHECKBOX_DECLARE_END
+    
+    //// UIGEN:ISSUE2_CHECKBOX_DECLARE_BEGIN - insert generated code for taskgroup checkbox variables declarations
+    //// UIGEN:ISSUE2_CHECKBOX_DECLARE_END
+    
+    //// UIGEN:ISSUE3_CHECKBOX_DECLARE_BEGIN - insert generated code for taskgroup checkbox variables declarations
+    //// UIGEN:ISSUE3_CHECKBOX_DECLARE_END
+    
+    
     //// UIGEN:VAR_DECLARE_BEGIN - insert generated code for field variables declarations
     //// UIGEN:VAR_DECLARE_END
     
@@ -598,8 +711,80 @@ public class ScoutingAppActivity extends ActivityBase {
 		// we can process the data for multiple competitions without conflict
 		buffer.append("Competition:" + competition_directory + eol);
 		
-		//// UIGEN:SAVE_BEGIN - insert generated code for save handler here                   
-		//// UIGEN:SAVE_END
+        if ( !MatchEntry.getText().toString().isEmpty() )
+            buffer.append("Match:" + MatchEntry.getText().toString() + eol);
+
+        if ( !Issue1_SummaryEntry.getText().toString().isEmpty() )
+            buffer.append("Issue1_Summary:" + Issue1_SummaryEntry.getText().toString() + eol);
+
+        String Issue1_TaskgroupSelection = "Issue1_Taskgroup:";
+        boolean Issue1_TaskgroupIsChecked = false;
+        
+		//// UIGEN:ISSUE1_SAVE_BEGIN - insert generated code for save handler here                   
+		//// UIGEN:ISSUE1_SAVE_END        
+
+        if ( Issue1_TaskgroupIsChecked )
+            buffer.append(eol);
+
+        String Issue1_PrioritySelection = "Issue1_Priority:";
+        if (Issue1_PriorityPriority_1RadioButton.isChecked())
+            buffer.append(Issue1_PrioritySelection + Issue1_PriorityPriority_1RadioButton.getText().toString() + eol);
+        else if (Issue1_PriorityPriority_2RadioButton.isChecked())
+            buffer.append(Issue1_PrioritySelection + Issue1_PriorityPriority_2RadioButton.getText().toString() + eol);
+        else if (Issue1_PriorityPriority_3RadioButton.isChecked())
+            buffer.append(Issue1_PrioritySelection + Issue1_PriorityPriority_3RadioButton.getText().toString() + eol);
+
+        if ( !Issue1_DescriptionEntry.getText().toString().isEmpty() )
+            buffer.append("Issue1_Description:" + Issue1_DescriptionEntry.getText().toString() + eol);
+
+        if ( !Issue2_SummaryEntry.getText().toString().isEmpty() )
+            buffer.append("Issue2_Summary:" + Issue2_SummaryEntry.getText().toString() + eol);
+
+        String Issue2_TaskgroupSelection = "Issue2_Taskgroup:";
+        boolean Issue2_TaskgroupIsChecked = false;
+        
+		//// UIGEN:ISSUE2_SAVE_BEGIN - insert generated code for save handler here                   
+		//// UIGEN:ISSUE2_SAVE_END        
+
+        if ( Issue2_TaskgroupIsChecked )
+            buffer.append(eol);
+
+        String Issue2_PrioritySelection = "Issue2_Priority:";
+        if (Issue2_PriorityPriority_1RadioButton.isChecked())
+            buffer.append(Issue2_PrioritySelection + Issue2_PriorityPriority_1RadioButton.getText().toString() + eol);
+        else if (Issue2_PriorityPriority_2RadioButton.isChecked())
+            buffer.append(Issue2_PrioritySelection + Issue2_PriorityPriority_2RadioButton.getText().toString() + eol);
+        else if (Issue2_PriorityPriority_3RadioButton.isChecked())
+            buffer.append(Issue2_PrioritySelection + Issue2_PriorityPriority_3RadioButton.getText().toString() + eol);
+
+        if ( !Issue2_DescriptionEntry.getText().toString().isEmpty() )
+            buffer.append("Issue2_Description:" + Issue2_DescriptionEntry.getText().toString() + eol);
+
+        if ( !Issue3_SummaryEntry.getText().toString().isEmpty() )
+            buffer.append("Issue3_Summary:" + Issue3_SummaryEntry.getText().toString() + eol);
+
+        String Issue3_TaskgroupSelection = "Issue3_Taskgroup:";
+        boolean Issue3_TaskgroupIsChecked = false;
+        
+		//// UIGEN:ISSUE3_SAVE_BEGIN - insert generated code for save handler here
+   		//// UIGEN:ISSUE3_SAVE_END        
+
+        if ( Issue3_TaskgroupIsChecked )
+            buffer.append(eol);
+
+        String Issue3_PrioritySelection = "Issue3_Priority:";
+        if (Issue3_PriorityPriority_1RadioButton.isChecked())
+            buffer.append(Issue3_PrioritySelection + Issue3_PriorityPriority_1RadioButton.getText().toString() + eol);
+        else if (Issue3_PriorityPriority_2RadioButton.isChecked())
+            buffer.append(Issue3_PrioritySelection + Issue3_PriorityPriority_2RadioButton.getText().toString() + eol);
+        else if (Issue3_PriorityPriority_3RadioButton.isChecked())
+            buffer.append(Issue3_PrioritySelection + Issue3_PriorityPriority_3RadioButton.getText().toString() + eol);
+
+        if ( !Issue3_DescriptionEntry.getText().toString().isEmpty() )
+            buffer.append("Issue3_Description:" + Issue3_DescriptionEntry.getText().toString() + eol);
+
+        if ( !Match_SummaryEntry.getText().toString().isEmpty() )
+            buffer.append("Match_Summary:" + Match_SummaryEntry.getText().toString() + eol);
 		
 		//// UICUSTOM:SAVE_BEGIN - insert custom code for save handler here                   
 		//// UICUSTOM:SAVE_END
@@ -607,12 +792,12 @@ public class ScoutingAppActivity extends ActivityBase {
         // make sure that the filename doesn't already exist, so we don't 
         // overwrite an existing file.
         if ( doesFileExist(filename) && promptForOverwrite ) {
-            new AlertDialog.Builder(ScoutingAppActivity.this)
+            new AlertDialog.Builder(DebriefAppActivity.this)
             .setTitle("File Already Exists: " + filename)
             .setMessage("Overwrite File?")
             .setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int whichButton) {
-                    Toast.makeText(ScoutingAppActivity.this, "Save Cancelled", Toast.LENGTH_LONG).show();
+                    Toast.makeText(DebriefAppActivity.this, "Save Cancelled", Toast.LENGTH_LONG).show();
                 }
             })
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -659,17 +844,72 @@ public class ScoutingAppActivity extends ActivityBase {
 	            } else if ( token.equalsIgnoreCase("Competition")) {
 	            	// ignore because there is no UI field for this token
 	            	
-		            //// UIGEN:RELOAD_BEGIN - insert generated code for reload handler here
-		            //// UIGEN:RELOAD_END
+                } else if ( token.equalsIgnoreCase("Match")) {
+                    MatchEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue1_Summary")) {
+                    Issue1_SummaryEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue1_Taskgroup")) {
+                    String valueStr = tokenizer.nextToken();
+                    
+		            //// UIGEN:ISSUE1_RELOAD_BEGIN - insert generated code for reload handler here
+		            //// UIGEN:ISSUE1_RELOAD_END
+                    
+                } else if ( token.equalsIgnoreCase("Issue1_Priority")) {
+                    String valueStr = tokenizer.nextToken();
+                    if ( valueStr.equalsIgnoreCase("Priority_1") )
+                        Issue1_PriorityRadioGroup.check(R.id.Issue1_PriorityPriority_1RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_2") )
+                        Issue1_PriorityRadioGroup.check(R.id.Issue1_PriorityPriority_2RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_3") )
+                        Issue1_PriorityRadioGroup.check(R.id.Issue1_PriorityPriority_3RadioButton);
+                } else if ( token.equalsIgnoreCase("Issue1_Description")) {
+                    Issue1_DescriptionEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue2_Summary")) {
+                    Issue2_SummaryEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue2_Taskgroup")) {
+                    String valueStr = tokenizer.nextToken();
+                    
+		            //// UIGEN:ISSUE2_RELOAD_BEGIN - insert generated code for reload handler here
+		            //// UIGEN:ISSUE2_RELOAD_END
+
+                } else if ( token.equalsIgnoreCase("Issue2_Priority")) {
+                    String valueStr = tokenizer.nextToken();
+                    if ( valueStr.equalsIgnoreCase("Priority_1") )
+                        Issue2_PriorityRadioGroup.check(R.id.Issue2_PriorityPriority_1RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_2") )
+                        Issue2_PriorityRadioGroup.check(R.id.Issue2_PriorityPriority_2RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_3") )
+                        Issue2_PriorityRadioGroup.check(R.id.Issue2_PriorityPriority_3RadioButton);
+                } else if ( token.equalsIgnoreCase("Issue2_Description")) {
+                    Issue2_DescriptionEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue3_Summary")) {
+                    Issue3_SummaryEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Issue3_Taskgroup")) {
+                    String valueStr = tokenizer.nextToken();
+                    
+		            //// UIGEN:ISSUE3_RELOAD_BEGIN - insert generated code for reload handler here
+		            //// UIGEN:ISSUE3_RELOAD_END
+                    
+                } else if ( token.equalsIgnoreCase("Issue3_Priority")) {
+                    String valueStr = tokenizer.nextToken();
+                    if ( valueStr.equalsIgnoreCase("Priority_1") )
+                        Issue3_PriorityRadioGroup.check(R.id.Issue3_PriorityPriority_1RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_2") )
+                        Issue3_PriorityRadioGroup.check(R.id.Issue3_PriorityPriority_2RadioButton);
+                    else if ( valueStr.equalsIgnoreCase("Priority_3") )
+                        Issue3_PriorityRadioGroup.check(R.id.Issue3_PriorityPriority_3RadioButton);
+                } else if ( token.equalsIgnoreCase("Issue3_Description")) {
+                    Issue3_DescriptionEntry.setText(tokenizer.nextToken());
+                } else if ( token.equalsIgnoreCase("Match_Summary")) {
+                    Match_SummaryEntry.setText(tokenizer.nextToken());
 	            	
 		            //// UICUSTOM:RELOAD_BEGIN - insert custom code for reload handler here
 		            //// UICUSTOM:RELOAD_END
 	            		            	
-				} else {
 				}
 			}
 		} catch (Exception e) {
-            Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+            Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
             return false;
 		}
 		return true;
@@ -677,17 +917,39 @@ public class ScoutingAppActivity extends ActivityBase {
 
 	public void discardScoutingData()
 	{
-        TeamEntry.setText("");
+        //TeamEntry.setText("");
         NotesEntry.setText("");
         
-        //// UIGEN:DISCARD_BEGIN - insert generated code for discard handler here                
-        //// UIGEN:DISCARD_END
+        MatchEntry.setText("");
+        Issue1_SummaryEntry.setText("");
+        
+        //// UIGEN:ISSUE1_DISCARD_BEGIN - insert generated code for discard handler here                
+        //// UIGEN:ISSUE1_DISCARD_END
+        
+        Issue1_PriorityRadioGroup.clearCheck();
+        Issue1_DescriptionEntry.setText("");
+        Issue2_SummaryEntry.setText("");
+        
+        //// UIGEN:ISSUE2_DISCARD_BEGIN - insert generated code for discard handler here                
+        //// UIGEN:ISSUE2_DISCARD_END
+
+        Issue2_PriorityRadioGroup.clearCheck();
+        Issue2_DescriptionEntry.setText("");
+        Issue3_SummaryEntry.setText("");
+        
+        //// UIGEN:ISSUE3_DISCARD_BEGIN - insert generated code for discard handler here                
+        //// UIGEN:ISSUE3_DISCARD_END
+        
+        Issue3_PriorityRadioGroup.clearCheck();
+        Issue3_DescriptionEntry.setText("");
+        Match_SummaryEntry.setText("");
         
         //// UICUSTOM:DISCARD_BEGIN - insert custom code for discard handler here                
         //// UICUSTOM:DISCARD_END
         
         deleteScoutingData( tmpFile );
 	}
+
 	
 	@Override
 	public void onPause() {
@@ -706,13 +968,13 @@ public class ScoutingAppActivity extends ActivityBase {
 	
 	@Override
     public void onBackPressed() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(ScoutingAppActivity.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(DebriefAppActivity.this);
         builder.setTitle("Exiting Scouting Application");
         builder.setMessage("Do you really want to exit?.").setCancelable(
                 false).setPositiveButton("Quit", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                     	discardScoutingData();
-                        ScoutingAppActivity.this.finish();
+                        DebriefAppActivity.this.finish();
                     }
                 }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
@@ -759,6 +1021,35 @@ public class ScoutingAppActivity extends ActivityBase {
 	    return true;
 	}
 
+	// Helper function to wrap the cloud and pit sync operations
+	private void SyncFiles( String syncControl ) {
+		String[] directoriesToSync = null;
+		
+		if (sync_text_files && sync_media_files) {
+			directoriesToSync = new String[3];
+			directoriesToSync[0] = competition_directory + "/ScoutingData/";
+			directoriesToSync[1] = competition_directory + "/ScoutingPictures/";
+			directoriesToSync[2] = competition_directory + "/ScoutingPictures/Thumbnails/";
+		} else if ( sync_text_files ) {
+			directoriesToSync = new String[1];
+			directoriesToSync[0] = competition_directory + "/ScoutingData/";
+		} else if ( sync_media_files ) {
+			directoriesToSync = new String[2];
+			directoriesToSync[0] = competition_directory + "/ScoutingPictures/";
+			directoriesToSync[1] = competition_directory + "/ScoutingPictures/Thumbnails/";
+		}
+		
+		if ( directoriesToSync != null ) {
+			if (syncControl.equalsIgnoreCase("Bluetooth")) {
+	    		new BluetoothSyncTask(DebriefAppActivity.this, device_name, sync_control).execute(directoriesToSync);
+			} else {
+	    		new HttpSyncTask(DebriefAppActivity.this, device_name, host_addr, sync_control).execute(directoriesToSync);
+			}
+		} else {
+			Toast.makeText(DebriefAppActivity.this, "No Folders Selected To Sync", Toast.LENGTH_LONG).show();        			
+		}
+	} 
+
 	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -771,6 +1062,9 @@ public class ScoutingAppActivity extends ActivityBase {
         LoadDeviceConfiguration(false);
         LoadCompetitionConfiguration(false);
 
+        // Load the task group email lists from the config file
+        LoadTaskGroupLists();
+        
         // once the device configuration is loaded, here's where we could modify the
         // background or other styling effects
         //getWindow().getDecorView().setBackgroundColor(Color.RED);
@@ -781,90 +1075,84 @@ public class ScoutingAppActivity extends ActivityBase {
         ScouterEntry = (EditText) findViewById(R.id.ScouterEntry);
         TeamEntry = (EditText) findViewById(R.id.TeamEntry);
         NotesEntry = (EditText) findViewById(R.id.NotesEntry);
-        videoButton = (Button) findViewById(R.id.VideoButton);
-        cameraButton = (Button) findViewById(R.id.CameraButton);      
-        syncButton = (Button) findViewById(R.id.SyncButton);
+        PitSyncButton = (Button) findViewById(R.id.PitSyncButton);
+        CloudSyncButton = (Button) findViewById(R.id.CloudSyncButton);
 
+        MatchEntry = (EditText) findViewById(R.id.MatchEntry);
+        Issue1_NotifyButton = (Button) findViewById(R.id.Issue1_NotifyLabel);
+        Issue1_SummaryEntry = (EditText) findViewById(R.id.Issue1_SummaryEntry);
+        
+        //// UIGEN:ISSUE1_CHECKBOX_INIT_BEGIN - insert generated code for checkbox variable init here                
+        //// UIGEN:ISSUE1_CHECKBOX_INIT_END
+        
+        Issue1_PriorityRadioGroup = (RadioGroup) findViewById(R.id.Issue1_PriorityRadioGroup);
+        Issue1_PriorityPriority_1RadioButton = (RadioButton) findViewById(R.id.Issue1_PriorityPriority_1RadioButton);
+        Issue1_PriorityPriority_2RadioButton = (RadioButton) findViewById(R.id.Issue1_PriorityPriority_2RadioButton);
+        Issue1_PriorityPriority_3RadioButton = (RadioButton) findViewById(R.id.Issue1_PriorityPriority_3RadioButton);
+        Issue1_DescriptionEntry = (EditText) findViewById(R.id.Issue1_DescriptionEntry);
+        Issue2_NotifyButton = (Button) findViewById(R.id.Issue2_NotifyLabel);
+        Issue2_SummaryEntry = (EditText) findViewById(R.id.Issue2_SummaryEntry);
+
+        //// UIGEN:ISSUE2_CHECKBOX_INIT_BEGIN - insert generated code for checkbox variable init here                
+        //// UIGEN:ISSUE2_CHECKBOX_INIT_END
+
+        Issue2_PriorityRadioGroup = (RadioGroup) findViewById(R.id.Issue2_PriorityRadioGroup);
+        Issue2_PriorityPriority_1RadioButton = (RadioButton) findViewById(R.id.Issue2_PriorityPriority_1RadioButton);
+        Issue2_PriorityPriority_2RadioButton = (RadioButton) findViewById(R.id.Issue2_PriorityPriority_2RadioButton);
+        Issue2_PriorityPriority_3RadioButton = (RadioButton) findViewById(R.id.Issue2_PriorityPriority_3RadioButton);
+        Issue2_DescriptionEntry = (EditText) findViewById(R.id.Issue2_DescriptionEntry);
+        Issue3_NotifyButton = (Button) findViewById(R.id.Issue3_NotifyLabel);
+        Issue3_SummaryEntry = (EditText) findViewById(R.id.Issue3_SummaryEntry);
+        
+        //// UIGEN:ISSUE3_CHECKBOX_INIT_BEGIN - insert generated code for checkbox variable init here                
+        //// UIGEN:ISSUE3_CHECKBOX_INIT_END
+
+        Issue3_PriorityRadioGroup = (RadioGroup) findViewById(R.id.Issue3_PriorityRadioGroup);
+        Issue3_PriorityPriority_1RadioButton = (RadioButton) findViewById(R.id.Issue3_PriorityPriority_1RadioButton);
+        Issue3_PriorityPriority_2RadioButton = (RadioButton) findViewById(R.id.Issue3_PriorityPriority_2RadioButton);
+        Issue3_PriorityPriority_3RadioButton = (RadioButton) findViewById(R.id.Issue3_PriorityPriority_3RadioButton);
+        Issue3_DescriptionEntry = (EditText) findViewById(R.id.Issue3_DescriptionEntry);
+        Match_SummaryEntry = (EditText) findViewById(R.id.Match_SummaryEntry);
+ 
         //// UIGEN:VAR_INIT_BEGIN - insert generated code for field variables initialization      
         //// UIGEN:VAR_INIT_END
         
         //// UICUSTOM:VAR_INIT_BEGIN - insert custom code for field variables initialization      
         //// UICUSTOM:VAR_INIT_END
-        
-    	// Processes the button click for the camera button
-        cameraButton.setOnClickListener(new OnClickListener(){
+                
+    	// Processes the button click for the PitSync button        
+        PitSyncButton.setOnClickListener(new OnClickListener(){
         	public void onClick(View v){
-        		if ( !TeamEntry.getText().toString().isEmpty() ) {
-            		recordMedia(TeamEntry.getText().toString(), MediaStore.ACTION_IMAGE_CAPTURE);
-        		} else {
-                    new AlertDialog.Builder(ScoutingAppActivity.this)
-                    .setTitle("Error!")
-                    .setMessage("Team Not Specified")
-                    .setNeutralButton("OK", null)
-                    .show();                			
-        		}
+        		String syncControl = "Bluetooth";
+        		SyncFiles(syncControl);
         	}
         });
-        
-    	// Processes the button click for the video button        
-        videoButton.setOnClickListener(new OnClickListener(){
+	 	
+        // Processes the click event for the CloudSync button
+        CloudSyncButton.setOnClickListener(new OnClickListener(){
         	public void onClick(View v){
-        		if ( !TeamEntry.getText().toString().isEmpty() ) {
-            		recordMedia(TeamEntry.getText().toString(), MediaStore.ACTION_VIDEO_CAPTURE);
-        		} else {
-                    new AlertDialog.Builder(ScoutingAppActivity.this)
-                    .setTitle("Error!")
-                    .setMessage("Team Not Specified")
-                    .setNeutralButton("OK", null)
-                    .show();                			
-        		}
+        		String syncControl = "Http";
+        		SyncFiles(syncControl);	
         	}
-        });
-
-        // Processes the click event for the Sync button
-        syncButton.setOnClickListener(new OnClickListener(){
-        	public void onClick(View v){
-        		String[] directoriesToSync = null;
-        		
-        		if (sync_text_files && sync_media_files) {
-        			directoriesToSync = new String[3];
-        			directoriesToSync[0] = competition_directory + "/ScoutingData/";
-        			directoriesToSync[1] = competition_directory + "/ScoutingPictures/";
-        			directoriesToSync[2] = competition_directory + "/ScoutingPictures/Thumbnails/";
-        		} else if ( sync_text_files ) {
-        			directoriesToSync = new String[1];
-        			directoriesToSync[0] = competition_directory + "/ScoutingData/";
-	    		} else if ( sync_media_files ) {
-	    			directoriesToSync = new String[2];
-	    			directoriesToSync[0] = competition_directory + "/ScoutingPictures/";
-        			directoriesToSync[1] = competition_directory + "/ScoutingPictures/Thumbnails/";
-	    		}
-        		
-        		if ( directoriesToSync != null ) {
-        			StartFileSyncTask(sync_control, directoriesToSync);
-        		} else {
-        			Toast.makeText(ScoutingAppActivity.this, "No Folders Selected To Sync", Toast.LENGTH_LONG).show();        			
-        		}
-        	} 
         });
 
         // Processes the data entry for the Scouter field
 	    ScouterEntry.setOnKeyListener(new OnKeyListener() {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-            	return ScoutingAppActivity.this.onKey( v, keyCode, event, ScouterEntry);
+            	return DebriefAppActivity.this.onKey( v, keyCode, event, ScouterEntry);
             }
         });
         
         // Processes the data entry for the Team field
 	    TeamEntry.setOnKeyListener(new OnKeyListener() {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-            	return ScoutingAppActivity.this.onKey( v, keyCode, event, TeamEntry);
+            	return DebriefAppActivity.this.onKey( v, keyCode, event, TeamEntry);
             }
         });
                         
 	    NotesEntry.setOnKeyListener(new OnKeyListener() {
 	    	public boolean onKey(View v, int keyCode, KeyEvent event) {
-	    		return ScoutingAppActivity.this.onKey( v, keyCode, event, NotesEntry);
+	    		return DebriefAppActivity.this.onKey( v, keyCode, event, NotesEntry);
 	    	}
 	    });
 
@@ -880,7 +1168,7 @@ public class ScoutingAppActivity extends ActivityBase {
         			// specified. we need these fields to build the filename
         			// and to ensure that we can associate a report to a person
         			if ( ScouterEntry.getText().toString().isEmpty() ) {
-                        new AlertDialog.Builder(ScoutingAppActivity.this)
+                        new AlertDialog.Builder(DebriefAppActivity.this)
                         .setTitle("Error!")
                         .setMessage("Please Enter Scouter's Name")
                         .setNeutralButton("OK", null)
@@ -889,7 +1177,7 @@ public class ScoutingAppActivity extends ActivityBase {
         			}	
         			
         			if ( TeamEntry.getText().toString().isEmpty() ) {
-                        new AlertDialog.Builder(ScoutingAppActivity.this)
+                        new AlertDialog.Builder(DebriefAppActivity.this)
                         .setTitle("Error!")
                         .setMessage("Please Enter A Team Number")
                         .setNeutralButton("OK", null)
@@ -899,14 +1187,14 @@ public class ScoutingAppActivity extends ActivityBase {
         			                   
                     // build up the desired filename based on field entries
         		    //// UIGEN:BUILD_FILENAME_BEGIN - insert generated code for the buildFilename() call
-                    final String filename = buildFilename( TeamEntry, "Base", "" );
+                    final String filename = buildDebriefFilename( "Debrief", "Match", MatchEntry.getText().toString() );
         		    //// UIGEN:BUILD_FILENAME_END
                     saveScoutingData( filename, true );
                     unsavedChanges = false;
-        			Toast.makeText(ScoutingAppActivity.this, "Scouting Data Saved To File: " + filename, Toast.LENGTH_LONG).show();
+        			Toast.makeText(DebriefAppActivity.this, "Scouting Data Saved To File: " + filename, Toast.LENGTH_LONG).show();
 
         		} catch (Exception e) {
-                    Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
         		}
             }
         });
@@ -919,7 +1207,7 @@ public class ScoutingAppActivity extends ActivityBase {
                 try {
         			// build a filename based on the field entries
         		    //// UIGEN:BUILD_FILENAME_BEGIN - insert generated code for the buildFilename() call
-                    final String filename = buildFilename( TeamEntry, "Base", "" );
+                    final String filename = buildDebriefFilename( "Debrief", "Match", MatchEntry.getText().toString() );
         		    //// UIGEN:BUILD_FILENAME_END
                     StringBuffer buffer = new StringBuffer();
         			
@@ -931,23 +1219,32 @@ public class ScoutingAppActivity extends ActivityBase {
         			
         			// And, write the full buffer representing the raw file that has been reloaded
         			// to the text view object on the user interface
-                    new AlertDialog.Builder(ScoutingAppActivity.this)
+                    new AlertDialog.Builder(DebriefAppActivity.this)
                     .setTitle("Reload: " + filename)
                     .setMessage(buffer.toString())
                     .setNeutralButton("OK", null)
                     .show();                			
                     // Perform action on clicks
-                    Toast.makeText(ScoutingAppActivity.this, "Scouting Data Reloaded From: " + filename, Toast.LENGTH_LONG).show();
+                    Toast.makeText(DebriefAppActivity.this, "Scouting Data Reloaded From: " + filename, Toast.LENGTH_LONG).show();
 
         		} catch (Exception e) {
-                    Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
         		}
             }
             public void onClick(View v) {
                 // Perform action on clicks
                 try {                	
+        			if ( ScouterEntry.getText().toString().isEmpty() ) {
+                        new AlertDialog.Builder(DebriefAppActivity.this)
+                        .setTitle("Error!")
+                        .setMessage("Please Enter Scouter's Name")
+                        .setNeutralButton("OK", null)
+                        .show();                			    				
+        				throw new Exception( "No Scouter Specified!" );
+        			}
+        			
         			if ( TeamEntry.getText().toString().isEmpty() ) {
-                        new AlertDialog.Builder(ScoutingAppActivity.this)
+                        new AlertDialog.Builder(DebriefAppActivity.this)
                         .setTitle("Error!")
                         .setMessage("Please Enter A Team Number")
                         .setNeutralButton("OK", null)
@@ -955,14 +1252,23 @@ public class ScoutingAppActivity extends ActivityBase {
                         return;
         			}
         			
+        			if ( MatchEntry.getText().toString().isEmpty() ) {
+                        new AlertDialog.Builder(DebriefAppActivity.this)
+                        .setTitle("Error!")
+                        .setMessage("Please Enter A Match Number")
+                        .setNeutralButton("OK", null)
+                        .show();
+                        return;
+        			}
+        			                   
                     if ( unsavedChanges == true ) {
 
-                		new AlertDialog.Builder(ScoutingAppActivity.this)
+                		new AlertDialog.Builder(DebriefAppActivity.this)
 	                    .setTitle("Reloading Scouting Data")
 	                    .setMessage("Do You Really Want To Do This?")
 	                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
 	                        public void onClick(DialogInterface dialog, int whichButton) {
-	                        	Toast.makeText(ScoutingAppActivity.this, "Reload Cancelled", Toast.LENGTH_LONG).show();
+	                        	Toast.makeText(DebriefAppActivity.this, "Reload Cancelled", Toast.LENGTH_LONG).show();
 	                        }
 	                    })
 	                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -975,7 +1281,7 @@ public class ScoutingAppActivity extends ActivityBase {
 	                	reloadData();
 	                }                
 	    		} catch (Exception e) {
-	                Toast.makeText(ScoutingAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+	                Toast.makeText(DebriefAppActivity.this, e.toString(), Toast.LENGTH_LONG).show();
 	    		}
             }
         });
@@ -988,42 +1294,60 @@ public class ScoutingAppActivity extends ActivityBase {
             public void onClick(View v) {
                 // Perform action on clicks
                 if ( unsavedChanges == true ) {
-                    new AlertDialog.Builder(ScoutingAppActivity.this)
+                    new AlertDialog.Builder(DebriefAppActivity.this)
                     .setTitle("Discarding Unsaved Scouting Data")
                     .setMessage("Do You Really Want To Do This?")
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
-                            Toast.makeText(ScoutingAppActivity.this, "Discard Cancelled", Toast.LENGTH_LONG).show();
+                            Toast.makeText(DebriefAppActivity.this, "Discard Cancelled", Toast.LENGTH_LONG).show();
                         }
                     })
                     .setNeutralButton("Yes", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                         	discardScoutingData();
                         	unsavedChanges = false;
-                            Toast.makeText(ScoutingAppActivity.this, "Scouting Data Discarded!", Toast.LENGTH_LONG).show();	
+                            Toast.makeText(DebriefAppActivity.this, "Scouting Data Discarded!", Toast.LENGTH_LONG).show();	
                         }
                     })
                     .setPositiveButton("Save", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                 		    //// UIGEN:BUILD_FILENAME_BEGIN - insert generated code for the buildFilename() call
-                            final String filename = buildFilename( TeamEntry, "Base", "" );
+                            final String filename = buildDebriefFilename( "Debrief", "Match", MatchEntry.getText().toString() );
                 		    //// UIGEN:BUILD_FILENAME_END
                             saveScoutingData( filename, true );
                         	discardScoutingData();
                             unsavedChanges = false;
-                			Toast.makeText(ScoutingAppActivity.this, "Scouting Data Saved To File: " + filename, Toast.LENGTH_LONG).show();
+                			Toast.makeText(DebriefAppActivity.this, "Scouting Data Saved To File: " + filename, Toast.LENGTH_LONG).show();
                         }
                     })
                    .show();                      
                 } else {
                 	discardScoutingData();
                 	unsavedChanges = false;
-                    Toast.makeText(ScoutingAppActivity.this, "Scouting Data Cleared!", Toast.LENGTH_LONG).show();	
+                    Toast.makeText(DebriefAppActivity.this, "Scouting Data Cleared!", Toast.LENGTH_LONG).show();	
                 }                
             }
         });
         
         //// UIGEN:HANDLERS_BEGIN - insert generated code for input handlers
+        // Processes the button click for the Issue1_Notify button
+        Issue1_NotifyButton.setOnClickListener(new OnClickListener(){
+            public void onClick(View v){
+                Issue1_NotifyButtonHandler();
+            }
+        });
+        // Processes the button click for the Issue2_Notify button
+        Issue2_NotifyButton.setOnClickListener(new OnClickListener(){
+            public void onClick(View v){
+                Issue2_NotifyButtonHandler();
+            }
+        });
+        // Processes the button click for the Issue3_Notify button
+        Issue3_NotifyButton.setOnClickListener(new OnClickListener(){
+            public void onClick(View v){
+                Issue3_NotifyButtonHandler();
+            }
+        });
         //// UIGEN:HANDLERS_END
 
         //// UICUSTOM:HANDLERS_BEGIN - insert custom code for input handlers
@@ -1034,6 +1358,213 @@ public class ScoutingAppActivity extends ActivityBase {
     //// UIGEN:HELPER_FUNCTIONS_BEGIN - insert generated code for helper functions
     //// UIGEN:HELPER_FUNCTIONS_END
 
+    private void addArrayToSet( String array[], Set<String> set ) {
+    	List<String> list = Arrays.asList(array);
+       	set.addAll(list);
+    }
+    
+    private void SendTextNotifications( String list[], String subject, String body ) {
+
+/*		this snippet of code needs to be completed, but this uses the internal
+ * 		java mailer to send the mail rather than using an intent. the benefit to
+ *      this approach would be that it will avoid requiring the user to hit send 
+ *      twice to get the messages to go out.
+    	try {   
+            GMailSender sender = new GMailSender("username@gmail.com", "password");
+            sender.sendMail(subject,   
+                    body,   
+                    "user@gmail.com",   
+                    "user@yahoo.com");   
+        } catch (Exception e) {   
+            Log.e("SendMail", e.getMessage(), e);   
+        } 
+*/        
+
+        Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
+        emailIntent.setType("plain/text");
+        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL, list);
+        emailIntent.putExtra(android.content.Intent.EXTRA_CC, Master_list);
+        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, body);
+    	
+        startActivity(emailIntent);
+
+    }
+
+    private void SendSlackNotification(String issue, String summary, String priority, String groups, String description ) {
+    	
+    	String matchStr = "*Match:* " + MatchEntry.getText().toString();
+       	String priorityStr = "*Priority:* " + priority;
+		String taskgroupStr = "*Taskgroups:* " + groups;
+    	String summaryStr = "*Issue Summary:* " + summary;
+    	String descriptionStr = "*Description:* " + description;
+
+    	// format the Slack message as a single formatted text string
+    	String slackMsg = matchStr + ", " + priorityStr + "\n";
+    	slackMsg += summaryStr + "\n";
+    	slackMsg += taskgroupStr + "\n";
+    	slackMsg += "\n" + descriptionStr + "\n";
+    	
+    	// instantiate the Slack interface task passing in the webhook URL and the formatted message
+    	String webHookUrl = "https://hooks.slack.com/services/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";
+    	new SlackIntfTask(DebriefAppActivity.this, webHookUrl).execute(slackMsg);
+
+        Toast.makeText(DebriefAppActivity.this, "Sending Issue " + issue + "Slack Notification", Toast.LENGTH_LONG).show();
+    }
+    
+    private void Issue1_NotifyButtonHandler() {
+		
+    	Set<String> notifySet = new HashSet<String>();
+		boolean groupChecked = false;
+		String notifyGroups = "";
+		
+/* Uncomment for Email and Text Notifications
+        String msgBody = Issue1_DescriptionEntry.getText().toString();
+    	String subject;
+    	if (Issue1_PriorityPriority_1RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue1_PriorityPriority_2RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue1_PriorityPriority_3RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else
+    		subject = "[XXX] ";
+		subject += Issue1_SummaryEntry.getText().toString();
+*/
+		try {
+	        //// UIGEN:ISSUE1_IS_CHECKED_BEGIN - insert generated code for checking status of taskgroup checkboxes
+	        //// UIGEN:ISSUE1_IS_CHECKED_END
+		} catch (Exception e) {
+			
+		}
+		
+/* Uncomment for Email and Text Notifications
+        if ( notifyGroups.length() > 12 ) {
+        	notifyGroups = notifyGroups.substring(0,12);
+        	notifyGroups += "...";
+        }
+    	subject = subject.replace("XXX", notifyGroups);
+		SendNotifications( notifySet.toArray(new String[notifySet.size()]), subject, msgBody);
+*/
+
+		// Slack Notifications
+		String issue_num = "1";
+    	String priority = "";
+    	if (Issue1_PriorityPriority_1RadioButton.isChecked())
+    		priority = "High";
+    	else if (Issue1_PriorityPriority_2RadioButton.isChecked())
+    		priority = "Medium";
+    	else if (Issue1_PriorityPriority_3RadioButton.isChecked())
+    		priority = "Low";
+		String summary = Issue1_SummaryEntry.getText().toString();
+		String description = Issue1_DescriptionEntry.getText().toString();
+		        
+		SendSlackNotification( issue_num, summary, priority, notifyGroups, description);
+
+    }
+    
+    private void Issue2_NotifyButtonHandler() {
+        
+    	Set<String> notifySet = new HashSet<String>();
+		boolean groupChecked = false;
+		String notifyGroups = "";
+		
+/* Uncomment for Email and Text Notifications
+        String msgBody = Issue2_DescriptionEntry.getText().toString();
+    	String subject;
+    	if (Issue2_PriorityPriority_1RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue2_PriorityPriority_2RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue2_PriorityPriority_3RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else
+    		subject = "[XXX] ";
+		subject += Issue2_SummaryEntry.getText().toString();
+*/
+		try {
+	        //// UIGEN:ISSUE2_IS_CHECKED_BEGIN - insert generated code for checking status of taskgroup checkboxes
+	        //// UIGEN:ISSUE2_IS_CHECKED_END
+		} catch (Exception e) {
+			
+		}
+		
+/* Uncomment for Email and Text Notifications		
+        if ( notifyGroups.length() > 12 ) {
+        	notifyGroups = notifyGroups.substring(0,12);
+        	notifyGroups += "...";
+        }
+    	subject = subject.replace("XXX", notifyGroups);
+		SendNotifications( notifySet.toArray(new String[notifySet.size()]), subject, msgBody);
+*/
+
+		// Slack Notifications
+		String issue_num = "2";
+    	String priority = "";
+    	if (Issue2_PriorityPriority_1RadioButton.isChecked())
+    		priority = "High";
+    	else if (Issue2_PriorityPriority_2RadioButton.isChecked())
+    		priority = "Medium";
+    	else if (Issue2_PriorityPriority_3RadioButton.isChecked())
+    		priority = "Low";
+		String summary = Issue2_SummaryEntry.getText().toString();
+		String description = Issue2_DescriptionEntry.getText().toString();
+		        
+		SendSlackNotification( issue_num, summary, priority, notifyGroups, description);
+
+    }
+    
+    private void Issue3_NotifyButtonHandler() {
+        
+    	Set<String> notifySet = new HashSet<String>();
+		boolean groupChecked = false;
+		String notifyGroups = "";
+		
+/* Uncomment for Email and Text Notifications
+        String msgBody = Issue3_DescriptionEntry.getText().toString();
+    	String subject;
+    	if (Issue3_PriorityPriority_1RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue3_PriorityPriority_2RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else if (Issue3_PriorityPriority_3RadioButton.isChecked())
+    	    subject = "[XXX] ";
+    	else
+    		subject = "[XXX] ";
+		subject += Issue3_SummaryEntry.getText().toString();
+*/
+		try {
+	        //// UIGEN:ISSUE3_IS_CHECKED_BEGIN - insert generated code for checking status of taskgroup checkboxes
+	        //// UIGEN:ISSUE3_IS_CHECKED_END
+		} catch (Exception e) {
+			
+		}
+		
+/* Uncomment for Email and Text Notifications		
+        if ( notifyGroups.length() > 12 ) {
+        	notifyGroups = notifyGroups.substring(0,12);
+        	notifyGroups += "...";
+        }
+    	subject = subject.replace("XXX", notifyGroups);
+		SendNotifications( notifySet.toArray(new String[notifySet.size()]), subject, msgBody);
+*/
+
+		// Slack Notifications
+		String issue_num = "3";
+    	String priority = "";
+    	if (Issue3_PriorityPriority_1RadioButton.isChecked())
+    		priority = "High";
+    	else if (Issue3_PriorityPriority_2RadioButton.isChecked())
+    		priority = "Medium";
+    	else if (Issue3_PriorityPriority_3RadioButton.isChecked())
+    		priority = "Low";
+		String summary = Issue3_SummaryEntry.getText().toString();
+		String description = Issue3_DescriptionEntry.getText().toString();
+		        
+		SendSlackNotification( issue_num, summary, priority, notifyGroups, description);
+
+    }
+    
     private void LoadMatchSchedule( ) {
 
     	try {
@@ -1055,9 +1586,10 @@ public class ScoutingAppActivity extends ActivityBase {
 			
 			reader.close();
 
-			Toast.makeText(ScoutingAppActivity.this, "Match Schedule Loaded", Toast.LENGTH_SHORT).show();
+			Toast.makeText(DebriefAppActivity.this, "Match Schedule Loaded", Toast.LENGTH_SHORT).show();
 
     	} catch (Exception e) {
+			e.printStackTrace();
     	}
     	
 	}
@@ -1115,20 +1647,12 @@ public class ScoutingAppActivity extends ActivityBase {
 			}
 			
 		} else {
-			LoadMatchSchedule();
-			/* Commented out the pop-up dialog to load the match schedule because it resulted
-			 * in an annoying situation when the match schedule could not be loaded. The 
-			 * above LoadMatchSchedule() silently attempts to load the schedule and if it 
-			 * loads successfully, then the application will simply use it when processing the
-			 * match selection. Normally, I would just delete the code rather than leave it
-			 * commented out, but we may want to revisit this whole sequence once the season
-			 * is over and make some additional changes.
-            new AlertDialog.Builder(ScoutingAppActivity.this)
+            new AlertDialog.Builder(DebriefAppActivity.this)
             .setTitle("No Match Schedule Loaded")
             .setMessage("Do You Want To Load The Match Schedule?")
             .setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int whichButton) {
-                    Toast.makeText(ScoutingAppActivity.this, "Cannot Set Team From Schedule", Toast.LENGTH_LONG).show();
+                    Toast.makeText(DebriefAppActivity.this, "Cannot Set Team From Schedule", Toast.LENGTH_LONG).show();
                 }
             })
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -1136,8 +1660,7 @@ public class ScoutingAppActivity extends ActivityBase {
                 	LoadMatchSchedule();
                 }
             })
-            .show();
-            */
+            .show();                      
 		}
 		
 		return team;

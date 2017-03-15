@@ -65,8 +65,16 @@ def process_form(global_config, form):
     try:
         if sheet_type in ('Pit','Match'):
             base_projectname = 'ScoutingApp'
+            dest_projectname = '%s%s' % (sheet_type,base_projectname)
+            app_prefix = sheet_type
+            dest_app_name = '%s Scouter' % (sheet_type)
+            dest_app_label = '%s %s Scouting Application' % (season,sheet_type)
         elif sheet_type in ('Debrief'):
             base_projectname = 'DebriefApp'
+            dest_projectname = base_projectname
+            app_prefix = ''
+            dest_app_name = 'Match Debrief'
+            dest_app_label = '%s %s Application' % (season,dest_app_name)
         else:
             err_str = 'Unsupported Sheet Type: %s' % (sheet_type)
             raise Exception(err_str)
@@ -74,9 +82,6 @@ def process_form(global_config, form):
     
         base_dir_label = '%sBase' % base_projectname
         base_project_path = os.path.join(base_root_dir, base_dir_label)
-        dest_projectname = '%s%s' % (sheet_type,base_projectname)  
-        dest_app_label = '%s %s Scouting Application' % (season,sheet_type)
-        dest_app_name = '%s Scouter' % (sheet_type)
         dest_project_dir = '%s%s-%s' % (season,dest_projectname,team)
         
         dest_project_path = os.path.join(dest_root_dir, dest_project_dir)
@@ -88,11 +93,11 @@ def process_form(global_config, form):
                                                       use_custom_buttons=use_custom_buttons)
         
         AppGenerator.prepare_destination_project( base_project_path, base_projectname, dest_project_path, dest_projectname, \
-                             sheet_type, dest_app_name, dest_app_label )
+                             app_prefix, dest_app_name, dest_app_label )
     
         AppGenerator.update_generated_xml_code(dest_project_path, generated_code_fragments, use_custom_buttons)
     
-        AppGenerator.update_generated_java_code(base_projectname, dest_project_path, sheet_type, generated_code_fragments)
+        AppGenerator.update_generated_java_code(base_projectname, dest_project_path, app_prefix, generated_code_fragments)
     
         #FileUtils.make_zipfile( dest_project_path + '.zip', dest_project_path )
         

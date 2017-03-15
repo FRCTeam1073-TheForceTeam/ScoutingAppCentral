@@ -10,9 +10,10 @@ class CheckboxUiGenControl( UiGenControl ):
     attr_def = None
     config = {}
 
-    def __init__(self, attr_def):
+    def __init__(self, attr_def, left_margin=120):
         self.attr_def = attr_def
         self.config = { 'Lines':'1', 'Items':'4' }
+        self.left_margin = left_margin
         option_str = attr_def['Options']
         if option_str != '':
             options = option_str.split(':')
@@ -29,7 +30,7 @@ class CheckboxUiGenControl( UiGenControl ):
         xml_str =  "    <!-- Begin NAME field text label and checkbox group -->\n"
         xml_str += "    <TextView\n"
         xml_str += "        android:id=\"@+id/NAMELabel\"\n"
-        xml_str += "        android:layout_width=\"120dp\"\n"
+        xml_str += "        android:layout_width=\"%ddp\"\n" % self.left_margin
         if self.config['Lines'] == '2':
             xml_str += "        android:layout_height=\"80dp\"\n"
         elif self.config['Lines'] == '3':
