@@ -1406,7 +1406,7 @@ public class DebriefAppActivity extends ActivityBase {
     	slackMsg += "\n" + descriptionStr + "\n";
     	
     	// instantiate the Slack interface task passing in the webhook URL and the formatted message
-    	String webHookUrl = "https://hooks.slack.com/services/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";
+    	String webHookUrl = "https://hooks.slack.com/services/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";
     	new SlackIntfTask(DebriefAppActivity.this, webHookUrl).execute(slackMsg);
 
         Toast.makeText(DebriefAppActivity.this, "Sending Issue " + issue + "Slack Notification", Toast.LENGTH_LONG).show();

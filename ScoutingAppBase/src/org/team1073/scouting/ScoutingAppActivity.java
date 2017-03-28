@@ -1058,6 +1058,7 @@ public class ScoutingAppActivity extends ActivityBase {
 			Toast.makeText(ScoutingAppActivity.this, "Match Schedule Loaded", Toast.LENGTH_SHORT).show();
 
     	} catch (Exception e) {
+    		
     	}
     	
 	}

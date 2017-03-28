@@ -4,7 +4,7 @@ mawor,WPI,Worcester District
 mabri,BRIDGEWATER,SE Mass District
 mabos,BOSTON,Greater Boston District
 marea,READING,North Shore District
-nhbed,BEDFORD,Southern NH District
+nhbed,NHBED,Southern NH District
 ripro,RI,Rhode Island District
 melew,PINETREE,Pine Tree District
 cthar,HARTFORD,Hartford District

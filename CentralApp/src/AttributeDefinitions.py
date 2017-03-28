@@ -80,7 +80,7 @@ class AttrDefinitions:
 
                 # if the name field of the attribute is empty, then assume an empty line and skip it
                 if definition['Name'] == '':
-                    print 'Empty attribute row, skipping...'
+                    #print 'Empty attribute row, skipping...'
                     continue
 
                 # set the Column_Order attribute to the row number, doing away with the troublesome

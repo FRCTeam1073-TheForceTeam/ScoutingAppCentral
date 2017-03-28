@@ -13,6 +13,11 @@ def hashfile(afile, hasher, blocksize=65536):
         buf = afile.read(blocksize)
     return hasher.digest()
 
+def strip_non_ascii(file_data):
+    ''' Returns the string without non ASCII characters'''
+    stripped = (c for c in file_data if 0 < ord(c) < 127)
+    return ''.join(stripped)
+
 def get_file_checksum( filepath, hasher ):
     blocksize = 65536
     fd = open(filepath, 'rb')
@@ -28,7 +33,16 @@ def put_file( path, content_type, file_data):
     else:
         mode = 'w+'
     fd = open(path, mode)
-    fd.write(file_data)
+    
+    try:
+        fd.write(file_data)
+    except UnicodeEncodeError:
+        # if writing a text file, try again stripping out any non-ascii characters
+        if mode == 'w+':
+            print 'Retrying after stripping non-ascii characters'
+            fd.write(strip_non_ascii(file_data))
+        else:
+            raise
     fd.close()
     return '200 OK'
     
