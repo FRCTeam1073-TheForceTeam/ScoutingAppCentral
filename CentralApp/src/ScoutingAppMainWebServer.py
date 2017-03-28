@@ -356,9 +356,9 @@ class TeamInfoJson(object):
             if params[0] != '':
                 name = params[0]
 
-        #WebTeamData.load_team_info(global_config, name)
+        WebTeamData.load_team_info(global_config, name)
         
-        WebTeamData.set_team_geo_location(global_config, name)
+        #WebTeamData.set_team_geo_location(global_config, name)
         return 
                            
 class TeamYearsJson(object):
@@ -814,9 +814,9 @@ class EventInfoJson(object):
         return result
     
     def POST(self, name):
-        #WebEventData.load_event_info(global_config, name)
+        WebEventData.load_event_info(global_config, name)
         
-        WebEventData.get_event_geo_location(global_config)
+        #WebEventData.get_event_geo_location(global_config)
         return
                   
 class EventStandingsJson(object):
