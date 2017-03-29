@@ -28,7 +28,7 @@ class RadioButtonUiGenControl( UiGenControl ):
         xml_str =  "    <!-- Begin NAME field text label and radio group -->\n"
         xml_str += "    <TextView\n"
         xml_str += "        android:id=\"@+id/NAMELabel\"\n"
-        xml_str += "        android:layout_width=\"120dp\"\n"
+        xml_str += "        android:layout_width=\"140dp\"\n"
         xml_str += "        android:layout_height=\"40dp\"\n"
         xml_str += "        android:layout_below=\"@+id/ABOVELabel\"\n"
         xml_str += "        android:gravity=\"center_vertical|right\"\n"

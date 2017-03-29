@@ -235,7 +235,7 @@ def get_event_info_str(event_name, season=None):
         event_code = event_name
 
     event_dict = WebEventData.get_event_info_dict(my_config, year, event_code)
-
+    
     event_info_str=list()
     if event_dict:
         event_info_str.append(('Name',event_dict['name'],'string'))
@@ -244,8 +244,15 @@ def get_event_info_str(event_name, season=None):
         event_info_str.append(('Start Date',event_dict['start_date'],'string'))
         event_info_str.append(('End Date',event_dict['end_date'],'string'))
     else:
-        event_info_str.append(('Name', 'Unknown','string'))
-        event_info_str.append(('Code', 'NONE','string'))
+        # We couldn't load the event information, so let's try to pull from local
+        # alias file
+        event_info = CompAlias.get_event_by_code(event_code)
+        if event_info:
+            event_info_str.append(('Name', event_info.event_name, 'string'))
+            event_info_str.append(('Code', event_info.event_code, 'string'))
+        else:
+            event_info_str.append(('Name', 'Unknown','string'))
+            event_info_str.append(('Code', event_code.upper(),'string'))
 
     return event_info_str
 

@@ -24,7 +24,7 @@ class TextFieldUiGenControl( UiGenControl ):
         xml_str =  "    <!-- Begin NAME field text label and entry field -->\n"
         xml_str += "    <TextView\n"
         xml_str += "        android:id=\"@+id/NAMELabel\"\n"
-        xml_str += "        android:layout_width=\"120dp\"\n"
+        xml_str += "        android:layout_width=\"140dp\"\n"
         xml_str += "        android:layout_height=\"40dp\"\n"
         xml_str += "        android:layout_alignParentLeft=\"true\"\n"
         if above_name == 'NONE':
@@ -41,7 +41,7 @@ class TextFieldUiGenControl( UiGenControl ):
         if self.config['Width'] == 'Narrow':
             xml_str += "        android:layout_width=\"80dp\"\n"
         elif self.config['Width'] == 'Wide':
-            xml_str += "        android:layout_width=\"480dp\"\n"
+            xml_str += "        android:layout_width=\"460dp\"\n"
         else:
             xml_str += "        android:layout_width=\"200dp\"\n"
         

@@ -10,7 +10,7 @@ class CheckboxUiGenControl( UiGenControl ):
     attr_def = None
     config = {}
 
-    def __init__(self, attr_def, left_margin=120):
+    def __init__(self, attr_def, left_margin=140):
         self.attr_def = attr_def
         self.config = { 'Lines':'1', 'Items':'4' }
         self.left_margin = left_margin

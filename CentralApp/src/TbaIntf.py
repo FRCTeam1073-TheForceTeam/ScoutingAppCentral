@@ -6,6 +6,8 @@ import urllib3
 from urllib3.contrib import pyopenssl
 pyopenssl.inject_into_urllib3()
 
+error_logged = False
+
 def get_from_tba_parsed( req_api ):
     
     req_data = get_from_tba( req_api )
@@ -17,17 +19,24 @@ def get_from_tba_parsed( req_api ):
     return parsed_data
 
 def get_from_tba( req_api ):
+    global error_logged
     resp_data = ''
     url_str = 'http://www.thebluealliance.com%s?X-TBA-App-Id=frc1073:scouting-system:v02' % req_api
 
-    http = urllib3.PoolManager( cert_reqs='CERT_REQUIRED',
-                                ca_certs=certifi.where())
-
-    resp = http.request('GET', url_str,
-                        headers={'User-Agent': 'Mozilla/5.0'})
-        
-    if resp.status is 200:
-        resp_data = resp.data
+    try:
+        http = urllib3.PoolManager( cert_reqs='CERT_REQUIRED',
+                                    ca_certs=certifi.where())
+    
+        resp = http.request('GET', url_str,
+                            headers={'User-Agent': 'Mozilla/5.0'})
+            
+        if resp.status is 200:
+            resp_data = resp.data
+    except:
+        if not error_logged:
+            print 'Error accessing TheBlueAlliance - check internet connection'
+            error_logged = True
+        pass
 
     return resp_data
     

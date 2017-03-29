@@ -12,6 +12,7 @@ import traceback
 import datetime
 import subprocess
 import json
+import threading
 
 import DbSession
 import DataModel
@@ -1608,9 +1609,11 @@ class UsersUpdate(object):
             
     def POST(self):
 '''
+command_running_lock = threading.Lock()
 
 command_running = False   
 def process_files_timer_callback(cmd):
+    '''
     global command_running
     # check to see if there is already a file process invocation underway. If so, 
     # then do not start another one and just return.
@@ -1625,7 +1628,19 @@ def process_files_timer_callback(cmd):
         print 'Resetting command_running flag - %d' % int(command_running)
     else:
         print 'Process files command already running'
-
+    '''
+    
+    global command_running_lock
+    if not command_running_lock.acquire(False):
+        print 'Process files command already running'
+    else:
+        try:
+            # launch the file process command using the subprocess call function. This
+            # method will not return until the called command itself returns.
+            process_file_subprocess = subprocess.call(['python', cmd])
+            print 'Subprocess returned - %s' % str(process_file_subprocess)
+        finally:
+            command_running_lock.release()
     return
     
     

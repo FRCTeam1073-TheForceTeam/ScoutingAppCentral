@@ -837,7 +837,6 @@ def recalculate_scoring(global_config, competition=None, attr_definitions=None):
             raise Exception( 'Competition Not Specified!')
 
     # Build the attribute definition dictionary from the definitions csv file
-    #attrdef_filename = './config/' + 'AttributeDefinitions-reboundrumble.csv'    
     if global_config['attr_definitions'] == None:
         return
     

@@ -865,6 +865,8 @@ def get_team_list_json_from_tba(global_config, comp):
     try:
         # retrieve the string itself as a formatted json string
         event_data = TbaIntf.get_from_tba(url_str)
+        if len(event_data) == 0:
+            event_data = '[ ]'
     except:
         event_data = '[ ]'
 

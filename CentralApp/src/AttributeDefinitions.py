@@ -241,6 +241,11 @@ class AttrDefinitions:
         category_dict = dict()
         category_dict['Uncategorized'] = list()
         for key, attrdef in self._attrdefinitions.iteritems():
+            # skip over the line separators, as they don't have any meaning beyond the
+            # tablet UI generation
+            if attrdef['Control'] == 'Line_Separator':
+                continue
+            
             if attrdef.has_key('Sub_Category') and attrdef['Sub_Category'] != '':
                 try:
                     category_dict[attrdef['Sub_Category']].append(key)
