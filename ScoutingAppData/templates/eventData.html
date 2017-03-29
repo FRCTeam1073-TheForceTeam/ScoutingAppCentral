@@ -61,6 +61,7 @@ $$(document).ready(function () {
     var jqxhr = $$.getJSON( "/rankings/$comp", function(json_data) {
         console.log( "success" );
         var numTeams = json_data.rankings.length;
+        var rank = numTeams
         for (var i=0;i<numTeams;i++)
         {
             data[i] = [];
@@ -72,6 +73,8 @@ $$(document).ready(function () {
                 data[i][1] = json_data.rankings[i].score;
             }
             teams[i] = json_data.rankings[i].team.toString();
+            json_data.rankings[i].rank = rank;
+            rank -=1;
         }
 
         $$("#placeholder_scouting_rank").bind("plotclick", function( event, pos, item ) {
@@ -119,10 +122,12 @@ $$(document).ready(function () {
 		                var tipString;
 		                if ( display == 'horizontal' ) {
 		                    tipString = "Team: " + json_data.rankings[yval].team.toString() + 
-		                        ", Score: " + xval.toString();
+                                        ", Rank: " + json_data.rankings[yval].rank.toString() +
+		                                ", Score: " + xval.toString();
 		                } else {
 		                    tipString = "Team: " + json_data.rankings[xval].team.toString() + 
-		                        ", Score: " + yval.toString();
+                                        ", Rank: " + json_data.rankings[xval].rank.toString() +
+		                                ", Score: " + yval.toString();
                         }
 		                console.log( tipString );
 		                return( tipString );
