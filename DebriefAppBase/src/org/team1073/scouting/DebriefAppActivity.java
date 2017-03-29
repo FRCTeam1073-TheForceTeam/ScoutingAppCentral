@@ -66,6 +66,9 @@ public class DebriefAppActivity extends ActivityBase {
 	private String competition_name="Test";
 	private String competition_directory= competition_name + competition_season;
 	private String host_addr = "";
+	private String pri_host_addr = "";
+	private String alt_host_addr = "";
+	private String host_addr_select = "Primary";
 	private String sync_method = "Bluetooth";
 	private String sync_control = "Upload_Only";
 	private Boolean sync_text_files = true;
@@ -224,8 +227,12 @@ public class DebriefAppActivity extends ActivityBase {
                 	device_name = tokenizer.nextToken();
                 } else if ( token.equalsIgnoreCase("DeviceId")) {
                     device_id = tokenizer.nextToken();
-	            } else if ( token.equalsIgnoreCase("HostAddr")) {
-	            	host_addr = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("PriHostAddr")) {
+	            	pri_host_addr = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("AltHostAddr")) {
+	            	alt_host_addr = tokenizer.nextToken();
+	            } else if ( token.equalsIgnoreCase("HostAddrSelect")) {
+	            	host_addr_select = tokenizer.nextToken();
 	            } else if ( token.equalsIgnoreCase("SyncMethod")) {
 	            	sync_method = tokenizer.nextToken();
 	            } else if ( token.equalsIgnoreCase("SyncControl")) {
@@ -240,11 +247,19 @@ public class DebriefAppActivity extends ActivityBase {
 	            		sync_media_files = true;
 	            	else
 	            		sync_media_files = false;
-	            } else if ( token.equalsIgnoreCase("LastConnectedServer")) {
-	            	setLastConnectedServer(tokenizer.nextToken());
 	            }
 			}
+			
+			// Set the host address (primary or alternate) now that the configuration
+			// is loaded, with primary as the default
+			if ( host_addr_select.equalsIgnoreCase("Primary")) {
+				host_addr = pri_host_addr;
+			} else {
+				host_addr = alt_host_addr;
+			}
+			
 			reader.close();
+			
     	} catch (Exception e) {
     		showDialog = true;
     	}
@@ -260,7 +275,11 @@ public class DebriefAppActivity extends ActivityBase {
 	        Button button = (Button) dialog.findViewById(R.id.DeviceOkButton);
 	        final EditText DeviceNameEntry = (EditText) dialog.findViewById(R.id.DeviceNameEntry);
 	        final EditText DeviceIdEntry = (EditText) dialog.findViewById(R.id.DeviceIdEntry);     
-	        final EditText HostAddrEntry = (EditText) dialog.findViewById(R.id.HostAddrEntry);     
+	        final EditText PriHostAddrEntry = (EditText) dialog.findViewById(R.id.PriHostAddrEntry);     
+	        final EditText AltHostAddrEntry = (EditText) dialog.findViewById(R.id.AltHostAddrEntry);     
+	        final RadioGroup HostAddrSelectRadioGroup = (RadioGroup) dialog.findViewById(R.id.HostAddrSelectRadioGroup);
+	        final RadioButton HostAddrSelect_Primary_RadioButton = (RadioButton) dialog.findViewById(R.id.HostAddrSelect_Primary_RadioButton);
+	        final RadioButton HostAddrSelect_Alt_RadioButton = (RadioButton) dialog.findViewById(R.id.HostAddrSelect_Alt_RadioButton);	        
 	        final RadioGroup SyncMethodRadioGroup = (RadioGroup) dialog.findViewById(R.id.SyncMethodRadioGroup);
 	        final RadioButton SyncMethod_Bluetooth_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncMethod_Bluetooth_RadioButton);
 	        final RadioButton SyncMethod_Wifi_3g_RadioButton = (RadioButton) dialog.findViewById(R.id.SyncMethod_Wifi_3g_RadioButton);
@@ -272,7 +291,14 @@ public class DebriefAppActivity extends ActivityBase {
 
 	        DeviceNameEntry.setText(device_name);
 	        DeviceIdEntry.setText(device_id);
-	        HostAddrEntry.setText(host_addr);
+	        
+	        PriHostAddrEntry.setText(pri_host_addr);
+	        AltHostAddrEntry.setText(alt_host_addr);
+	        if (host_addr_select.equalsIgnoreCase("Primary"))
+	        	HostAddrSelectRadioGroup.check(R.id.HostAddrSelect_Primary_RadioButton);
+	        else
+	        	HostAddrSelectRadioGroup.check(R.id.HostAddrSelect_Alt_RadioButton);
+	        
 	        if (sync_method.equalsIgnoreCase("Bluetooth"))
 	        	SyncMethodRadioGroup.check(R.id.SyncMethod_Bluetooth_RadioButton);
             else if (sync_method.equalsIgnoreCase("Wifi_3G"))
@@ -303,8 +329,21 @@ public class DebriefAppActivity extends ActivityBase {
 	                        buffer.append("DeviceName=" + DeviceNameEntry.getText().toString() + eol);
 	                    if ( !DeviceIdEntry.getText().toString().isEmpty() )
 	                        buffer.append("DeviceId=" + DeviceIdEntry.getText().toString() + eol);
-	                    if ( !HostAddrEntry.getText().toString().isEmpty() )
-	                        buffer.append("HostAddr=" + HostAddrEntry.getText().toString() + eol);
+	                    
+	                    if ( !PriHostAddrEntry.getText().toString().isEmpty() )
+	                        buffer.append("PriHostAddr=" + PriHostAddrEntry.getText().toString() + eol);
+	                    if ( !AltHostAddrEntry.getText().toString().isEmpty() )
+	                        buffer.append("AltHostAddr=" + AltHostAddrEntry.getText().toString() + eol);
+	                    if (HostAddrSelect_Primary_RadioButton.isChecked())
+	                        buffer.append("HostAddrSelect=" + HostAddrSelect_Primary_RadioButton.getText().toString() + eol);
+	                    else if (HostAddrSelect_Alt_RadioButton.isChecked())
+	                        buffer.append("HostAddrSelect=" + HostAddrSelect_Alt_RadioButton.getText().toString() + eol);
+	                    	
+	                    if (SyncMethod_Bluetooth_RadioButton.isChecked())
+	                        buffer.append("SyncMethod=" + SyncMethod_Bluetooth_RadioButton.getText().toString() + eol);
+	                    else if (SyncMethod_Wifi_3g_RadioButton.isChecked())
+	                        buffer.append("SyncMethod=" + SyncMethod_Wifi_3g_RadioButton.getText().toString() + eol);
+	                    
 	                    if (SyncMethod_Bluetooth_RadioButton.isChecked())
 	                        buffer.append("SyncMethod=" + SyncMethod_Bluetooth_RadioButton.getText().toString() + eol);
 	                    else if (SyncMethod_Wifi_3g_RadioButton.isChecked())
@@ -313,8 +352,6 @@ public class DebriefAppActivity extends ActivityBase {
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Only_RadioButton.getText().toString() + eol);
 	                    else if (SyncControl_Upload_Download_RadioButton.isChecked())
 	                        buffer.append("SyncControl=" + SyncControl_Upload_Download_RadioButton.getText().toString() + eol);
-	                    if ( !getLastConnectedServer().isEmpty() )
-	                        buffer.append("LastConnectedServer=" + getLastConnectedServer() + eol);
 	                    if (TextFileTypeCheckBox_Checkbox.isChecked())
 	                        buffer.append("SyncTextFiles=Yes" + eol);
 	                    else

@@ -46,32 +46,85 @@
         android:background="@android:drawable/editbox_background" />
     <!-- End DeviceId field text label and entry field -->
 
-    <!-- Begin HostAddr field text label and entry field -->
+    <!-- Begin PriHostAddr field text label and entry field -->
     <TextView
-        android:id="@+id/HostAddrLabel"
+        android:id="@+id/PriHostAddrLabel"
         android:layout_width="120dp"
         android:layout_height="40dp"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/DeviceIdLabel"
         android:gravity="center_vertical|right"
-        android:text="Host IP Address:" />
+        android:text="Primary Host IP Address:" />
 
     <EditText
-        android:id="@+id/HostAddrEntry"
+        android:id="@+id/PriHostAddrEntry"
         android:layout_width="200dp"
         android:layout_height="40dp"
         android:textColor="@color/black"
         android:layout_below="@+id/DeviceIdLabel"
-        android:layout_toRightOf="@+id/HostAddrLabel"
+        android:layout_toRightOf="@+id/PriHostAddrLabel"
         android:background="@android:drawable/editbox_background" />
-    <!-- End HostAddr field text label and entry field -->
+    <!-- End PriHostAddr field text label and entry field -->
 
+    <!-- Begin AltHostAddr field text label and entry field -->
+    <TextView
+        android:id="@+id/AltHostAddrLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/PriHostAddrLabel"
+        android:gravity="center_vertical|right"
+        android:text="Alt Host IP Address:" />
+
+    <EditText
+        android:id="@+id/AltHostAddrEntry"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:textColor="@color/black"
+        android:layout_below="@+id/PriHostAddrLabel"
+        android:layout_toRightOf="@+id/AltHostAddrLabel"
+        android:background="@android:drawable/editbox_background" />
+    <!-- End AltHostAddr field text label and entry field -->
+
+    <!-- Begin HostAddrSelect field text label and radio group -->
+    <TextView
+        android:id="@+id/HostAddrSelectLabel"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/AltHostAddrEntry"
+        android:gravity="center_vertical|right"
+        android:text="Host Address Select:" />
+
+    <RadioGroup
+        android:id="@+id/HostAddrSelectRadioGroup"
+        android:layout_width="600dp"
+        android:layout_height="40dp"
+        android:layout_alignTop="@+id/HostAddrSelectLabel"
+        android:layout_below="@+id/AltHostAddrEntry"
+        android:layout_toRightOf="@+id/HostAddrSelectLabel"
+        android:orientation="horizontal" >
+        
+        <RadioButton
+            android:id="@+id/HostAddrSelect_Primary_RadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Primary" />
+
+	    <RadioButton
+	        android:id="@+id/HostAddrSelect_Alt_RadioButton"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Alternate" />
+
+    	</RadioGroup>
+    <!-- End HostAddrSelect field text label and radio group -->
+    
     <!-- Begin SyncMethod field text label and radio group -->
     <TextView
         android:id="@+id/SyncMethodLabel"
         android:layout_width="120dp"
         android:layout_height="40dp"
-        android:layout_below="@+id/HostAddrLabel"
+        android:layout_below="@+id/HostAddrSelectLabel"
         android:gravity="center_vertical|right"
         android:text="Sync_Method:" />
 
@@ -79,9 +132,9 @@
         android:id="@+id/SyncMethodRadioGroup"
         android:layout_width="600dp"
         android:layout_height="40dp"
-        android:layout_below="@+id/HostAddrLabel"
-        android:layout_toRightOf="@+id/SyncMethodLabel"
         android:layout_alignTop="@+id/SyncMethodLabel"
+        android:layout_below="@+id/HostAddrSelectLabel"
+        android:layout_toRightOf="@+id/SyncMethodLabel"
         android:orientation="horizontal" >
 
         <RadioButton
@@ -90,13 +143,13 @@
             android:layout_height="wrap_content"
             android:text="Bluetooth" />
 
-        <RadioButton
-            android:id="@+id/SyncMethod_Wifi_3g_RadioButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Wifi_3G" />
+	    <RadioButton
+	        android:id="@+id/SyncMethod_Wifi_3g_RadioButton"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Wifi_3G" />
 
-    </RadioGroup>
+        </RadioGroup>
     <!-- End SyncMethod field text label and radio group -->
 
     <!-- Begin SyncControl field text label and radio group -->
