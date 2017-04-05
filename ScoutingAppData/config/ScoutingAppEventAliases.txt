@@ -1,10 +1,11 @@
+# EventCode, Alias, Description, Attribute File Override
 ctwat,WATERBURY,Waterbury District
-nhgrs,NHGRS,Granite State District
+nhgrs,NHGRS,Granite State District,MatchandPitScouting-2017-Bedford.xlsx
 mawor,WPI,Worcester District
 mabri,BRIDGEWATER,SE Mass District
 mabos,BOSTON,Greater Boston District
 marea,READING,North Shore District
-nhbed,NHBED,Southern NH District
+nhbed,NHBED,Southern NH District,MatchandPitScouting-2017-Bedford.xlsx
 ripro,RI,Rhode Island District
 melew,PINETREE,Pine Tree District
 cthar,HARTFORD,Hartford District

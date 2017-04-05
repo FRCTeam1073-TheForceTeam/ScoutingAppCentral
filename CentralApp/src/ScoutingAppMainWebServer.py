@@ -1723,15 +1723,11 @@ if __name__ == "__main__":
     
 
     # Build the attribute definition dictionary from the definitions spreadsheet file
-    attrdef_filename = global_config['attr_definitions']
-    if attrdef_filename != None and len(attrdef_filename) > 0:
-        attrdef_pathname = './config/' + attrdef_filename
-        if os.path.exists(attrdef_pathname):
-            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-            attr_definitions.parse(attrdef_pathname)
-            
-            # WebGenExtJsStoreFiles.gen_js_store_files(global_config, attr_definitions)
-            WebAttributeDefinitions.init_attr_def_forms(attr_definitions)
+    attrdef_filename = WebCommonUtils.get_attrdef_filename( short_comp=global_config['this_competition'] )
+    if attrdef_filename is not None:
+        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+        attr_definitions.parse(attrdef_filename)
+        WebAttributeDefinitions.init_attr_def_forms(attr_definitions)
 
 
     # make sure that the required directories exist

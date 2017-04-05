@@ -164,22 +164,49 @@ def get_issue_types():
     issue_types = my_config['issue_types'].split(',')
     return issue_types
 
-def get_attr_list():
+def get_attr_list(short_comp=None):
     my_config = ScoutingAppMainWebServer.global_config
     attr_list = list()
     
-    # make sure that an attribute definitions file has been configured
-    if len(my_config['attr_definitions']):
-        attrdef_filename = './config/' + my_config['attr_definitions']
-        if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions(my_config)
-            attr_definitions.parse(attrdef_filename)
-            attr_dict = attr_definitions.get_definitions()
-            attr_list = attr_dict.keys()
-            attr_list.sort()
+    attrdef_filename = get_attrdef_filename(short_comp)
+    if attrdef_filename is not None:
+        attr_definitions = AttributeDefinitions.AttrDefinitions(my_config)
+        attr_definitions.parse(attrdef_filename)
+        attr_dict = attr_definitions.get_definitions()
+        attr_list = attr_dict.keys()
+        attr_list.sort()
                 
     return attr_list
 
+def get_attrdef_filename(short_comp=None,comp=None):
+    my_config = ScoutingAppMainWebServer.global_config
+    attrdef_filename = None
+
+    if short_comp is None and comp is not None:
+        short_comp,_ = split_comp_str(comp)
+
+    # if the competition name is provided, look up the config for a 
+    # specific attrbute definition file
+    if short_comp is not None:
+        event_info = CompAlias.get_event_info(short_comp)
+        if event_info is not None:
+            if event_info.event_attr is not None:
+                attrdef_filename = './config/' + event_info.event_attr
+                
+    # if no competition specific attribute definition file is set, then
+    # use the global configuration
+    if attrdef_filename is None:
+        if len(my_config['attr_definitions']):
+            attrdef_filename = './config/' + my_config['attr_definitions']
+            
+    # make sure that the filename exists, else return None
+    if attrdef_filename is not None and not os.path.exists(attrdef_filename):
+        attrdef_filename = None
+        my_config['logger'].debug( 'Attribute File %s Does Not Exist' % attrdef_filename )
+        print 'Attribute File %s Does Not Exist' % attrdef_filename
+        
+    return attrdef_filename
+    
 def get_filter_list():
     my_config = ScoutingAppMainWebServer.global_config
     filter_list = list()

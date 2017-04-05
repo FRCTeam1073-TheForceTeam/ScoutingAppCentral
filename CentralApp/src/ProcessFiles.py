@@ -14,6 +14,7 @@ from optparse import OptionParser
 
 import AttributeDefinitions
 import ConfigUtils
+import CompAlias
 import DbSession
 import DataModel
 import IssueTrackerDataModel
@@ -551,12 +552,17 @@ def read_ignore_filelist_cfg(ignore_filename):
 
 if __name__ == "__main__":
 
+    print 'Processing files...'
+
     # command line options handling
     parser = OptionParser()
     
     parser.add_option(
         "-l","--processloop",dest="processloop", default='0',
         help='Process Team Files')
+    parser.add_option(    
+        "-a","--aliases",dest="comp_alias_file",default='ScoutingAppEventAliases.txt',
+        help="Competition Alias Configuration File")
     
     # Parse the command line arguments
     (options,args) = parser.parse_args()
@@ -567,6 +573,12 @@ if __name__ == "__main__":
 
     logger = Logger.get_logger('./config', 'logging.conf', 'scouting.fileproc')
     global_config['logger'] = logger
+
+    # load the competition alias file if one is specified
+    if options.comp_alias_file != '':
+        comp_alias_file = './config/' + options.comp_alias_file        
+        logger.debug('Loading Competition Alias file: %s' % comp_alias_file)
+        CompAlias.read_comp_alias_config(comp_alias_file)
 
     session = DbSession.open_db_session((global_config['db_name'] + global_config['this_season']), DataModel)
 
@@ -583,23 +595,19 @@ if __name__ == "__main__":
             competition_dir = './static/data/' + competition
             input_dir = competition_dir + '/ScoutingData/'
     
-            if global_config['attr_definitions'] == None:
+            attrdef_filename = WebCommonUtils.get_attrdef_filename(short_comp=global_config['this_competition'])
+            if attrdef_filename is None:
                 global_config['logger'].debug( 'No Attribute Definitions, Skipping Process Files' )
                 print 'No Attribute Definitions, Skipping Process Files'
             else:
-                attrdef_filename = './config/' + global_config['attr_definitions']
-                if os.path.exists(attrdef_filename):
-                    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-                    attr_definitions.parse(attrdef_filename)
+                attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+                attr_definitions.parse(attrdef_filename)
                     
-                    process_files(global_config, attr_definitions, input_dir)
-                    process_issue_files(global_config, input_dir)
-                    process_debrief_files(global_config, input_dir)
-                    global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
-                    print 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
-                else:
-                    global_config['logger'].debug( 'Attribute File %s Does Not Exist' % attrdef_filename )
-                    print 'Attribute File %s Does Not Exist' % attrdef_filename
+                process_files(global_config, attr_definitions, input_dir)
+                process_issue_files(global_config, input_dir)
+                process_debrief_files(global_config, input_dir)
+                global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
+                print 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
         except Exception, e:
             global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
             print 'Exception Caught Processing Files: %s' % str(e)
@@ -617,6 +625,8 @@ if __name__ == "__main__":
             done = True
 
     session.remove()
+    
+    print 'Process files complete...'
 
 
 

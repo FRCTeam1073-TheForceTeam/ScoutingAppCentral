@@ -20,6 +20,7 @@ import DbSession
 import AttributeDefinitions
 import TbaIntf
 import GoogleMapsIntf
+import WebCommonUtils
 
 
 
@@ -841,9 +842,12 @@ def recalculate_scoring(global_config, competition=None, attr_definitions=None):
         return
     
     if attr_definitions is None:
-        attrdef_filename = './config/' + global_config['attr_definitions']    
-        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-        attr_definitions.parse(attrdef_filename)
+        attrdef_filename = WebCommonUtils.get_attrdef_filename(competition)
+        if attrdef_filename is not None:
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+            attr_definitions.parse(attrdef_filename)
+        else:
+            return
 
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
     team_rankings = getTeamsInRankOrder(session, competition)

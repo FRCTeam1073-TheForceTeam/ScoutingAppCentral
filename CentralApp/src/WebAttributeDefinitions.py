@@ -13,6 +13,7 @@ import AttributeDefinitions
 import DataModel
 import ConfigUtils
 import FileSync
+import WebCommonUtils
 
 attrdef_form = None
  
@@ -35,45 +36,39 @@ def get_attr_def_form(global_config):
 
     form = attrdef_form()
     
-    if global_config['attr_definitions'] == None:
-        print 'No Attribute Definitions, Skipping Process Files'
-    else:
-        attrdef_filename = './config/' + global_config['attr_definitions']
-        if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-            attr_definitions.parse(attrdef_filename)
-            attr_dict = attr_definitions.get_definitions()
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(global_config['this_competition'])
+    if attrdef_filename is not None:
+        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+        attr_definitions.parse(attrdef_filename)
+        attr_dict = attr_definitions.get_definitions()
                                             
-            for key, attr_def in sorted(attr_dict.items()):
-                try:
-                    weight = float(attr_def['Weight'])
-                except:
-                    weight = 0.0
-                form[key].value = str(int(weight))
+        for key, attr_def in sorted(attr_dict.items()):
+            try:
+                weight = float(attr_def['Weight'])
+            except:
+                weight = 0.0
+            form[key].value = str(int(weight))
                 
     return form
 
 def process_attr_def_form(global_config, form):
     global_config['logger'].debug( 'Process Attribute Definitions Form' )
     
-    if global_config['attr_definitions'] == None:
-        print 'No Attribute Definitions, Skipping Process Files'
-    else:
-        attrdef_filename = './config/' + global_config['attr_definitions']
-        if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-            attr_definitions.parse(attrdef_filename)
-            attr_dict = attr_definitions.get_definitions()
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(global_config['this_competition'])
+    if attrdef_filename is not None:
+        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+        attr_definitions.parse(attrdef_filename)
+        attr_dict = attr_definitions.get_definitions()
 
-            for key, attr_def in sorted(attr_dict.items()):
-                attr_def['Weight'] = form[key].value
+        for key, attr_def in sorted(attr_dict.items()):
+            attr_def['Weight'] = form[key].value
                             
-            attr_definitions.write_attr_overrides();
-            competition = global_config['this_competition'] + global_config['this_season']
-            if competition == None:
-                raise Exception( 'Competition Not Specified!')
+        attr_definitions.write_attr_overrides();
+        competition = global_config['this_competition'] + global_config['this_season']
+        if competition == None:
+            raise Exception( 'Competition Not Specified!')
             
-            DataModel.recalculate_scoring(global_config, competition, attr_definitions)
+        DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
 def get_attr_def_item_json( global_config, attr_def, attr_filter, checked_ind ):
 
@@ -104,11 +99,10 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
     
     global_config['logger'].debug( 'GET Attribute Definitions Tree JSON' )
 
-    # make sure that an attribute definitions file has been configured
-    if not len(global_config['attr_definitions']):
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(global_config['this_competition'])
+    if attrdef_filename is None:
         return None
 
-    attrdef_filename = './config/' + global_config['attr_definitions']
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     

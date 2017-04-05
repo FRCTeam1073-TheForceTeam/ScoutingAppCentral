@@ -67,9 +67,6 @@ def get_team_datafiles_page(global_config, name, display_notes=True):
     
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
 
-    attrdef_filename = './config/' + global_config['attr_definitions']
-    attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-    attr_definitions.parse(attrdef_filename)
     page=''
     
     team_info = DataModel.getTeamInfo(session, int(name))
@@ -98,6 +95,11 @@ def get_team_datafiles_page(global_config, name, display_notes=True):
         
     for comp in competitions:
         if comp != '':
+
+            attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
+            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+            attr_definitions.parse(attrdef_filename)
+
             input_dir = './static/data/' + comp + '/ScoutingData/'
             pattern = 'Team' + name + '_' + '[a-zA-Z0-9_]*.txt'
             datafiles = get_datafiles(input_dir, re.compile(pattern), False, global_config['logger'])
@@ -308,7 +310,7 @@ def get_team_attr_rankings_page(global_config, comp, attr_name):
     
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
         
-    attrdef_filename = './config/' + global_config['attr_definitions']
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     attr = attr_definitions.get_definition(attr_name)
@@ -352,7 +354,7 @@ def get_team_score_breakdown_json(global_config, name, comp=None, store_json_fil
         season = WebCommonUtils.map_comp_to_season(comp)
     session = DbSession.open_db_session(global_config['db_name'] + season)
     
-    attrdef_filename = './config/' + global_config['attr_definitions']
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     
@@ -400,15 +402,15 @@ def get_team_attributes_page(global_config):
     global_config['logger'].debug( 'GET Team Attributes' )
     
     session = DbSession.open_db_session(global_config['db_name'] + global_config['this_season'])
-    
-    attrdef_filename = './config/' + global_config['attr_definitions']
+    comp = global_config['this_competition'] + global_config['this_season']
+
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
     
     web.header('Content-Type', 'application/json')
     result = []
     result.append('{ "attributes": [\n')
-    comp = global_config['this_competition'] + global_config['this_season']
     team_rankings = DataModel.getTeamsInRankOrder(session, comp)
     for team_entry in team_rankings:
         result.append("{ 'Team': " + str(team_entry.team))
@@ -596,7 +598,7 @@ def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[
     if global_config['attr_definitions'] == None:
         return None
     
-    attrdef_filename = './config/' + global_config['attr_definitions']
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
     attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
     attr_definitions.parse(attrdef_filename)
 
@@ -904,7 +906,7 @@ def get_team_rankings_json(global_config, season, event, attr_filters=[], filter
     else:
         # we'll need the attribute definitions in order to retrieve the correct attribute value
         # and attribute weighting
-        attrdef_filename = './config/' + global_config['attr_definitions']
+        attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
         attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
         attr_definitions.parse(attrdef_filename)
         
@@ -994,7 +996,7 @@ def get_team_attr_rankings_json(global_config, comp=None, attr_name=None):
 
     session = DbSession.open_db_session(global_config['db_name'] + season)
 
-    attrdef_filename = './config/' + global_config['attr_definitions']
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(comp=comp)
     attr_definitions = AttributeDefinitions.AttrDefinitions()
     attr_definitions.parse(attrdef_filename)
     attr_def = attr_definitions.get_definition(attr_name)

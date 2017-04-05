@@ -9,6 +9,7 @@ import os
 import AttributeDefinitions
 import DbSession
 import DataModel
+import WebCommonUtils
 
 # Form definition and callback class for the application configuration settings
 attr_modify_season_label = "Season:"
@@ -50,19 +51,18 @@ def process_form(global_config, form):
     db_name  = global_config['db_name'] + global_config['this_season']
     session  = DbSession.open_db_session(db_name)
     
-    if global_config['attr_definitions'] != None:
-        attrdef_filename = './config/' + global_config['attr_definitions']
-        if os.path.exists(attrdef_filename):
-            attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
-            attr_definitions.parse(attrdef_filename)
-            attr_def = attr_definitions.get_definition(attr_name)
+    attrdef_filename = WebCommonUtils.get_attrdef_filename(short_comp=comp)
+    if attrdef_filename is not None:
+        attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+        attr_definitions.parse(attrdef_filename)
+        attr_def = attr_definitions.get_definition(attr_name)
 
-            try:
-                DataModel.modifyAttributeValue(session, team, comp+season, attr_name, old_value, new_value, attr_def)
-                result = 'Attribute %s Modified From %s to %s For Team %s' % (attr_name,old_value,new_value,team)
-                session.commit()
-            except ValueError as reason:   
-                result = 'Error Modifying Scouting Addribute %s For Team %s: %s' % (attr_name,team,reason)
+        try:
+            DataModel.modifyAttributeValue(session, team, comp+season, attr_name, old_value, new_value, attr_def)
+            result = 'Attribute %s Modified From %s to %s For Team %s' % (attr_name,old_value,new_value,team)
+            session.commit()
+        except ValueError as reason:   
+            result = 'Error Modifying Scouting Addribute %s For Team %s: %s' % (attr_name,team,reason)
     
     session.remove()
     return result
