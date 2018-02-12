@@ -113,7 +113,7 @@ class AttrDefinitions:
                     
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
-                    if definition['Control'] == 'Scoring_Matrix':
+                    if definition['Control'] == 'Scoring_Matrix' or definition['Control'] == 'Scoring_Timer':
                         definition['Type'] = 'Integer'
 
                         disp_type = None
