@@ -10,6 +10,7 @@ from UiGeneratorCheckbox import CheckboxUiGenControl
 from UiGeneratorRadioButton import RadioButtonUiGenControl
 from UiGeneratorTextfield import TextFieldUiGenControl
 from UiGeneratorScoringMatrix import ScoringMatrixUiGenControl 
+from UiGeneratorScoringTimer import ScoringTimerUiGenControl 
 from UiGeneratorSeparator import LineSeparatorUiGenControl 
 from UiGeneratorButton import ButtonUiGenControl 
 from UiGeneratorHeading import HeadingFieldUiGenControl
@@ -90,6 +91,8 @@ def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_f
                     ctrl_gen = CheckboxUiGenControl(item)
                 elif control == 'Scoring_Matrix':
                     ctrl_gen = ScoringMatrixUiGenControl(item)
+                elif control == 'Scoring_Timer':
+                    ctrl_gen = ScoringTimerUiGenControl(item)
                 elif control == 'Line_Separator':
                     ctrl_gen = LineSeparatorUiGenControl(item)
                 elif control == 'Heading':
@@ -130,7 +133,7 @@ def gen_scouting_sheet_ui( global_config, attrdef_filename, sheet_type, create_f
                 java_helper_functions += ctrl_gen.gen_java_helper_functions()
                 java_helper_functions = java_helper_functions.replace('NAME', item['Name'])
                 
-                if (control == 'Scoring_Matrix'):
+                if control == 'Scoring_Matrix' or control == 'Scoring_Timer':
                     above_name = ctrl_gen.get_last_label()
                 elif control == 'Text': 
                     above_name = item['Name'] + 'Entry'

@@ -4,7 +4,7 @@ import googlemaps
 from datetime import datetime
 import json
 
-gmaps = googlemaps.Client(key='AIzaSyAT811vhX8eE9ImdkWDoRkOzzfqdD21ZGA')
+gmaps = googlemaps.Client(key='AIzaSyA17MA82Z5UXV0KaDbTg7MadrbRjdpEkG4')
 
 def get_geo_location( address_str ):
     geo_location = None
@@ -30,7 +30,9 @@ def get_geo_location( address_str ):
 if __name__ == "__main__":
 
     # Geocoding an address
-    geo_location = get_geo_location('Hollis, NH')
+    #geo_location = get_geo_location('24 Cavalier Ct, Hollis, NH')
+
+    geo_location = get_geo_location('25 Columbus Ave. Concord NH')
     
     geo_location_json = json.dumps(geo_location)
     
