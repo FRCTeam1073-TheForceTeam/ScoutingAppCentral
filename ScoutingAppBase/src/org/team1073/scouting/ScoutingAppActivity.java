@@ -1121,10 +1121,14 @@ public class ScoutingAppActivity extends ActivityBase {
 	
 	private String GetTeamFromMatchSchedule( String round, String alliance, String position_str, String match_str ) {
 		int offset = 0;
-		int position = Integer.parseInt(position_str);
 		String team = "0";
 		String[] matchEntry = null; 
 		
+		if ( round.equals("") || alliance.equals("") || position_str.equals("") )
+			return team;
+		
+		int position = Integer.parseInt(position_str);
+
 		if ( alliance.equals("Red") ) {
 			offset = 2;
 		} else {

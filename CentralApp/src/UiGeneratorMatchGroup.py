@@ -275,6 +275,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         else if (Comp_RoundFinalsRadioButton.isChecked())
             compRound = Comp_RoundFinalsRadioButton.getText().toString();
         else {
+/*
             new AlertDialog.Builder(MatchScoutingAppActivity.this)
             .setTitle("Error!")
             .setMessage("Competition Round Not Specified")
@@ -282,6 +283,7 @@ class MatchGroupUiGenControl( UiGenControl ):
             .show();
             
             return;
+*/
         }
 
         String alliance="";
@@ -290,6 +292,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         else if (AllianceRedRadioButton.isChecked())
             alliance = AllianceRedRadioButton.getText().toString();
         else {
+/*
             new AlertDialog.Builder(MatchScoutingAppActivity.this)
             .setTitle("Error!")
             .setMessage("Alliance Not Specified")
@@ -297,6 +300,7 @@ class MatchGroupUiGenControl( UiGenControl ):
             .show();
             
             return;
+*/
         }
 
         String position="";
@@ -307,6 +311,7 @@ class MatchGroupUiGenControl( UiGenControl ):
         else if (Position3RadioButton.isChecked())
             position = Position3RadioButton.getText().toString();
         else {
+/*
             new AlertDialog.Builder(MatchScoutingAppActivity.this)
             .setTitle("Error!")
             .setMessage("Position Not Specified")
@@ -314,6 +319,7 @@ class MatchGroupUiGenControl( UiGenControl ):
             .show();                            
 
             return;
+*/
         }
         
         String matchStr = match.toString();
