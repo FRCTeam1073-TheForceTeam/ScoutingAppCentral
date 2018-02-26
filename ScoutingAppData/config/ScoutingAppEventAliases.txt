@@ -1,4 +1,5 @@
 # EventCode, Alias, Description, Attribute File Override
+cars,CARS,Carson Field,MatchandPitScouting-2017.xlsx
 ctwat,WATERBURY,Waterbury District
 nhgrs,NHGRS,Granite State District,MatchandPitScouting-2017-Bedford.xlsx
 mawor,WPI,Worcester District
@@ -9,5 +10,5 @@ nhbed,NHBED,Southern NH District,MatchandPitScouting-2017-Bedford.xlsx
 ripro,RI,Rhode Island District
 melew,PINETREE,Pine Tree District
 cthar,HARTFORD,Hartford District
-necmp,NECMP,New England District Championships
+necmp,NECMP,New England District Championships,MatchandPitScouting-2017-NECMP.xlsx
 week0,WEEK0,Week Zero
