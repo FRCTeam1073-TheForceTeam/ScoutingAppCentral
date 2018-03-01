@@ -2,27 +2,17 @@
 import copy
 
 # task group definitions
-taskgroups = ( 
-                'Feed',
-                'Shoot',
-                'Fuel',
+taskgroups = (
+                'Mechanical',
+                'Electrical',
                 'Spirit',
                 'Safety',
                 'Auto',
                 'Dashboard',
                 'Scout',
-                'Change',
-                'Climb',
-                'Gear',
-                'Chassis',
-                'Bumpers',
                 'Driveteam',
-                'Can',
-                'Inspection',
-                'Bling',
-                'Vision'
-                )
-
+                'Inspection'
+            )
 
 # issue categories
 categories = (1,2,3)
