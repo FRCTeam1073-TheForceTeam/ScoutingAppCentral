@@ -16,6 +16,6 @@ public class ActivityBase extends Activity{
 	}
 	
 	public void SaveDeviceConfiguration() {
-        Toast.makeText(ActivityBase.this, "ActivityBase", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(ActivityBase.this, "ActivityBase", Toast.LENGTH_SHORT).show();
 	}
 }
