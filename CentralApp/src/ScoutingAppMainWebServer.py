@@ -1425,10 +1425,11 @@ class FileRequest(object):
         request_path = request_path.lstrip('/')
         query_str = web.input(checksum=None)
 
-        if query_str.checksum is None:
-            response_body = FileSync.get(global_config, request_path)
-        else:
-            response_body = FileSync.get(global_config, request_path, with_checksum=True)
+        with_checksum = False
+        if query_str.checksum is not None:
+            with_checksum = True
+
+        response_body = FileSync.get(global_config, request_path, with_checksum=with_checksum)
 
         return response_body
         
@@ -1441,12 +1442,17 @@ class FileRequest(object):
 class Sync(object):
     def GET(self, request_path):
         request_path = request_path.lstrip('/')
-        query_str = web.input(checksum=None)
+        query_str = web.input(checksum=None, recurse=None)
 
-        if query_str.checksum is None:
-            response_body = FileSync.get(global_config, request_path)
-        else:
-            response_body = FileSync.get(global_config, request_path, with_checksum=True)
+        with_checksum = False
+        if query_str.checksum is not None:
+            with_checksum = True
+    
+        recurse = False
+        if query_str.recurse is not None:
+            recurse = True
+
+        response_body = FileSync.get(global_config, request_path, recurse=recurse, with_checksum=with_checksum)
 
         return response_body
         
