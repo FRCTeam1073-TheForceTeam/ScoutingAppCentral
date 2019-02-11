@@ -4,3 +4,4 @@ SQLAlchemy >= 1.1.4
 Pillow >= 3.4.2
 urllib3[secure]
 googlemaps
+openpyxl
