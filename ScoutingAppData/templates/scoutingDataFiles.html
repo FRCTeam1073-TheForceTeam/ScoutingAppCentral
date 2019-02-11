@@ -1,0 +1,138 @@
+$def with (season, short_comp)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: FRC Scouting Data Files
+
+$code:
+    district = utils.get_district_string()
+    comp = short_comp + season
+    season_list = utils.get_season_list()
+    comp_list = utils.get_short_comp_list(season)
+    event_code = utils.map_comp_to_event_code(comp).lower() 
+    myteam = utils.get_myteam()
+
+<style type="text/css">
+    .legend table, .legend > div { 
+            height: 100px !important; 
+            opacity: 1 !important; 
+            left: 740px; 
+            top: 10px; 
+            width: 116px !important; }
+    .legend table { border: 1px solid #555; padding: 5px; }
+
+</style>
+
+<script type="text/javascript">
+
+    $$(document).ready(function () {
+
+        var jqxhr_events = $$.getJSON( "/api/scoutingdatafiles/$comp", function(json_data) {
+
+            function drawTables( json_data ) {
+                
+                for (var verified_file in json_data.verified ) {
+                    json_data.pending.splice( json_data.pending.indexOf(verified_file), 1 );
+                }
+
+                var pending_table = $$('#pending_files').dataTable( {
+                    "bAutoWidth": true, // Disable the auto width calculation
+                    "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                    "iDisplayLength": 100,
+                    "aaData": json_data.pending,
+                    "aoColumns": [
+                        { "mData": "name", "mRender": function(data,type,row) { return '<a href="/scoutingfile/static/data/$comp/ScoutingData'+row+'">'+row+'</a>'; } }
+                    ]
+                } );
+
+                var verified_table = $$('#verified_files').dataTable( {
+                    "bAutoWidth": true, // Disable the auto width calculation
+                    "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
+                    "iDisplayLength": 100,
+                    "aaData": json_data.verified,
+                    "aoColumns": [
+                        { "mData": "name", "mRender": function(data,type,row) { return '<a href="/scoutingfile/static/data/$comp/ScoutingData'+row+'">'+row+'</a>'; } }
+                    ]
+                } );
+            }
+
+            drawTables( json_data );
+        } );   
+    });
+
+</script>
+
+  <div class="article">
+  
+    <div id="title" align="center">
+        <h1>FRC Scouting Data Files</h1>
+    </div>
+
+    <!-- provide a dropdown to select the season to display on the events page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $season
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for season_entry in season_list:
+            <li><a href="/events/$season_entry">$season_entry</a></li>
+        </ul>
+    </div>
+
+    <!-- provide a dropdown to select the competition to display on the events page -->
+    <div class="btn-group">
+        <a class="btn btn-default btn-lg dropdown-toggle" data-toggle="dropdown" href="#">
+            $short_comp
+          <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu tba-dropdown-menu-limited">
+          $for comp_entry in comp_list:
+            <li><a href="/events/$season/$comp_entry">$comp_entry</a></li>
+        </ul>
+    </div>
+
+    <div class="container-fluid">
+
+    <div class="tabbable">
+      <ul class="nav nav-tabs">
+          <li class="active"><a href="#pane_pending_files" data-toggle="tab">Pending Files</a></li>
+          <li><a href="#pane_verified_files" data-toggle="tab">Verified Files</a></li>
+      </ul>
+ 
+      <div class="tab-content">
+          <div id="pane_pending_files" class="tab-pane active">
+          <br>
+          <ul>
+          <table id="pending_files" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+                <tr role="row">
+			        <th>Scouting File</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_verified_files" class="tab-pane">
+          <br>
+          <ul>
+          <table id="verified_files" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead>
+                <tr role="row">
+			        <th>Scouting File</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+	      </table>
+          </ul>
+          </div>
+
+      </div>
+    </div>
+    </div>
+  </div>  
+

@@ -109,6 +109,8 @@ urls = (
     '/teamattrrank(.*)',    'TeamAttributeRanking',
 
     '/scoutingapp',         'ScoutingAppPage',
+    '/scoutingfiles',       'ScoutingDataPage',
+    '/scoutingfile/(.*)',   'ScoutingFilePage',
     
     '/eventdata/(.*)',      'JsonEventFile',
     '/teamdata2/(.*)',      'JsonTeamFile',
@@ -143,6 +145,8 @@ urls = (
     '/api/attrfilter/(.*)',         'AttributesFilter',
     '/api/geolocation',             'GeoLocationJson',
     '/api/teamparticipation',       'TeamParticipationJson',
+    '/api/scoutingdatafiles/(.*)',  'ScoutingDataFilesJson',
+    
     
     '/images/(.*)',                 'Images',
     
@@ -1440,6 +1444,13 @@ class FileRequest(object):
         return
 
 class Sync(object):
+    def OPTIONS(self, request_path):
+        web.header('Access-Control-Allow-Origin', '*')
+        web.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE' )
+        web.header('Access-Control-Allow-Headers', 'Content-Type')
+        web.header('Access-Control-Allow-Credentials', 'true')
+        return {'message': 'GET OK!'}        
+        
     def GET(self, request_path):
         request_path = request_path.lstrip('/')
         query_str = web.input(checksum=None, recurse=None)
@@ -1457,6 +1468,7 @@ class Sync(object):
         return response_body
         
     def PUT(self, request_path):
+        
         request_path = request_path.lstrip('/')
         content_type = web.ctx.env['CONTENT_TYPE']
         FileSync.put(global_config, request_path, content_type, web.data())
@@ -1606,7 +1618,43 @@ class Images(object):
             return open('images/%s'%image,"rb").read() # Notice 'rb' for reading images
         except ValueError:
             return image + ' does not exists!'
+
+#
+# HERE
+#
         
+class ScoutingDataPage(object):
+
+    def GET(self):
+        user_info = WebLogin.check_access(global_config,10)
+        season = global_config['this_season']
+        competition = global_config['this_competition']
+
+        return render.scoutingDataFiles(season,competition)
+    
+class ScoutingFilePage(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+
+        return render.scoutingDataFile('/'+ param_str)
+                           
+
+class ScoutingDataFilesJson(object):
+
+    def GET(self, param_str):
+        user_info = WebLogin.check_access(global_config,10)
+        
+        web.header('Content-Type', 'application/json')
+        
+        file_path = 'static/data/%s/ScoutingData' % param_str
+        scouting_files_dict = {}
+        scouting_files_dict['pending'] = FileSync.get_file_list(file_path, ext='.json', recurse=True)
+        scouting_files_dict['verified'] = FileSync.get_file_list(file_path, ext='.verified', recurse=True)
+        scouting_files_json = json.dumps(scouting_files_dict)
+        
+        return scouting_files_json
+
     
      
 '''    
