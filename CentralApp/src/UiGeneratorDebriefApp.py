@@ -2,27 +2,16 @@
 import copy
 
 # task group definitions
-taskgroups = ( 
-                'Feed',
-                'Shoot',
-                'Fuel',
-                'Spirit',
-                'Safety',
+taskgroups = (
                 'Auto',
-                'Dashboard',
-                'Scout',
-                'Change',
-                'Climb',
-                'Gear',
+                'Claw',
+                'Lift',
+                'Conveyor',
                 'Chassis',
                 'Bumpers',
-                'Driveteam',
-                'Can',
                 'Inspection',
-                'Bling',
-                'Vision'
+                'Driveteam'
                 )
-
 
 # issue categories
 categories = (1,2,3)
@@ -60,7 +49,7 @@ def get_debrief_app_control_defs(taskgroups):
         map_values += '%s=1:' % taskgroup
     map_values = map_values.rstrip(':')
     
-    items_per_line = 4
+    items_per_line = 2
     lines = len(taskgroups) / items_per_line
     if len(taskgroups) % items_per_line:
         lines += 1

@@ -45,32 +45,55 @@ def put_file( path, content_type, file_data):
             raise
     fd.close()
     return '200 OK'
-    
-def get_file_list( path, ext=None ):
-    file_list = []
-    dir_list = os.listdir(path)
-    for file_name in dir_list:
-        if not os.path.isdir(path + file_name):
-            if ext != None:
-                if file_name.endswith(ext):
-                    file_list.append(file_name)
-            else:
-                file_list.append(file_name)
-    return file_list
 
-def get_file_list_with_checksum( path, ext=None ):
-    file_list = []
-    dir_list = os.listdir(path)
-    for file_name in dir_list:
-        if not os.path.isdir(path + file_name):
-            if ext != None:
-                if file_name.endswith(ext):
+def get_file_list( path, ext=None, recurse=False, with_checksum=False ):
+    files = []
+    if recurse is False:
+        dir_list = os.listdir(path)
+        for file_name in dir_list:
+            if not os.path.isdir(path + file_name):
+                if with_checksum is True:
                     file_checksum = get_file_checksum( path + file_name, hashlib.md5() )
-                    file_list.append(file_name + ':' + str(file_checksum))
-            else:
-                file_checksum = get_file_checksum( path + file_name, hashlib.md5() )
-                file_list.append(file_name + ':' + str(file_checksum))
-    return file_list
+                else:
+                    file_checksum = None
+                if ext != None:
+                    if file_name.endswith(ext):
+                        if file_checksum is not None:
+                            files.append(file_name + ':' + str(file_checksum))
+                        else:
+                            files.append(file_name)
+                else:
+                    if file_checksum is not None:
+                        files.append(file_name + ':' + str(file_checksum))
+                    else:
+                        files.append(file_name)
+    else:
+        for dir_name, subdir_list, file_list in os.walk(path):
+            dir_segments = dir_name.split('/')
+            num_dir_segments = len(dir_segments)
+            if num_dir_segments > 1 and dir_segments[-1].startswith('.'):
+                continue
+            for file_name in file_list:
+                if file_name.startswith('.'):
+                    continue
+                file_path = os.path.join(dir_name, file_name).replace(path,'')
+                print('\t%s' % file_path)
+                if with_checksum is True:
+                    file_checksum = get_file_checksum( file_path, hashlib.md5() )
+                else:
+                    file_checksum = None
+                if ext != None:
+                    if file_name.endswith(ext):
+                        if file_checksum is not None:
+                            files.append(file_path + ':' + str(file_checksum))
+                        else:
+                            files.append(file_path)
+                else:
+                    if file_checksum is not None:
+                        files.append(file_path + ':' + str(file_checksum))
+                    else:
+                        files.append(file_path)
+    return files
 
 def get_file(path):
     file_data = ''
@@ -91,7 +114,7 @@ def get_file(path):
         pass
     return file_data
     
-def get(global_config, path, with_checksum=False):
+def get(global_config, path, recurse=False, with_checksum=False):
     
     # if the requested path starts with 'static', then let's assume that
     # the request knows the full path that it's looking for, otherwise, 
@@ -104,10 +127,7 @@ def get(global_config, path, with_checksum=False):
     # if the path refers to a directory, then return the list of files in the directory
     # otherwise, return the contents of the file
     if os.path.isdir(fullpath):
-        if with_checksum is False:
-            file_list = get_file_list(fullpath)
-        else:
-            file_list = get_file_list_with_checksum(fullpath)
+        file_list = get_file_list(fullpath, recurse=recurse, with_checksum=with_checksum)
         response_body = ''
         for file_name in file_list:
             response_body += file_name + '\n'

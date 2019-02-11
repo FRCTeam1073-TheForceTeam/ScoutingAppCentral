@@ -213,7 +213,8 @@ public class BluetoothSyncTask extends AsyncTask<String, String, Integer> {
                         publishProgress( "Connected to " + device.getName() );
                         break;
                     } catch (Exception e) {
-                        //publishProgress( "Error connecting to " + device.getName() + " Msg: " + e.getMessage() );
+                        publishProgress( "Error connecting to " + device.getName() + " Msg: " + e.getMessage() );
+                        
                     }
                 }
                 connectPass++;

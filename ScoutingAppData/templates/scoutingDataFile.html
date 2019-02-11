@@ -1,0 +1,189 @@
+$def with (scouting_file)
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=1, minimum-scale=0.5, maximum-scale=2.0" />
+
+$var title: FRC Scouting Data File
+
+<style type="text/css">
+    .legend table, .legend > div { 
+            height: 100px !important; 
+            opacity: 1 !important; 
+            left: 740px; 
+            top: 10px; 
+            width: 116px !important; }
+    .legend table { border: 1px solid #555; padding: 5px; }
+
+</style>
+
+<script type="text/javascript">
+
+    var scoutingData = {};
+
+    function createFormItem( section, name, value ) {
+        console.log( name + ': ' + value );
+
+        var div = document.createElement('div');
+        div.id = section + '-' + name + '-group';
+        div.className ='form-group row';
+
+        var div1 = document.createElement('div');
+        div1.className = 'col-sm-1';
+        div.append(div1);
+
+        var label = document.createElement('label');
+        label.htmlFor = section + '-' + name;
+        label.innerText = name;
+        label.className = 'col-sm-2 col-form-label text-align:right';
+        div.append(label);
+
+        var div2 = document.createElement('div');
+        div2.className = 'col-sm-6';
+        div.append(div2);
+
+        var input=document.createElement('input');
+        input.type ='text';
+        input.className = 'form-control';
+        input.name = name;
+        input.value = value;
+        input.id = section + '-' + name;
+        div2.append(input);
+
+        return div;
+    }
+
+    function createFormSection( name, items ) {
+
+        console.log( 'Section: ' + name );
+
+        var sectionDiv = document.createElement('div');
+        var heading = document.createElement('h4');
+        heading.innerText = name;
+        sectionDiv.append( heading );
+
+        Object.keys(items).forEach(function(key) {
+            var formItem = createFormItem( name, key, items[key]);
+            sectionDiv.append( formItem );
+        });
+        sectionDiv.append( document.createElement('hr') );
+
+        $$('#scouting-data-form').append( sectionDiv );
+
+    }
+
+    function createSubmitButton() {
+        var buttonDiv = document.createElement('div');
+        buttonDiv.className = 'col-md-12 text-center';
+
+        var spacerDiv = document.createElement('div');
+        spacerDiv.className = 'col-md-4';
+        buttonDiv.append(spacerDiv);
+
+        var cancelDiv = document.createElement('div');
+        cancelDiv.className = 'col-md-2';
+        buttonDiv.append(cancelDiv);
+        
+        var button = document.createElement('button');
+        button.id = 'cancel-data';
+        button.className = 'btn-primary btn-lg';
+        button.innerText = 'Cancel';
+        button.onclick = cancelVerify;
+        cancelDiv.append(button);
+
+        var submitDiv = document.createElement('div');
+        submitDiv.className = 'col-md-2';
+        buttonDiv.append(submitDiv);
+        
+        button = document.createElement('button');
+        button.id = 'submit-data';
+        button.type = 'submit';
+        button.className = 'btn-primary btn-lg';
+        button.innerText = 'Submit';
+        button.onclick = saveDataFile;
+        submitDiv.append(button);
+
+        var spacerDiv = document.createElement('div');
+        spacerDiv.className = 'col-md-4';
+        buttonDiv.append(spacerDiv);
+
+        $$('#scouting-data-form').append( buttonDiv );
+
+    }
+
+    function addPadding() {
+        var padding = document.createElement('br');
+        $$('#scouting-data-form').append( padding );
+    }
+
+
+    function cancelVerify() {
+        window.location.assign( '/scoutingfiles' );
+    }
+
+    function saveDataFile() {
+
+        Object.keys(scoutingData).forEach(function(section_key) {
+            var section = scoutingData[section_key];
+            Object.keys(section).forEach(function(item_key) {
+                var item_id = section_key + '-' + item_key;
+                var item_value = document.getElementById( item_id ).value;    
+
+                scoutingData[section_key][item_key] = item_value;
+            });
+        });
+
+        var filepath = '$scouting_file';
+        if ( !filepath.endsWith('.verified') ) {
+            filepath += '.verified';
+        }
+
+        $$.ajax({
+                url: '/sync' + filepath,
+                        type: 'PUT',
+                        data: JSON.stringify(scoutingData),
+                        crossDomain: true,
+                        beforeSend: function(xhr) {
+                            xhr.setRequestHeader( 'Content-Type', 'application/json' );
+                        },
+                        success: function () {
+                            console.log( 'Scouting Data Saved To: ' + filepath );
+                            window.location.assign( '/scoutingfiles' );
+                        }
+                    });
+    }
+
+    $$(document).ready(function () {
+
+        console.log( '$scouting_file' );
+
+        var jqxhr_file = $$.getJSON( '$scouting_file', function(json_data) {
+
+            scoutingData = json_data;
+
+            // create HTML form based on the data contained in the json body
+            console.log( 'Json Values' );
+            Object.entries(json_data).forEach(
+                ([key, value]) => createFormSection( key, value )
+            );
+
+            createSubmitButton();
+            addPadding();
+
+        });
+    });
+
+</script>
+
+  <div class="article">
+  
+    <div id="title" align="center">
+        <h1>FRC Scouting Data File</h1>
+    </div>
+
+    <div class="container-fluid">
+
+    <div id = "scouting-data-form">
+    </div>
+
+    </div>
+  </div>  
+
