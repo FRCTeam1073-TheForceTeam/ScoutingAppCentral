@@ -97,7 +97,7 @@ $var title: FRC Scouting Data File
         button.id = 'submit-data';
         button.type = 'submit';
         button.className = 'btn-primary btn-lg';
-        button.innerText = 'Submit';
+        button.innerText = 'Approve';
         button.onclick = saveDataFile;
         submitDiv.append(button);
 
@@ -146,10 +146,23 @@ $var title: FRC Scouting Data File
                         },
                         success: function () {
                             console.log( 'Scouting Data Saved To: ' + filepath );
+                            deleteDataFile(filepath.replace('verified','processed'))
+                        }
+                    });
+    }
+
+    function deleteDataFile( filepath ) {
+            $$.ajax({
+                url: '/sync' + filepath,
+                        type: 'DELETE',
+                        crossDomain: true,
+                        success: function () {
+                            console.log( 'Removed File: ' + filepath );
                             window.location.assign( '/scoutingfiles' );
                         }
                     });
     }
+
 
     $$(document).ready(function () {
 
