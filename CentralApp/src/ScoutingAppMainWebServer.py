@@ -1443,6 +1443,11 @@ class FileRequest(object):
         FileSync.put(global_config, request_path, content_type, web.data())
         return
 
+    def DELETE(self, request_path):
+        request_path = request_path.lstrip('/')
+        FileSync.delete(global_config, request_path)
+        return
+
 class Sync(object):
     def OPTIONS(self, request_path):
         web.header('Access-Control-Allow-Origin', '*')
@@ -1472,6 +1477,11 @@ class Sync(object):
         request_path = request_path.lstrip('/')
         content_type = web.ctx.env['CONTENT_TYPE']
         FileSync.put(global_config, request_path, content_type, web.data())
+        return
+
+    def DELETE(self, request_path):
+        request_path = request_path.lstrip('/')
+        FileSync.delete(global_config, request_path)
         return
 
     def POST(self, request_path):

@@ -573,8 +573,8 @@ def process_json_files(global_config, output_file, input_dir):
     # get all the processed files, too. We'll use the processed list to determine
     # which files are actually newly verified and need to be processed
     processed_files = FileSync.get_file_list(input_dir, ext='.processed', recurse=True )
-    #for processed_file in processed_files:
-    #    verified_files.remove( processed_file.replace('processed','verified') )
+    for processed_file in processed_files:
+        verified_files.remove( processed_file.replace('processed','verified') )
     
     # read in the output file, which is expected to be an XLSX file
     xlsx_workbook = openpyxl.load_workbook(output_file)
@@ -603,9 +603,14 @@ def process_json_files(global_config, output_file, input_dir):
                          attr_row = i
                          data_row = i+1
                          data_cell = team_sheet.cell(row=i+1,column=1).value
-                         if data_cell is None or data_cell == scouting_data['Setup']['Match']:
+                         if data_cell is None:
                              team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
                              team_sheet['B2'].value = curr_matches+1
+                             shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+                             break
+                         elif data_cell == int(scouting_data['Setup']['Match']):
+                             # Update an existing row
+                             team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
                              shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
                              break
                              

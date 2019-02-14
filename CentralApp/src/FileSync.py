@@ -151,4 +151,14 @@ def put(global_config, path, content_type, msg_body):
                             
     put_file(fullpath, content_type, msg_body)
 
+def delete(global_config, path):
+    # if the requested path starts with 'static', then let's assume that
+    # the request knows the full path that it's looking for, otherwise,
+    # we will prepend the path with the path to the data directory
+    if path.startswith('static'):
+        fullpath = './' + path
+    else:
+        fullpath = './static/data/' + path
 
+    if os.path.exists(fullpath):
+        os.remove(fullpath)
