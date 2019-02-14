@@ -77,7 +77,7 @@ def get_file_list( path, ext=None, recurse=False, with_checksum=False ):
                 if file_name.startswith('.'):
                     continue
                 file_path = os.path.join(dir_name, file_name).replace(path,'')
-                print('\t%s' % file_path)
+                # print('\t%s' % file_path)
                 if with_checksum is True:
                     file_checksum = get_file_checksum( file_path, hashlib.md5() )
                 else:

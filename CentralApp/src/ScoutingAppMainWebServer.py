@@ -1651,6 +1651,7 @@ class ScoutingDataFilesJson(object):
         scouting_files_dict = {}
         scouting_files_dict['pending'] = FileSync.get_file_list(file_path, ext='.json', recurse=True)
         scouting_files_dict['verified'] = FileSync.get_file_list(file_path, ext='.verified', recurse=True)
+        scouting_files_dict['processed'] = FileSync.get_file_list(file_path, ext='.processed', recurse=True)
         scouting_files_json = json.dumps(scouting_files_dict)
         
         return scouting_files_json
@@ -1689,6 +1690,7 @@ def process_files_timer_callback(cmd):
         print 'Process files command already running'
     else:
         try:
+
             # launch the file process command using the subprocess call function. This
             # method will not return until the called command itself returns.
             process_file_subprocess = subprocess.call(['python', cmd])

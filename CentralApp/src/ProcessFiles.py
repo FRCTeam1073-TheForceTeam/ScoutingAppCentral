@@ -9,6 +9,13 @@ import traceback
 import time
 import datetime
 import sys
+import openpyxl
+import shutil
+import json
+
+from openpyxl.utils.cell import range_boundaries
+from openpyxl.utils.cell import get_column_letter
+from copy import copy
 
 from optparse import OptionParser
 
@@ -22,6 +29,7 @@ import DebriefDataModel
 import FileParser
 import Logger
 import WebCommonUtils
+import FileSync
 
 
 def log_exception(logger, e):
@@ -550,6 +558,150 @@ def read_ignore_filelist_cfg(ignore_filename):
             
     return ignore_filelist
 
+def match_sort(key):
+    match_prefix = key.split('_')[0]
+    match_number = int(match_prefix.replace('Match',''))
+    return match_number
+
+def process_json_files(global_config, output_file, input_dir):
+    
+    # get all the verified files from the input directory. These files are
+    # candidates to be processed
+    verified_files = FileSync.get_file_list(input_dir, ext='.verified', recurse=True )
+    verified_files.sort(key=match_sort)
+    
+    # get all the processed files, too. We'll use the processed list to determine
+    # which files are actually newly verified and need to be processed
+    processed_files = FileSync.get_file_list(input_dir, ext='.processed', recurse=True )
+    #for processed_file in processed_files:
+    #    verified_files.remove( processed_file.replace('processed','verified') )
+    
+    # read in the output file, which is expected to be an XLSX file
+    xlsx_workbook = openpyxl.load_workbook(output_file)
+    
+    for verified_file in verified_files:
+        with open(input_dir+verified_file) as fd:
+            scouting_data = json.load(fd)
+            
+            team = scouting_data['Setup'].get('Team')
+            if team is not None:
+                team_name = 'Team %s' % team
+                try:
+                    team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
+                except:
+                    team_sheet = create_team_sheet( xlsx_workbook, team_name )
+
+                curr_matches = team_sheet['B2'].value
+                
+                # get max row and column count and iterate over the sheet
+                max_row= team_sheet.max_row
+                
+                for i in range(1,max_row+1):
+                     # scan for a row that has Match in the first column to identify rows where data will be stored
+                     cell_value = team_sheet.cell(row=i,column=1).value
+                     if team_sheet.cell(row=i,column=1).value == 'Match':
+                         attr_row = i
+                         data_row = i+1
+                         data_cell = team_sheet.cell(row=i+1,column=1).value
+                         if data_cell is None or data_cell == scouting_data['Setup']['Match']:
+                             team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
+                             team_sheet['B2'].value = curr_matches+1
+                             shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+                             break
+                             
+                         # Jump over the next two rows
+                         i += 2
+                         
+            xlsx_workbook.save(output_file)
+                             
+
+def update_data_row( team_sheet, attr_row, data_row, scouting_data ):
+    max_column= team_sheet.max_column
+    
+    # start with the setup data fields, which are at the start of the row
+    scouting_section = scouting_data['Setup']
+    # iterate over all columns
+    for i in range(1,max_column+1):
+        attr_value = team_sheet.cell(row=attr_row,column=i).value
+        # if the row of attributes has an empty cell, that marks the end of the
+        # list of scouting attributes, so break out of the loop
+        if attr_value is None:
+            break
+        attr_value = attr_value.replace(' ','_')
+        
+        data_value = scouting_section.get(attr_value)
+        if scouting_data.get(attr_value) is not None:
+            scouting_section = scouting_data[attr_value]
+        else:
+            try:
+                team_sheet.cell(row=data_row, column=i).value = int(data_value)
+            except:
+                team_sheet.cell(row=data_row, column=i).value = data_value
+
+    return team_sheet
+
+'''
+def copy_range( sheet, start_col, start_row, end_col, end_row ):
+    range_selected = []
+    #Loops through selected Rows
+    for i in range(start_row,end_row + 1,1):
+        #Appends the row to a RowSelected list
+        row_selected = []
+        for j in range(start_col,end_col+1,1):
+            row_selected.append(sheet.cell(row = i, column = j))
+        #Adds the RowSelected List and nests inside the rangeSelected
+        range_selected.append(row_selected)
+ 
+    return range_selected
+    
+def paste_range( dest_sheet, start_col, start_row, end_col, end_row, copied_cells ):
+    #Paste data from copyRange into template sheet
+    count_row = 0
+    for i in range(start_row,end_row+1,1):
+        count_col = 0
+        for j in range(start_col,end_col+1,1):
+            
+            dest_sheet.cell(row = i, column = j).value = copiedData[count_row][count_col]
+            count_col += 1
+        count_row += 1    
+'''
+    
+def create_team_sheet(xlsx_workbook, team_name):
+    blank_team_sheet = xlsx_workbook.get_sheet_by_name('Team Sheet')
+    decision_sheet = xlsx_workbook.get_sheet_by_name('Decision Sheet')
+
+    # find an opening in the decision sheet for this team's data
+    dest_cell = '%s1' % get_column_letter( decision_sheet.max_column+1)
+        
+    team_sheet = xlsx_workbook.copy_worksheet(blank_team_sheet)
+    team_sheet.title = team_name
+    team_sheet['A1'] = team_name
+    
+    # Define start Range(target_start) in the new Worksheet
+    min_col, min_row, max_col, max_row = range_boundaries(dest_cell)
+
+    source_range = 'D1:E30'
+    
+    for row, row_cells in enumerate(decision_sheet[source_range], min_row):
+        for column, cell in enumerate(row_cells, min_col):
+            cell_value = cell.value
+            if cell_value is not None:
+                cell_value = cell_value.replace('Team 1', team_name)
+                cell_value = cell_value.replace('Team Sheet', team_name)
+                
+                if cell_value.startswith('=PRODUCT'):
+                    frags = cell_value.split(',')
+                    frags[1] = frags[1].replace('D', get_column_letter(column-1))
+                    cell_value = ','.join(frags)
+                    
+                if cell_value.startswith('=SUM'):
+                    cell_value = cell_value.replace('E', get_column_letter(column) )
+            
+            decision_sheet.cell(row=row, column=column).value = cell_value
+            decision_sheet.cell(row=row, column=column).fill = copy(cell.fill)
+            
+    return team_sheet
+
 if __name__ == "__main__":
 
     print 'Processing files...'
@@ -595,6 +747,18 @@ if __name__ == "__main__":
             competition_dir = './static/data/' + competition
             input_dir = competition_dir + '/ScoutingData/'
     
+            # the following section replaces the original file processing. The new model
+            # reads in the JSON scouting data files and writes the information to a specially 
+            # formatted spreadsheet output file. Over time, we may migrate back to a more
+            # traditional model like before, but for 2019, this is what we're going to do.
+            output_file = input_dir + '2019 ScoutingSystem Week0.xlsx'
+            process_json_files(global_config, output_file, input_dir)
+            process_issue_files(global_config, input_dir)
+            process_debrief_files(global_config, input_dir)
+            global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
+            print 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+
+            '''
             attrdef_filename = WebCommonUtils.get_attrdef_filename(short_comp=global_config['this_competition'])
             if attrdef_filename is None:
                 global_config['logger'].debug( 'No Attribute Definitions, Skipping Process Files' )
@@ -608,6 +772,7 @@ if __name__ == "__main__":
                 process_debrief_files(global_config, input_dir)
                 global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
                 print 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time))
+            '''
         except Exception, e:
             global_config['logger'].debug('Exception Caught Processing Files: %s' % str(e) )
             print 'Exception Caught Processing Files: %s' % str(e)
