@@ -31,7 +31,8 @@ $code:
 
             function drawTables( json_data ) {
                 
-                for (var verified_file in json_data.verified ) {
+                for (var i=0; i<json_data.verified.length; i++) {
+                    var verified_file = json_data.verified[i].replace('.verified','');
                     json_data.pending.splice( json_data.pending.indexOf(verified_file), 1 );
                 }
 
