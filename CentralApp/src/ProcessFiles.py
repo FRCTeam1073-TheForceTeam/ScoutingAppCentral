@@ -560,7 +560,10 @@ def read_ignore_filelist_cfg(ignore_filename):
 
 def match_sort(key):
     match_prefix = key.split('_')[0]
-    match_number = int(match_prefix.replace('Match',''))
+    try:
+        match_number = int(match_prefix.replace('Match',''))
+    except:
+        match_number = 0
     return match_number
 
 def process_json_files(global_config, output_file, input_dir):
