@@ -608,7 +608,7 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
             scouting_data = json.load(fd)
             team = scouting_data['Setup'].get('Team')
 
-            if team is not None:
+            if team is not None and len(team) > 0:
                 # ######################################################### #
                 # store the scouting data to the local database
 
