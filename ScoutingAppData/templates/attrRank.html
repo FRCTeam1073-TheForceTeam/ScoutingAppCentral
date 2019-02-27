@@ -110,6 +110,7 @@ function filteredPlot( filter ) {
 		                horizontal: true
                     }
                 },
+                axisLabels: { show: true },
                 yaxis: {
                     tickFormatter: function(v,axis) {
 		                if ( (v >= 0) && (v < teams.length) ) {
@@ -122,12 +123,12 @@ function filteredPlot( filter ) {
                     tickLength: 0,
 		            axisLabel: 'Team',
                     axisLabelUseCanvas: true,
-                    axisLabelFontSizePixels: 10,
+                    axisLabelFontSizePixels: 12,
                     axisLabelFontFamily: 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
                     axisLabelPadding: 5
                 },
                 xaxis: {
-                    axisLabel: 'Score',
+                    axisLabel: 'Score'
                 },
                 grid: {
                     hoverable: true,

@@ -1705,8 +1705,10 @@ def process_files_timer_callback(cmd):
             # method will not return until the called command itself returns.
             process_file_subprocess = subprocess.call(['python', cmd])
             print 'Subprocess returned - %s' % str(process_file_subprocess)
-        finally:
-            command_running_lock.release()
+        except:
+            traceback.print_exc()
+            
+        command_running_lock.release()
     return
     
     
