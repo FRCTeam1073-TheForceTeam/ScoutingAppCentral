@@ -32,6 +32,10 @@ class AttrDefinitions:
         else:
             return None
 
+    def add_definition(self, attr_def):
+        self._attrdefinitions[attr_def['Name']] = attr_def
+        self._attr_names[attr_def['Name']] = attr_def['Name']
+
     def get_definitions(self):
         return self._attrdefinitions
          

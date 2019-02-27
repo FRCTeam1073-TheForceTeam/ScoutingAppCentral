@@ -174,7 +174,9 @@ global_config = { 'my_team'            : '1073',
                   'team_list'          : '',
                   'event_code'         : '',
                   'issue_types'        : 'Robot,MobileBase',
-                  'logger'             : logger }
+                  'logger'             : logger,
+                  'events'             : {}
+                }
 
 def read_config(config_dict, config_filename):
     if os.path.exists(config_filename):

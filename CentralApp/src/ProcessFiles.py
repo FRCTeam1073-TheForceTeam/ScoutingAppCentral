@@ -566,28 +566,117 @@ def match_sort(key):
         match_number = 0
     return match_number
 
-def process_json_files(global_config, output_file, input_dir):
+def process_json_files(global_config, competition, output_file, input_dir, reprocess_files=False):
     
+    # Initialize the database session connection
+    db_name  = global_config['db_name'] + global_config['this_season']
+    session  = DbSession.open_db_session(db_name)
+
     # get all the verified files from the input directory. These files are
     # candidates to be processed
     verified_files = FileSync.get_file_list(input_dir, ext='.verified', recurse=True )
     verified_files.sort(key=match_sort)
     
-    # get all the processed files, too. We'll use the processed list to determine
-    # which files are actually newly verified and need to be processed
-    processed_files = FileSync.get_file_list(input_dir, ext='.processed', recurse=True )
-    for processed_file in processed_files:
-        verified_files.remove( processed_file.replace('processed','verified') )
+    # For the normal case, get all the processed files, too. We'll use the processed list to 
+    # determine which files are actually newly verified and need to be processed. If the 
+    # reprocess flag is true, then we'll process all verified files.
+    if reprocess_files is not True:
+        processed_files = FileSync.get_file_list(input_dir, ext='.processed', recurse=True )
+        for processed_file in processed_files:
+            verified_files.remove( processed_file.replace('processed','verified') )
     
     # read in the output file, which is expected to be an XLSX file
     xlsx_workbook = openpyxl.load_workbook(output_file)
     
+    '''
+    # took out for now until we have local dictionary storage
+    events = global_config.get('events')
+    if events is None:
+        events = {}
+        global_config['events'] = events
+    event_data = events.get( competition )
+    if event_data is None:
+        events[competition] = { 'ScoutingData': { 'TeamData': {} } }
+        event_data = events[competition]
+
+    event_scouting_data = event_data['ScoutingData']['TeamData']
+    '''
+
     for verified_file in verified_files:
+        # read the file into a dictionary
         with open(input_dir+verified_file) as fd:
             scouting_data = json.load(fd)
-            
             team = scouting_data['Setup'].get('Team')
+
             if team is not None:
+                # ######################################################### #
+                # store the scouting data to the local database
+
+                DataModel.addTeamToEvent(session, int(team), competition)
+
+                attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+                for section_name, section_data in scouting_data.iteritems():
+                    if isinstance(section_data,dict):
+                        for attr_name, attr_value in section_data.iteritems():
+                            # don't store the team number in the database
+                            if attr_name == 'Team':
+                                continue
+                            
+                            attribute_def = {}
+                            attribute_def['Name'] = attr_name
+                            if attr_value.isdigit():
+                                attribute_def['Type'] = 'Integer'
+                                attribute_def['Weight'] = 1.0
+                            else:
+                                attribute_def['Type'] = 'String'
+                                attribute_def['Weight'] = 0.0
+                            attribute_def['Statistic_Type'] = 'Average'
+                            attr_definitions.add_definition(attribute_def)
+                        
+                            category = 'Match'
+                            try:
+                                DataModel.createOrUpdateAttribute(session, int(team), competition, category, 
+                                                                  attr_name, attr_value, attribute_def)
+                            except Exception, exception:
+                                traceback.print_exc(file=sys.stdout)
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+                                for line in exception_info:
+                                    line = line.replace('\n','')
+                                    global_config['logger'].debug(line)
+                    else:
+                        print 'Unexpected entry in scouting data file, name: %s, value: %s' % (section_name,section_data)
+                
+                score = DataModel.calculateTeamScore(session, int(team), competition, attr_definitions)
+                DataModel.setTeamScore(session, int(team), competition, score)
+                session.commit()
+
+                # ######################################################### #
+                '''
+                # ######################################################### #
+                # store the scouting data to a local dictionary
+                team_data = event_scouting_data.get(team)
+                if team_data is None:
+                    team_data = { 'Summary': {}, 'MatchData': [] }
+                    event_scouting_data[team] = team_data
+
+                team_match_data = team_data['MatchData']
+
+                # if this match has already been scored, then update the data by removing the existing
+                # match data and then add the updated data
+                update_match = False
+                for match_data in team_match_data:
+                    if scouting_data['Setup']['Match'] == match_data['Setup']['Match']:
+                        update_match = True
+                        break
+                if update_match is True:
+                    team_match_data.remove(match_data)
+                team_match_data.append(scouting_data)
+                # ######################################################### #
+                '''
+
+                # ######################################################### #
+                # store the scouting data information to the spreadsheet
                 team_name = 'Team %s' % team
                 try:
                     team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
@@ -619,6 +708,7 @@ def process_json_files(global_config, output_file, input_dir):
                              
                          # Jump over the next two rows
                          i += 2
+                # ######################################################### #
                          
             xlsx_workbook.save(output_file)
                              
@@ -760,7 +850,7 @@ if __name__ == "__main__":
             # formatted spreadsheet output file. Over time, we may migrate back to a more
             # traditional model like before, but for 2019, this is what we're going to do.
             output_file = input_dir + '2019 ScoutingSystem Week0.xlsx'
-            process_json_files(global_config, output_file, input_dir)
+            process_json_files(global_config, competition, output_file, input_dir)
             process_issue_files(global_config, input_dir)
             process_debrief_files(global_config, input_dir)
             global_config['logger'].debug( 'Scan complete, elapsed time - %s' % (str(datetime.datetime.now()-start_time)) )
