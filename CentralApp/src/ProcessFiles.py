@@ -849,7 +849,7 @@ if __name__ == "__main__":
             # reads in the JSON scouting data files and writes the information to a specially 
             # formatted spreadsheet output file. Over time, we may migrate back to a more
             # traditional model like before, but for 2019, this is what we're going to do.
-            output_file = input_dir + '2019 ScoutingSystem Week0.xlsx'
+            output_file = input_dir + '2019 ScoutingSystem %s.xlsx' % global_config['this_competition']
             process_json_files(global_config, competition, output_file, input_dir)
             process_issue_files(global_config, input_dir)
             process_debrief_files(global_config, input_dir)
