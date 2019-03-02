@@ -70,11 +70,13 @@ def process_attr_def_form(global_config, form):
             
         DataModel.recalculate_scoring(global_config, competition, attr_definitions)
 
-def get_attr_def_item_json( global_config, attr_def, attr_filter, checked_ind ):
+def get_attr_def_item_json( global_config, attr_def, attr_filter, checked_ind, attr_id=None ):
 
     attr_name = attr_def['Name']
+    if attr_id is None:
+        attr_id = attr_name
     result = []
-    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [' % (attr_name,checked_ind,attr_name))
+    result.append('    { "text": "%s", "checked": %d, "id": "%s", "item": [' % (attr_name,checked_ind,attr_id))
     
     if attr_def['Control'] == 'Radio' or attr_def['Control'] == 'Checkbox':
         map_values_str = attr_def['Map_Values']
@@ -136,7 +138,7 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
                     # name is specified in the filter list
                     if attrname in attr_filter:
                         checked_ind = 1
-                tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind )
+                tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind, attrname )
                 result.append(tree_item_str)
                 result.append(',\n')
                           
@@ -159,7 +161,7 @@ def get_attr_tree_json(global_config, filter_name = None, store_data_to_file=Fal
                 # name is specified in the filter list
                 if attrname in attr_filter:
                     checked_ind = 1
-            tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind )
+            tree_item_str = get_attr_def_item_json( global_config, attr_definitions.get_definition(attrname), attr_filter, checked_ind, attrname )
             result.append(tree_item_str)
             result.append(',\n')
                       

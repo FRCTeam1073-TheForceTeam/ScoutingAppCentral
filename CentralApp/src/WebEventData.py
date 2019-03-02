@@ -177,7 +177,7 @@ def get_district_events_json(global_config, year, type):
         
         global_config['logger'].debug( 'GET District Event Info Json' )    
         
-        url_str = '/api/v2/district/%s/%s/events' % (type.lower(),year)
+        url_str = '/api/v3/district/%s%s/events' % (year,type.lower())
         try:
             event_data = TbaIntf.get_from_tba(url_str)
             if type != None:
@@ -202,7 +202,7 @@ def get_district_rankings_json(global_config, year, type):
         
         competition = global_config['this_competition']+year
         
-        url_str = '/api/v2/district/%s/%s/rankings' % (type.lower(),year)
+        url_str = '/api/v3/district/%s%s/rankings' % (year,type.lower())
 
         result = []
         result.append('{ "district" : "%s",\n' % (type.upper()))
@@ -231,8 +231,8 @@ def get_district_rankings_json(global_config, year, type):
                 result.append( '"%s", ' % str(team_rank['point_total']) )
                 result.append( '"%s", ' % get_team_hyperlink( competition, str(team_rank['team_key']).lstrip('frc') ) )
                                                             
-                for event, totals in team_rank['event_points'].iteritems():
-                    result.append( '"%s", ' % str(totals['total']) )
+                for event in team_rank['event_points']:
+                    result.append( '"%s", ' % str(event['total']) )
                     
                 if len(team_rank['event_points']) == 1:
                     result.append( '"-", ' )
@@ -256,7 +256,7 @@ def get_events_json(global_config, year, type=None):
         
         global_config['logger'].debug( 'GET Event Info Json' )    
         
-        url_str = '/api/v2/events/%s' % year
+        url_str = '/api/v3/events/%s' % year
         try:
             event_data = TbaIntf.get_from_tba(url_str)
             if type != None:
@@ -285,13 +285,13 @@ def get_events_json(global_config, year, type=None):
             pass
         return event_data
 
-def get_event_data_from_tba( query_str ):
-    url_str = '/api/v2/event/%s' % (query_str)
+def get_event_data_from_tba( query_str, api_version='v3' ):
+    url_str = '/api/%s/event/%s' % (api_version,query_str)
     event_data = TbaIntf.get_from_tba_parsed(url_str)
     return event_data
 
-def get_event_json_from_tba( query_str ):
-    url_str = '/api/v2/event/%s' % (query_str)
+def get_event_json_from_tba( query_str, api_version='v3' ):
+    url_str = '/api/%s/event/%s' % (api_version,query_str)
     event_data = TbaIntf.get_from_tba(url_str)
     return event_data
 
@@ -319,49 +319,52 @@ def get_event_standings_json(global_config, year, event_code):
     # derive our competition name from the FIRST event code 
     competition = WebCommonUtils.map_event_code_to_comp(year+event_code)
 
-    #return get_data_from_first(global_config, year, event_code, 'rankings')
     store_data_to_file = False
     result = []
     
-    rankings = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
+    tba_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
 
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
-    if rankings:
-        # rankings is now a list of lists, with the first element of the list being the list of column headings
-        # take the list of columngs and apply to each of the subsequent rows to build the json response
-        result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
-        headings = rankings[0]
-        result.append('  "columns" : [\n')
+    if tba_data:
+        rankings = tba_data.get('rankings')
+        if rankings is not None:
 
-        for heading in headings:
-            result.append('    { "sTitle": "%s" }' % heading)
-            result.append(',\n')
-        if len(headings)>0:
-            result = result[:-1]
-        result.append(' ],\n')
-        result.append('  "rankings" : [\n')
-        
-        for line in rankings[1:]:
-            result.append('       [ ')
-            for i in range(0,len(headings)):
-                if need_team_hyperlink(headings[i]):
-                    #result.append('"%s"' % (line[i]))
-                    result.append(('"<a href=\\"/teamdata/%s/'% competition)+str(line[i])+'\\">'+str(line[i])+'</a>"')
-                else:
-                    #result.append('"%s": "%s"' % (headings[i].title(),line[i]))
-                    result.append('"%s"' % (str(line[i])))
-                    
-                result.append(', ')
-            if len(line) > 0:         
+            result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
+            headings = [ 'Rank', 'Team', 'Record', 'Matches_Played', 'Dq' ]
+            result.append('  "columns" : [\n')
+
+            for heading in headings:
+                result.append('    { "sTitle": "%s" }' % heading)
+                result.append(',\n')
+            if len(headings)>0:
                 result = result[:-1]
             result.append(' ],\n')
+
+            result.append('  "rankings" : [\n')
+            for line in rankings:
+                result.append('       [ ')
+                for item in headings:
+                    key = item.lower()
+                    if key == 'record':
+                        result.append('"%s-%s-%s"' % (str(line[key]['wins']),str(line[key]['losses']),str(line[key]['ties'])))
+                    elif key == 'team':
+                        team_str = line['team_key'].replace('frc','')
+                        result.append(('"<a href=\\"/teamdata/%s/'% competition)+team_str+'\\">'+team_str+'</a>"')
+                    else:
+                        result.append('"%s"' % (str(line[key])))
+                    result.append(', ')
+
+                if len(line) > 0:         
+                    result = result[:-1]
+                result.append(' ],\n')
                 
-        if len(rankings) > 1:         
-            result = result[:-1]
-        result.append(' ]\n')
-        store_data_to_file = True
-        result.append(' ]\n')        
+            if len(rankings) > 1:         
+                result = result[:-1]
+            result.append(' ]\n')
+            store_data_to_file = True
+            result.append(' ]\n')        
+
     else:
         # we were not able to retrieve the data from FIRST, so let's return any stored file with the 
         # information, otherwise we will return an empty json payload
@@ -458,7 +461,7 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
     
     if team_str is None:
         exp_filename = ''
-        event_matches = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()) )
+        event_matches = get_event_data_from_tba( '%s%s/matches' % (year,event_code.lower()), api_version='v3' )
     else:
         exp_filename = '_%s' % team_str
         event_matches = WebTeamData.get_team_data_from_tba( team_str, 'event/%s%s/matches' % (year,event_code.lower()) )
@@ -504,26 +507,26 @@ def get_event_matchresults_json(global_config, year, event_code, round_str, team
                 try:
                     if global_config['json_no_links'] == 'Yes':
                         # Red alliance teams
-                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][0]).lstrip('frc') )
-                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][1]).lstrip('frc') )
-                        result.append( '"%s", ' % str(match['alliances']['red']['teams'][2]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][0]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][1]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][2]).lstrip('frc') )
                         
                         # Blue alliance teams
-                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][0]).lstrip('frc') )
-                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][1]).lstrip('frc') )
-                        result.append( '"%s", ' % str(match['alliances']['blue']['teams'][2]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['blue']['team_keys'][0]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['blue']['team_keys'][1]).lstrip('frc') )
+                        result.append( '"%s", ' % str(match['alliances']['blue']['team_keys'][2]).lstrip('frc') )
                     else:
                         raise
                 except:
                     # Red alliance teams
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][0]).lstrip('frc') ) )
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][1]).lstrip('frc') ) )
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['teams'][2]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['team_keys'][0]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['team_keys'][1]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['red']['team_keys'][2]).lstrip('frc') ) )
                     
                     # Blue alliance teams
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][0]).lstrip('frc') ) )
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][1]).lstrip('frc') ) )
-                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['teams'][2]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['team_keys'][0]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['team_keys'][1]).lstrip('frc') ) )
+                    result.append( '"%s", ' % get_team_hyperlink( competition, str(match['alliances']['blue']['team_keys'][2]).lstrip('frc') ) )
                     
                 # Red alliance score
                 
@@ -727,7 +730,7 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
     
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
-    event_stats = get_event_data_from_tba( '%s%s/stats' % (year,event_code.lower()) )
+    event_stats = get_event_data_from_tba( '%s%s/oprs' % (year,event_code.lower()) )
     if len(event_stats):
 
         # rankings is now a list of lists, with the first element of the list being the list of column headings
@@ -749,7 +752,7 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
             stats_dict = event_stats[stat_type]
             
             for key, value in stats_dict.iteritems():
-                result.append( '       ["%s", %.2f' % (get_team_hyperlink( competition, key ),value) )
+                result.append( '       ["%s", %.2f' % (get_team_hyperlink( competition, key.lstrip('frc') ),value) )
                 result.append(' ],\n')
                 store_data_to_file = True
     

@@ -636,9 +636,11 @@ def get_team_scouting_data_summary_json(global_config, comp, name, attr_filter=[
                     attr_name = attr_def['Display_Name']
                 else:
                     attr_name = attr_def['Name']
-                result.append('   { "name": "%s", "matches": "%s", "cumulative_value": "%s", "average_value": "%s", "all_values": "%s" }' % \
+                    
+                category = attr_def.get('Sub_Category', '')
+                result.append('   { "name": "%s", "matches": "%s", "cumulative_value": "%s", "average_value": "%s", "all_values": "%s", "category": "%s" }' % \
                               (attr_name,str(attribute.num_occurs),str(attribute.cumulative_value),str(round(attribute.avg_value,1)),\
-                               DataModel.mapAllValuesToShortenedString(attr_def, attribute.all_values)) )
+                               DataModel.mapAllValuesToShortenedString(attr_def, attribute.all_values), category) )
                 result.append(',\n')
         if some_attr_added:
             result = result[:-1]
@@ -863,7 +865,7 @@ def get_team_list_json_from_tba(global_config, comp):
     event_code = WebCommonUtils.map_comp_to_event_code(comp)
     season = WebCommonUtils.map_comp_to_season(comp)
     
-    url_str = '/api/v2/event/%s%s/teams' % (season,event_code.lower())
+    url_str = '/api/v3/event/%s%s/teams' % (season,event_code.lower())
     try:
         # retrieve the string itself as a formatted json string
         event_data = TbaIntf.get_from_tba(url_str)

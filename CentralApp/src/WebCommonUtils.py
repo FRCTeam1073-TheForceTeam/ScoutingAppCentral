@@ -267,7 +267,7 @@ def get_event_info_str(event_name, season=None):
     if event_dict:
         event_info_str.append(('Name',event_dict['name'],'string'))
         event_info_str.append(('Code',event_dict['event_code'].upper(),'string'))
-        event_info_str.append(('Location',event_dict['location'],'string'))
+        event_info_str.append(('Location',event_dict['location_name'],'string'))
         event_info_str.append(('Start Date',event_dict['start_date'],'string'))
         event_info_str.append(('End Date',event_dict['end_date'],'string'))
     else:

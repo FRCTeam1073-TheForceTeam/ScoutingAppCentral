@@ -107,75 +107,79 @@ class AttrDefinitions:
                 # the following code will detect duplicate rows in the attribute definitions file. We
                 # continue to see issues where the file has rows with the same attribute name and this
                 # code will raise an exception during the parsing of the attribute definitions file
-                if self._attr_names.has_key(definition['Name']):
-                    raise Exception('ERROR: Duplicate Name In Attribute Definitions, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
+                attr_key = '%s:%s' % (definition['Sub_Category'], definition['Name'])
+                
+                if self._attr_names.has_key(attr_key):
+                    raise Exception('ERROR: Duplicate Name In Attribute Definitions, Attribute Name: %s, Row Number: %d' % (attr_key,row_number+1))
                 else:
-                    self._attr_names[definition['Name']] = definition['Name']
+                    self._attr_names[attr_key] = attr_key
                     
                 if sheet_type == None or sheet_qualifier.lower() == 'all' or sheet_qualifier.lower() == 'both' or sheet_qualifier.lower() == sheet_type.lower():
-                    self._attrdefinitions[definition['Name']] = definition
+                    self._attrdefinitions[attr_key] = definition
                     
                     # for the scoring matrix, add default attribute definitions for the individual scoring fields
                     # if explicit attributes have not been defined in the spreadsheet
-                    if definition['Control'] == 'Scoring_Matrix' or definition['Control'] == 'Scoring_Timer':
-                        definition['Type'] = 'Integer'
-
-                        disp_type = None
-                        options_str = definition['Options']    
-                        if options_str != '':
-                            options = options_str.split(':')
-                            for option in options:
-                                if option.find('=') != -1:
-                                    option_name, option_value = option.split('=')
-                                    if option_name == 'Type':
-                                        disp_type = option_value
-                                        break
-
-                        map_values_str = definition['Map_Values']
-                        map_values = map_values_str.split(':')
-                        for map_value in map_values:
-                            label = map_value.split('=')[0]
-                            attr_name = definition['Name'] + '_' + label
-                            
-                            new_definition = definition.copy()
-                            new_definition['Name'] = attr_name
-                            if disp_type != None:
-                                new_definition['Display_Name'] = attr_name.replace('Points', disp_type)
-                            new_definition['Order'] = ''
-                            new_definition['Control'] = 'None'
-                            new_definition['Options'] = ''
-                            new_definition['Weight'] = '0.0'
-                            new_definition['Map_Values'] = ''
-                            new_definition['Type'] = 'Integer'
-                            new_definition['Include_In_Report'] = 'No'
-                            new_definition['Column_Order'] = str(extra_column_order)
-                            extra_column_order += 1
-
-                            extra_attrdefinitions[attr_name] = new_definition
-                    elif definition['Control'] == 'Checkbox':
-                        definition['Type'] = 'Map_Integer'
-                        # set the control to use numeric values in the generated CSV file
-                        definition['Display_Numeric'] = 'Yes'
-                    elif definition['Control'] == 'Radio':
-                        definition['Type'] = 'Map_Integer'
-                        # set the control to use numeric values in the generated CSV file
-                        definition['Display_Numeric'] = 'Yes'
-                    elif definition['Control'] == 'Match_Group':
-                        expanded_definitions = UiGeneratorMatchGroup.GetMatchGroupControlDefs(definition)
-
-                        # check for name conflicts in the expanded definitions that were added as part
-                        # of the match group expansion
-                        for expanded_def_name in expanded_definitions.keys():
-                            if self._attr_names.has_key(expanded_def_name):
-                                raise Exception('ERROR: Duplicate Name In Match Group Attribute Expansion, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
-                            else:
-                                self._attr_names[expanded_def_name] = expanded_def_name
-
-                        self._attrdefinitions.update(expanded_definitions)
-                                                
-                        # reset the row_number based on the currrent order of this definition. It has
-                        # been incremented by the number of expanded definitions
-                        row_number = definition['Order']
+                    control_type = definition.get('Control')
+                    if control_type is not None:
+                        if control_type == 'Scoring_Matrix' or control_type == 'Scoring_Timer':
+                            definition['Type'] = 'Integer'
+    
+                            disp_type = None
+                            options_str = definition['Options']    
+                            if options_str != '':
+                                options = options_str.split(':')
+                                for option in options:
+                                    if option.find('=') != -1:
+                                        option_name, option_value = option.split('=')
+                                        if option_name == 'Type':
+                                            disp_type = option_value
+                                            break
+    
+                            map_values_str = definition['Map_Values']
+                            map_values = map_values_str.split(':')
+                            for map_value in map_values:
+                                label = map_value.split('=')[0]
+                                attr_name = definition['Name'] + '_' + label
+                                
+                                new_definition = definition.copy()
+                                new_definition['Name'] = attr_name
+                                if disp_type != None:
+                                    new_definition['Display_Name'] = attr_name.replace('Points', disp_type)
+                                new_definition['Order'] = ''
+                                new_definition['Control'] = 'None'
+                                new_definition['Options'] = ''
+                                new_definition['Weight'] = '0.0'
+                                new_definition['Map_Values'] = ''
+                                new_definition['Type'] = 'Integer'
+                                new_definition['Include_In_Report'] = 'No'
+                                new_definition['Column_Order'] = str(extra_column_order)
+                                extra_column_order += 1
+    
+                                extra_attrdefinitions[attr_name] = new_definition
+                        elif control_type == 'Checkbox':
+                            definition['Type'] = 'Map_Integer'
+                            # set the control to use numeric values in the generated CSV file
+                            definition['Display_Numeric'] = 'Yes'
+                        elif control_type == 'Radio':
+                            definition['Type'] = 'Map_Integer'
+                            # set the control to use numeric values in the generated CSV file
+                            definition['Display_Numeric'] = 'Yes'
+                        elif control_type == 'Match_Group':
+                            expanded_definitions = UiGeneratorMatchGroup.GetMatchGroupControlDefs(definition)
+    
+                            # check for name conflicts in the expanded definitions that were added as part
+                            # of the match group expansion
+                            for expanded_def_name in expanded_definitions.keys():
+                                if self._attr_names.has_key(expanded_def_name):
+                                    raise Exception('ERROR: Duplicate Name In Match Group Attribute Expansion, Attribute Name: %s, Row Number: %d' % (definition['Name'],row_number+1))
+                                else:
+                                    self._attr_names[expanded_def_name] = expanded_def_name
+    
+                            self._attrdefinitions.update(expanded_definitions)
+                                                    
+                            # reset the row_number based on the currrent order of this definition. It has
+                            # been incremented by the number of expanded definitions
+                            row_number = definition['Order']
                         
             row_number += 1
 

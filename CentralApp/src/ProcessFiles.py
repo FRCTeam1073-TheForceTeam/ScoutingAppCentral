@@ -618,9 +618,19 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                 for section_name, section_data in scouting_data.iteritems():
                     if isinstance(section_data,dict):
                         for attr_name, attr_value in section_data.iteritems():
+                            
+                            # use the attribute definitions to control whether information gets 
+                            # stored to the database rather than the hard coded stuff here.
+                            # also need to consider the section/category name as the attributes
+                            # and definitions are processed
+                            
                             # don't store the team number in the database
                             if attr_name == 'Team':
                                 continue
+                            
+                            # augment the attribute name with the section name in order to make the attribute
+                            # unique
+                            attr_name = '%s:%s' % (section_name, attr_name)
                             
                             attribute_def = {}
                             attribute_def['Name'] = attr_name
