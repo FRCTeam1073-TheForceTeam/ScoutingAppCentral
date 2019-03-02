@@ -1,8 +1,8 @@
 # EventCode, Alias, Description, Attribute File Override
 cars,CARS,Carson Field
 ctwat,WATERBURY,Waterbury District
-nhgrs,NHGRS,Granite State District,2018 Scouting App.xlsx
-nhsnh,NHSNH,Southern New Hampshire District,2018 Scouting App.xlsx
+nhgrs,NHGRS,Granite State District,2019 Scouting Attributes.xlsx
+nhsnh,NHSNH,Southern New Hampshire District,2019 Scouting Attributes.xlsx
 mawor,WPI,Worcester District
 mabri,BRIDGEWATER,SE Mass District
 mabos,BOSTON,Greater Boston District
