@@ -190,8 +190,7 @@ $$(document).ready(function () {
                             return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
                       { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
                       { "mData": "start_date" },
-                      { "mData": "end_date" },
-                      { "mData": "official" }
+                      { "mData": "end_date" }
                   ],
                   "order": [[ 3, "asc" ]]
               } );   
@@ -237,8 +236,7 @@ $$(document).ready(function () {
                             return '<a href="/event/'+key+'">'+short_key+'</a>'; } },
                       { "mData": "name", "mRender": function(data,type,row) { return '<a href="/event/'+row.key+'">'+row.name+'</a>'; } },
                       { "mData": "start_date" },
-                      { "mData": "end_date" },
-                      { "mData": "official" }
+                      { "mData": "end_date" }
                   ],
                   "order": [[ 3, "asc" ]]
               } );   
@@ -336,7 +334,6 @@ $$(document).ready(function () {
 			          <th>Event Name</th>
 			          <th>Start Date</th>
 			          <th>End Date</th>
-			          <th>Official Event</th>
                   </tr>
               </thead>
               <tbody>
@@ -354,7 +351,6 @@ $$(document).ready(function () {
 			          <th>Event Name</th>
 			          <th>Start Date</th>
 			          <th>End Date</th>
-			          <th>Official Event</th>
                   </tr>
               </thead>
               <tbody>
