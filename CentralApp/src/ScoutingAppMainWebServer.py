@@ -1483,6 +1483,10 @@ class Sync(object):
 
     def DELETE(self, request_path):
         request_path = request_path.lstrip('/')
+        query_str = web.input(delete_data=None)
+        if query_str.delete_data is not None:
+            ProcessFiles.remove_json_file_data(global_config, request_path)
+
         FileSync.delete(global_config, request_path)
         return
 

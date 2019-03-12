@@ -721,7 +721,74 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                 # ######################################################### #
                          
             xlsx_workbook.save(output_file)
-                             
+
+def remove_json_file_data(global_config, request_path):
+
+    # Initialize the database session connection
+    db_name  = global_config['db_name'] + global_config['this_season']
+    session  = DbSession.open_db_session(db_name)
+
+    if request_path.startswith('static'):
+        fullpath = './' + request_path
+
+        if os.path.exists(fullpath) is False:
+            return
+
+        competition = request_path.split('/')[2]
+
+        print 'Removing scouting data from JSON file: %s' % fullpath
+
+        with open(fullpath) as fd:
+            scouting_data = json.load(fd)
+            team = scouting_data['Setup'].get('Team')
+
+            if team is not None and len(team) > 0:
+                attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
+                for section_name, section_data in scouting_data.iteritems():
+                    if isinstance(section_data,dict):
+                        for attr_name, attr_value in section_data.iteritems():
+
+                            # use the attribute definitions to control whether information gets
+                            # stored to the database rather than the hard coded stuff here.
+                            # also need to consider the section/category name as the attributes
+                            # and definitions are processed
+
+                            # don't store the team number in the database
+                            if attr_name == 'Team':
+                                continue
+
+                            # augment the attribute name with the section name in order to make the attribute
+                            # unique
+                            attr_name = '%s:%s' % (section_name, attr_name)
+
+                            attribute_def = {}
+                            attribute_def['Name'] = attr_name
+                            if attr_value.isdigit():
+                                attribute_def['Type'] = 'Integer'
+                                attribute_def['Weight'] = 1.0
+                            else:
+                                attribute_def['Type'] = 'String'
+                                attribute_def['Weight'] = 0.0
+                            attribute_def['Statistic_Type'] = 'Average'
+                            attr_definitions.add_definition(attribute_def)
+
+                            category = 'Match'
+                            try:
+                                DataModel.deleteAttributeValue(session, int(team), competition, 
+                                                               attr_name, attr_value, attribute_def)
+                            except Exception, exception:
+                                traceback.print_exc(file=sys.stdout)
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                exception_info = traceback.format_exception(exc_type, exc_value,exc_traceback)
+                                for line in exception_info:
+                                    line = line.replace('\n','')
+                                    global_config['logger'].debug(line)
+                    else:
+                        print 'Unexpected entry in scouting data file, name: %s, value: %s' % (section_name,section_data)
+
+                score = DataModel.calculateTeamScore(session, int(team), competition, attr_definitions)
+                DataModel.setTeamScore(session, int(team), competition, score)
+                session.commit()
 
 def update_data_row( team_sheet, attr_row, data_row, scouting_data ):
     max_column= team_sheet.max_column

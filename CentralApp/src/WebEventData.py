@@ -736,7 +736,7 @@ def get_event_stats_json(global_config, year, event_code, stat_type):
         # rankings is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response
         result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
-        headings = [ 'Team', 'OPR' ]
+        headings = [ 'Team', stat_type.rstrip('s').upper() ]
         
         result.append('  "columns" : [\n')
 
