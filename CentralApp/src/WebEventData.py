@@ -607,14 +607,14 @@ def get_event_matchschedule_json(global_config, year, event_code, team_str = Non
             result.append( '"%s", ' % str(match['match_number']) )
 
             # Red alliance teams
-            result.append( '"%s", ' % str(match['alliances']['red']['teams'][0]).lstrip('frc') )
-            result.append( '"%s", ' % str(match['alliances']['red']['teams'][1]).lstrip('frc') )
-            result.append( '"%s", ' % str(match['alliances']['red']['teams'][2]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][0]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][1]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['red']['team_keys'][2]).lstrip('frc') )
             
             # Blue alliance teams
-            result.append( '"%s", ' % str(match['alliances']['blue']['teams'][0]).lstrip('frc') )
-            result.append( '"%s", ' % str(match['alliances']['blue']['teams'][1]).lstrip('frc') )
-            result.append( '"%s"' % str(match['alliances']['blue']['teams'][2]).lstrip('frc') )                
+            result.append( '"%s", ' % str(match['alliances']['blue']['team_keys'][0]).lstrip('frc') )
+            result.append( '"%s", ' % str(match['alliances']['blue']['team_keys'][1]).lstrip('frc') )
+            result.append( '"%s"' % str(match['alliances']['blue']['team_keys'][2]).lstrip('frc') )
             
             result.append(' ],\n')
             store_data_to_file = True
@@ -681,12 +681,12 @@ def get_event_matchschedule_json(global_config, year, event_code, team_str = Non
                 match_str = str(match['match_number'])
                 
             match_entry = [ comp_level, match_str,
-                            match['alliances']['red']['teams'][0].lstrip('frc'),
-                            match['alliances']['red']['teams'][1].lstrip('frc'),
-                            match['alliances']['red']['teams'][2].lstrip('frc'),
-                            match['alliances']['blue']['teams'][0].lstrip('frc'),
-                            match['alliances']['blue']['teams'][1].lstrip('frc'),
-                            match['alliances']['blue']['teams'][2].lstrip('frc') ]
+                            match['alliances']['red']['team_keys'][0].lstrip('frc'),
+                            match['alliances']['red']['team_keys'][1].lstrip('frc'),
+                            match['alliances']['red']['team_keys'][2].lstrip('frc'),
+                            match['alliances']['blue']['team_keys'][0].lstrip('frc'),
+                            match['alliances']['blue']['team_keys'][1].lstrip('frc'),
+                            match['alliances']['blue']['team_keys'][2].lstrip('frc') ]
             
             if comp_level == 'qm':
                 match_schedule['qualification'].append(match_entry)
@@ -785,12 +785,12 @@ def get_team_hyperlink( competition, team ):
     return team_hyperlink
 
 def get_match_hyperlink( competition, match ):
-    red_alliance =   'red=%s+%s+%s' % (str(match['alliances']['red']['teams'][0]).lstrip('frc'),\
-                                       str(match['alliances']['red']['teams'][1]).lstrip('frc'),\
-                                       str(match['alliances']['red']['teams'][2]).lstrip('frc'))
-    blue_alliance = 'blue=%s+%s+%s' % (str(match['alliances']['blue']['teams'][0]).lstrip('frc'),\
-                                       str(match['alliances']['blue']['teams'][1]).lstrip('frc'),\
-                                       str(match['alliances']['blue']['teams'][2]).lstrip('frc'))
+    red_alliance =   'red=%s+%s+%s' % (str(match['alliances']['red']['team_keys'][0]).lstrip('frc'),\
+                                       str(match['alliances']['red']['team_keys'][1]).lstrip('frc'),\
+                                       str(match['alliances']['red']['team_keys'][2]).lstrip('frc'))
+    blue_alliance = 'blue=%s+%s+%s' % (str(match['alliances']['blue']['team_keys'][0]).lstrip('frc'),\
+                                       str(match['alliances']['blue']['team_keys'][1]).lstrip('frc'),\
+                                       str(match['alliances']['blue']['team_keys'][2]).lstrip('frc'))
     filter_name = 'Scouting_Brief'
     match_number = str(match['match_number'])
     

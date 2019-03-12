@@ -694,6 +694,8 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                     team_sheet = create_team_sheet( xlsx_workbook, team_name )
 
                 curr_matches = team_sheet['B2'].value
+                if curr_matches is None:
+                    curr_matches = 0
                 
                 # get max row and column count and iterate over the sheet
                 max_row= team_sheet.max_row
