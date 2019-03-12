@@ -153,7 +153,7 @@ $var title: FRC Scouting Data File
 
     function deleteDataFile( filepath ) {
             $$.ajax({
-                url: '/sync' + filepath,
+                url: '/sync' + filepath + '?delete_data=true',
                         type: 'DELETE',
                         crossDomain: true,
                         success: function () {

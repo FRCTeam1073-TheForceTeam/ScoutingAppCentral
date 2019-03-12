@@ -382,6 +382,45 @@ $$(document).ready(function () {
 
       } );   
 
+      var jqxhr_oprs = $$.getJSON( "/api/eventstats/$event_code/dprs", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_dprs').dataTable( {
+                "bAutoWidth": false,
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]],
+                "iDisplayLength": 100,
+                "aaData": json_data.stats,
+                "aoColumns": json_data.columns,
+                "order": [[ 1, "dsc" ]]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );  
+
+      var jqxhr_oprs = $$.getJSON( "/api/eventstats/$event_code/ccwms", function(json_data) {
+          console.log( "success" );
+
+          console.log( json_data );
+
+          function drawTable( json_data ) {
+            $$('#event_ccwms').dataTable( {
+                "bAutoWidth": false,
+                "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]],
+                "iDisplayLength": 100,
+                "aaData": json_data.stats,
+                "aoColumns": json_data.columns,
+                "order": [[ 1, "dsc" ]]
+            } );
+          }
+
+          drawTable( json_data );
+
+      } );  
 
 });
 
@@ -472,6 +511,8 @@ $$(function() {
           <li><a href="#pane_qualmatches"    data-toggle="tab">Qual Round</a></li>
           <li><a href="#pane_playoffmatches" data-toggle="tab">Playoff Round</a></li>
           <li><a href="#pane_oprs" data-toggle="tab">OPRs</a></li>
+          <li><a href="#pane_dprs" data-toggle="tab">DPRs</a></li>
+          <li><a href="#pane_ccwms" data-toggle="tab">CCWMs</a></li>
       </ul>
  
       <div class="tab-content">
@@ -590,6 +631,28 @@ $$(function() {
           <h3>Offensive Power Ratings</h3>
           <br>
           <table id="event_oprs" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_dprs" class="tab-pane">
+          <ul>
+          <h3>Defensive Power Ratings</h3>
+          <br>
+          <table id="event_dprs" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
+              <thead> </thead>
+              <tbody> </tbody>
+	      </table>
+          </ul>
+          </div>
+
+          <div id="pane_ccwms" class="tab-pane">
+          <ul>
+          <h3>Calculated Contribution to Winning Margin</h3>
+          <br>
+          <table id="event_ccwms" class="table table-striped table-bordered dataTable no-footer" width="100%" cellspacing="0" role="grid" aria-describedby="example_info" >
               <thead> </thead>
               <tbody> </tbody>
 	      </table>
