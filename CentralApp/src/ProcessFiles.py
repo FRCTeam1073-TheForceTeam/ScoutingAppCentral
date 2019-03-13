@@ -603,6 +603,8 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
     '''
 
     for verified_file in verified_files:
+        filename = verified_file.split('/')[-1]
+
         # read the file into a dictionary
         with open(input_dir+verified_file) as fd:
             scouting_data = json.load(fd)
@@ -642,8 +644,14 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                                 attribute_def['Weight'] = 0.0
                             attribute_def['Statistic_Type'] = 'Average'
                             attr_definitions.add_definition(attribute_def)
-                        
-                            category = 'Match'
+
+                            if filename.startswith('Match'):
+                                category = 'Match'
+                            elif filename.startswith('Pit'):
+                                category = 'Pit'
+                            else:
+                                category = 'Unknown'
+
                             try:
                                 DataModel.createOrUpdateAttribute(session, int(team), competition, category, 
                                                                   attr_name, attr_value, attribute_def)

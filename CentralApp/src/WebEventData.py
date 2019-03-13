@@ -397,18 +397,19 @@ def get_event_rank_list_json(global_config, year, event_code):
     store_data_to_file = False
     result = []
     
-    rankings = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
+    rankings_data = get_event_data_from_tba( '%s%s/rankings' % (year,event_code.lower()) )
 
     result.append('{ "event" : "%s",\n' % (event_code.lower()))
     
+    rankings = rankings_data.get('rankings', [])
     if len(rankings):
         # rankings is now a list of lists, with the first element of the list being the list of column headings
         # take the list of columngs and apply to each of the subsequent rows to build the json response
         result.append('  "last_updated": "%s",\n' % time.strftime('%c'))
         result.append('  "rankings" : [\n')
         
-        for line in rankings[1:]:
-            result.append('       { "rank": %s, "team_number": %s, "status": "available" }' % (line[0],line[1]))
+        for team_rank in rankings:
+            result.append('       { "rank": %d, "team_number": %s, "status": "available" }' % (team_rank['rank'],team_rank['team_key'].replace('frc','')))
             result.append(',\n')
                 
         if len(rankings) > 1:         
