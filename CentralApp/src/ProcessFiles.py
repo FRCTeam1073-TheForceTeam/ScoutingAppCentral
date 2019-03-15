@@ -608,7 +608,11 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
         # read the file into a dictionary
         with open(input_dir+verified_file) as fd:
             scouting_data = json.load(fd)
-            team = scouting_data['Setup'].get('Team')
+            
+            if filename.startswith('Match'):
+                team = scouting_data['Setup'].get('Team')
+            elif filename.startswith('Pit'):
+                team = scouting_data['Pit'].get('Team')
 
             if team is not None and len(team) > 0:
                 # ######################################################### #
@@ -694,41 +698,46 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                 '''
 
                 # ######################################################### #
-                # store the scouting data information to the spreadsheet
-                team_name = 'Team %s' % team
-                try:
-                    team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
-                except:
-                    team_sheet = create_team_sheet( xlsx_workbook, team_name )
-
-                curr_matches = team_sheet['B2'].value
-                if curr_matches is None:
-                    curr_matches = 0
-                
-                # get max row and column count and iterate over the sheet
-                max_row= team_sheet.max_row
-                
-                for i in range(1,max_row+1):
-                     # scan for a row that has Match in the first column to identify rows where data will be stored
-                     cell_value = team_sheet.cell(row=i,column=1).value
-                     if team_sheet.cell(row=i,column=1).value == 'Match':
-                         attr_row = i
-                         data_row = i+1
-                         data_cell = team_sheet.cell(row=i+1,column=1).value
-                         if data_cell is None:
-                             team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
-                             team_sheet['B2'].value = curr_matches+1
-                             shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
-                             break
-                         elif data_cell == int(scouting_data['Setup']['Match']):
-                             # Update an existing row
-                             team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
-                             shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
-                             break
-                             
-                         # Jump over the next two rows
-                         i += 2
+                # store the match scouting data information to the spreadsheet
+                if category == 'Match':
+                    team_name = 'Team %s' % team
+                    try:
+                        team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
+                    except:
+                        team_sheet = create_team_sheet( xlsx_workbook, team_name )
+    
+                    curr_matches = team_sheet['B2'].value
+                    if curr_matches is None:
+                        curr_matches = 0
+                    
+                    # get max row and column count and iterate over the sheet
+                    max_row= team_sheet.max_row
+                    
+                    for i in range(1,max_row+1):
+                         # scan for a row that has Match in the first column to identify rows where data will be stored
+                         cell_value = team_sheet.cell(row=i,column=1).value
+                         if team_sheet.cell(row=i,column=1).value == 'Match':
+                             attr_row = i
+                             data_row = i+1
+                             data_cell = team_sheet.cell(row=i+1,column=1).value
+                             if data_cell is None:
+                                 team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
+                                 team_sheet['B2'].value = curr_matches+1
+                                 shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+                                 break
+                             elif data_cell == int(scouting_data['Setup']['Match']):
+                                 # Update an existing row
+                                 team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
+                                 shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+                                 break
+                                 
+                             # Jump over the next two rows
+                             i += 2
                 # ######################################################### #
+                # for all other categories (like Pit), we're done, so mark the file as processed
+                else:
+                    shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+
                          
             xlsx_workbook.save(output_file)
 
@@ -747,10 +756,14 @@ def remove_json_file_data(global_config, request_path):
         competition = request_path.split('/')[2]
 
         print 'Removing scouting data from JSON file: %s' % fullpath
+        filename = fullpath.split('/')[-1]
 
         with open(fullpath) as fd:
             scouting_data = json.load(fd)
-            team = scouting_data['Setup'].get('Team')
+            if filename.startswith('Match'):
+                team = scouting_data['Setup'].get('Team')
+            elif filename.startswith('Pit'):
+                team = scouting_data['Pit'].get('Team')
 
             if team is not None and len(team) > 0:
                 attr_definitions = AttributeDefinitions.AttrDefinitions(global_config)
