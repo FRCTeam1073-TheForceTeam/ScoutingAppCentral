@@ -6,7 +6,7 @@ nhsnh,NHSNH,Southern New Hampshire District,2019 Scouting Attributes.xlsx
 mawor,WPI,Worcester District
 mabri,BRIDGEWATER,SE Mass District
 mabos,BOSTON,Greater Boston District
-marea,READING,North Shore District
+marea,MAREA,North Shore District
 nhdur,NHDUR,UNH District
 ripro,RI,Rhode Island District
 melew,PINETREE,Pine Tree District
