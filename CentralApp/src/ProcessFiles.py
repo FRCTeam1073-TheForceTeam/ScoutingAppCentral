@@ -586,7 +586,11 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
             verified_files.remove( processed_file.replace('processed','verified') )
     
     # read in the output file, which is expected to be an XLSX file
-    xlsx_workbook = openpyxl.load_workbook(output_file)
+    try:
+        xlsx_workbook = openpyxl.load_workbook(output_file)
+    except:
+        print 'Error Reading Spreadsheet %s For Input' % output_file
+        xlsx_workbook = None
     
     '''
     # took out for now until we have local dictionary storage
@@ -699,7 +703,7 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
 
                 # ######################################################### #
                 # store the match scouting data information to the spreadsheet
-                if category == 'Match':
+                if category == 'Match' and xlsx_workbook is not None:
                     team_name = 'Team %s' % team
                     try:
                         team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
@@ -738,8 +742,8 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                 else:
                     shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
 
-                         
-            xlsx_workbook.save(output_file)
+            if xlsx_workbook is not None:             
+                xlsx_workbook.save(output_file)
 
 def remove_json_file_data(global_config, request_path):
 
