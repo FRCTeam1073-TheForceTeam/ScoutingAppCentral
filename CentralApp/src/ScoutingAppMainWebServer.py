@@ -21,6 +21,7 @@ import IssueTrackerDataModel
 import UsersDataModel
 import AttributeDefinitions
 
+from shutil import copyfile
 from optparse import OptionParser
 
 import BluetoothSyncServer
@@ -153,6 +154,7 @@ urls = (
     '/testpage(.*)',                'TestPage',
         
     '/static/(.*)',                 'FileRequest',
+    '/copyfile',                    'CopyFile',
     '/sync/(.*)',                   'Sync'
 )
 
@@ -172,7 +174,7 @@ global_config = { 'my_team'            : '1073',
                   'users_db_name'      : 'users',
                   'attr_definitions'   : None,
                   'team_list'          : '',
-                  'event_code'         : '',
+                  #'event_code'         : '',
                   'issue_types'        : 'Robot,MobileBase',
                   'logger'             : logger,
                   'events'             : {}
@@ -1537,6 +1539,14 @@ class Sync(object):
         
         return
 
+class CopyFile(object):
+    
+    def POST(self):   
+        copy_params = json.loads(web.data())        
+        copyfile( copy_params['source'], copy_params['dest'] )
+        
+        return
+    
 class JsonEventFile(object):
     
     def GET(self, request_path):

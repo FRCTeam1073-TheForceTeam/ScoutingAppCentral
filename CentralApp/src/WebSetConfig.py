@@ -10,11 +10,11 @@ from myform import pureform as pureform
 # Form definition and callback class for the application configuration settings
 cfg_this_comp_label = "Competition:"
 cfg_this_comp_season_label = "Competition Season:"
-cfg_this_event_code_label = "Competition Event Code:"
+#cfg_this_event_code_label = "Competition Event Code:"
 cfg_attr_defs_label = "Attributes Definitions File:"
 cfg_my_team_label = "My Team Number:"
 cfg_my_district_label = "My District:"
-cfg_other_comp_label = "Other Competitions:"
+#cfg_other_comp_label = "Other Competitions:"
 cfg_scouting_db_name_label = "Scouting Database Name:"
 cfg_debrief_db_name_label = "Debrief Database Name:"
 cfg_issues_db_name_label = "Issues Database Name:"
@@ -24,21 +24,23 @@ cfg_issue_types_label = "Issue Types (comma-separated):"
 
 
 cfg_issues_db_master_options = ['Yes', 'No']
+cfg_season_options = ['2019', '2018']
+cfg_comp_options = ['NHDUR', 'MAREA', 'NECMP', 'WEEK0']
 
 cfgform = pureform( 
     form.Textbox(cfg_my_team_label, size=60),
     form.Textbox(cfg_my_district_label, size=60),
-    form.Textbox(cfg_this_comp_label, size=60),
-    form.Textbox(cfg_this_comp_season_label, size=60),
-    form.Textbox(cfg_this_event_code_label, size=60),
-    form.Textbox(cfg_other_comp_label, size=60),
-    form.Textbox(cfg_issue_types_label, size=60),
+    form.Dropdown(cfg_this_comp_season_label, cfg_season_options),
+    form.Dropdown(cfg_this_comp_label, cfg_comp_options),
+    #form.Textbox(cfg_this_event_code_label, size=60),
+    #form.Textbox(cfg_other_comp_label, size=60),
     form.Textbox(cfg_attr_defs_label, size=60),
     form.Textbox(cfg_scouting_db_name_label, size=60),
     form.Textbox(cfg_issues_db_name_label, size=60),
     form.Dropdown(cfg_issues_db_master_label, cfg_issues_db_master_options),
     form.Textbox(cfg_debrief_db_name_label, size=60),
-    form.Textbox(cfg_users_db_name_label, size=60))
+    form.Textbox(cfg_users_db_name_label, size=60),
+    form.Textbox(cfg_issue_types_label, size=60))
 
 def get_form(global_config):
     global_config['logger'].debug( 'GET Set Configuration Form' )
@@ -48,8 +50,8 @@ def get_form(global_config):
     form[cfg_my_district_label].value = global_config['my_district']
     form[cfg_this_comp_label].value = global_config['this_competition']
     form[cfg_this_comp_season_label].value = global_config['this_season']
-    form[cfg_this_event_code_label].value = global_config['event_code']
-    form[cfg_other_comp_label].value = global_config['other_competitions']
+    #form[cfg_this_event_code_label].value = global_config['event_code']
+    #form[cfg_other_comp_label].value = global_config['other_competitions']
     form[cfg_issue_types_label].value = global_config['issue_types']
     form[cfg_attr_defs_label].value = global_config['attr_definitions']
     form[cfg_scouting_db_name_label].value = global_config['db_name']
@@ -67,8 +69,8 @@ def process_form(global_config, form):
     global_config['my_district'] = form[cfg_my_district_label].value
     global_config['this_competition'] = form[cfg_this_comp_label].value
     global_config['this_season'] = form[cfg_this_comp_season_label].value
-    global_config['event_code'] = form[cfg_this_event_code_label].value
-    global_config['other_competitions'] = form[cfg_other_comp_label].value
+    #global_config['event_code'] = form[cfg_this_event_code_label].value
+    #global_config['other_competitions'] = form[cfg_other_comp_label].value
     global_config['attr_definitions'] = form[cfg_attr_defs_label].value
     
     global_config['db_name'] = form[cfg_scouting_db_name_label].value

@@ -21,11 +21,16 @@ $code:
             width: 116px !important; }
     .legend table { border: 1px solid #555; padding: 5px; }
 
+    th.dt-center, td.dt-center { text-align: center; }
+
 </style>
 
 <script type="text/javascript">
 
     $$(document).ready(function () {
+        var pending_table;
+        var verified_table;
+        var processed_table;
 
         var jqxhr_events = $$.getJSON( "/api/scoutingdatafiles/$comp", function(json_data) {
 
@@ -36,17 +41,18 @@ $code:
                     json_data.pending.splice( json_data.pending.indexOf(verified_file), 1 );
                 }
 
-                var pending_table = $$('#pending_files').dataTable( {
+                pending_table = $$('#pending_files').DataTable( {
                     "bAutoWidth": true, // Disable the auto width calculation
                     "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                     "iDisplayLength": 100,
                     "aaData": json_data.pending,
                     "aoColumns": [
-                        { "mData": "name", "mRender": function(data,type,row) { return '<a href="/scoutingfile/static/data/$comp/ScoutingData'+row+'">'+row+'</a>'; } }
+                        { "mData": "name", "mRender": function(data,type,row) { return '<a href="/scoutingfile/static/data/$comp/ScoutingData'+row+'">'+row+'</a>'; } },
+                        { "mData": "name", "width": "8%", "className": "dt-center", "mRender": function(data,type,row) { return '<button class="btn-primary">Approve</button>'; } }
                     ]
                 } );
 
-                var verified_table = $$('#verified_files').dataTable( {
+                verified_table = $$('#verified_files').DataTable( {
                     "bAutoWidth": true, // Disable the auto width calculation
                     "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                     "iDisplayLength": 100,
@@ -56,7 +62,7 @@ $code:
                     ]
                 } );
 
-                var processed_table = $$('#processed_files').dataTable( {
+                processed_table = $$('#processed_files').DataTable( {
                     "bAutoWidth": true, // Disable the auto width calculation
                     "aLengthMenu": [[10, 20, 50, 100], [10, 20, 50, 100]], 
                     "iDisplayLength": 100,
@@ -69,6 +75,33 @@ $code:
 
             drawTables( json_data );
         } );   
+
+        // Add event listener for opening and closing details
+        $$('#pending_files tbody').on('click', 'button', function () {
+            var row = pending_table.row( $$(this).parents('tr') );
+            var data = row.data();
+
+            var button = $$(this)[0];
+            button.disabled = true;
+            button.setAttribute("style", "background-color: #9a9e9d");
+
+            var filepath = './static/data/$comp/ScoutingData' + data;
+            var copy_data = {};
+            copy_data.source = filepath;
+            copy_data.dest = filepath + '.verified';
+            $$.ajax({
+                url: '/copyfile',
+                        type: 'POST',
+                        data: JSON.stringify(copy_data),
+                        crossDomain: true,
+                        beforeSend: function(xhr) {
+                            xhr.setRequestHeader( 'Content-Type', 'application/json' );
+                        },
+                        success: function () {
+                        }
+            });
+        });
+
     });
 
 </script>
@@ -120,6 +153,7 @@ $code:
               <thead>
                 <tr role="row">
 			        <th>Scouting File</th>
+			        <th></th>
                 </tr>
               </thead>
               <tbody>

@@ -823,6 +823,7 @@ def get_team_list_json(global_config, season, event, store_json_file=False):
 
     result.append('{ "teams" : [\n')
 
+    '''
     team_list = DataModel.getTeamsInNumericOrder(session, comp)
     for team in team_list:
         team_info = None
@@ -844,7 +845,8 @@ def get_team_list_json(global_config, season, event, store_json_file=False):
         result.append(' ] }\n')
         json_str = ''.join(result)
     else:
-        json_str = get_team_list_json_from_tba(global_config, comp)
+    '''
+    json_str = get_team_list_json_from_tba(global_config, comp)
 
     if store_json_file is True:
         try:
@@ -1085,7 +1087,7 @@ def get_team_event_list_from_tba(global_config, team, season):
     
 def get_team_data_from_tba(team_str, query_str):
     
-    url_str = '/api/v2/team/frc%s/%s' % (team_str,query_str)
+    url_str = '/api/v3/team/frc%s/%s' % (team_str,query_str)
     team_data = TbaIntf.get_from_tba_parsed(url_str)
     return team_data    
 
