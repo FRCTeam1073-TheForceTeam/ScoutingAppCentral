@@ -110,7 +110,7 @@ urls = (
     '/teamattrrank(.*)',    'TeamAttributeRanking',
 
     '/scoutingapp',         'ScoutingAppPage',
-    '/scoutingfiles',       'ScoutingDataPage',
+    '/scoutingfiles(.*)',   'ScoutingDataPage',
     '/scoutingfile/(.*)',   'ScoutingFilePage',
     
     '/eventdata/(.*)',      'JsonEventFile',
@@ -1651,10 +1651,18 @@ class Images(object):
         
 class ScoutingDataPage(object):
 
-    def GET(self):
+    def GET(self, param_str):
         user_info = WebLogin.check_access(global_config,10)
         season = global_config['this_season']
         competition = global_config['this_competition']
+        params = param_str.split('/')
+        numparams = len(params)
+        if numparams > 1:
+            if len(params[1]) > 0:
+                season = params[1]
+            if numparams > 2:
+                if len(params[2]) > 0:
+                    competition = params[2]
 
         return render.scoutingDataFiles(season,competition)
     
