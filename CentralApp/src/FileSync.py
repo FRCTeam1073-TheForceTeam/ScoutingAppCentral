@@ -46,7 +46,7 @@ def put_file( path, content_type, file_data):
     fd.close()
     return '200 OK'
 
-def get_file_list( path, ext=None, recurse=False, with_checksum=False ):
+def get_file_list( path, ext=None, recurse=False, with_checksum=False, exclude=False ):
     files = []
     if recurse is False:
         dir_list = os.listdir(path)
@@ -57,7 +57,7 @@ def get_file_list( path, ext=None, recurse=False, with_checksum=False ):
                 else:
                     file_checksum = None
                 if ext != None:
-                    if file_name.endswith(ext):
+                    if (file_name.endswith(ext) and not exclude) or (exclude and not file_name.endswith(ext)):
                         if file_checksum is not None:
                             files.append(file_name + ':' + str(file_checksum))
                         else:
@@ -83,7 +83,7 @@ def get_file_list( path, ext=None, recurse=False, with_checksum=False ):
                 else:
                     file_checksum = None
                 if ext != None:
-                    if file_name.endswith(ext):
+                    if (file_name.endswith(ext) and not exclude) or (exclude and not file_name.endswith(ext)):
                         if file_checksum is not None:
                             files.append(file_path + ':' + str(file_checksum))
                         else:
@@ -127,7 +127,7 @@ def get(global_config, path, recurse=False, with_checksum=False):
     # if the path refers to a directory, then return the list of files in the directory
     # otherwise, return the contents of the file
     if os.path.isdir(fullpath):
-        file_list = get_file_list(fullpath, recurse=recurse, with_checksum=with_checksum)
+        file_list = get_file_list(fullpath, recurse=recurse, with_checksum=with_checksum, ext='.processed', exclude=True)
         response_body = ''
         for file_name in file_list:
             response_body += file_name + '\n'

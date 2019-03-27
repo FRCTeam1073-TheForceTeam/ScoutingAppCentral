@@ -5,3 +5,7 @@ Pillow >= 3.4.2
 urllib3[secure]
 googlemaps
 openpyxl
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib

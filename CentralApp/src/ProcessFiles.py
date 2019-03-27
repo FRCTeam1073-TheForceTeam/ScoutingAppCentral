@@ -30,6 +30,7 @@ import FileParser
 import Logger
 import WebCommonUtils
 import FileSync
+import GoogleSheetsIntf
 
 
 def log_exception(logger, e):
@@ -585,13 +586,17 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
         for processed_file in processed_files:
             verified_files.remove( processed_file.replace('processed','verified') )
     
-    # read in the output file, which is expected to be an XLSX file
-    try:
-        xlsx_workbook = openpyxl.load_workbook(output_file)
-    except:
-        print 'Error Reading Spreadsheet %s For Input' % output_file
-        xlsx_workbook = None
+    xlsx_workbook = None
+    excel_intf_ctrl = global_config.get('excel_sheets_intf', 'Disabled')
+    if excel_intf_ctrl == 'Enabled':
+        # read in the output file, which is expected to be an XLSX file
+        try:
+            xlsx_workbook = openpyxl.load_workbook(output_file)
+        except:
+            print 'Error Reading Spreadsheet %s For Input' % output_file
     
+    google_intf_ctrl = global_config.get('google_sheets_intf', 'Disabled')
+
     '''
     # took out for now until we have local dictionary storage
     events = global_config.get('events')
@@ -615,8 +620,12 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
             
             if filename.startswith('Match'):
                 team = scouting_data['Setup'].get('Team')
+                category = 'Match'
             elif filename.startswith('Pit'):
                 team = scouting_data['Pit'].get('Team')
+                category = 'Pit'                
+            else:
+                category = 'Unknown'
 
             if team is not None and len(team) > 0:
                 # ######################################################### #
@@ -653,13 +662,6 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                             attribute_def['Statistic_Type'] = 'Average'
                             attr_definitions.add_definition(attribute_def)
 
-                            if filename.startswith('Match'):
-                                category = 'Match'
-                            elif filename.startswith('Pit'):
-                                category = 'Pit'
-                            else:
-                                category = 'Unknown'
-
                             try:
                                 DataModel.createOrUpdateAttribute(session, int(team), competition, category, 
                                                                   attr_name, attr_value, attribute_def)
@@ -676,6 +678,27 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
                 score = DataModel.calculateTeamScore(session, int(team), competition, attr_definitions)
                 DataModel.setTeamScore(session, int(team), competition, score)
                 session.commit()
+
+                # ######################################################### #
+                # Google spreadsheet update
+                if google_intf_ctrl == 'Enabled':
+                    row_data = []
+                    for section_name, section_data in scouting_data.iteritems():
+                        if isinstance(section_data,dict):
+                            for attr_name, attr_value in section_data.iteritems():
+    
+                                # augment the attribute name with the section name in order to make the attribute
+                                # unique
+                                attr_name = '%s_%s' % (section_name, attr_name)
+    
+                                row_data.append((attr_name,attr_value))
+                                
+                        else:
+                            print 'Unexpected entry in scouting data file, name: %s, value: %s' % (section_name,section_data)
+    
+                    sheet_name = '%s_%s_Data' % (competition,category)
+                    GoogleSheetsIntf.add_scouting_data_row( sheet_name, row_data )
+                # ######################################################### #
 
                 # ######################################################### #
                 '''
@@ -703,45 +726,43 @@ def process_json_files(global_config, competition, output_file, input_dir, repro
 
                 # ######################################################### #
                 # store the match scouting data information to the spreadsheet
-                if category == 'Match' and xlsx_workbook is not None:
-                    team_name = 'Team %s' % team
-                    try:
-                        team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
-                    except:
-                        team_sheet = create_team_sheet( xlsx_workbook, team_name )
-    
-                    curr_matches = team_sheet['B2'].value
-                    if curr_matches is None:
-                        curr_matches = 0
-                    
-                    # get max row and column count and iterate over the sheet
-                    max_row= team_sheet.max_row
-                    
-                    for i in range(1,max_row+1):
-                         # scan for a row that has Match in the first column to identify rows where data will be stored
-                         cell_value = team_sheet.cell(row=i,column=1).value
-                         if team_sheet.cell(row=i,column=1).value == 'Match':
-                             attr_row = i
-                             data_row = i+1
-                             data_cell = team_sheet.cell(row=i+1,column=1).value
-                             if data_cell is None:
-                                 team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
-                                 team_sheet['B2'].value = curr_matches+1
-                                 shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
-                                 break
-                             elif data_cell == int(scouting_data['Setup']['Match']):
-                                 # Update an existing row
-                                 team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
-                                 shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
-                                 break
-                                 
-                             # Jump over the next two rows
-                             i += 2
-                # ######################################################### #
-                # for all other categories (like Pit), we're done, so mark the file as processed
-                else:
-                    shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
-
+                if excel_intf_ctrl == 'Enabled' and xlsx_workbook is not None:
+                    if category == 'Match':
+                        team_name = 'Team %s' % team
+                        try:
+                            team_sheet = xlsx_workbook.get_sheet_by_name(team_name)
+                        except:
+                            team_sheet = create_team_sheet( xlsx_workbook, team_name )
+        
+                        curr_matches = team_sheet['B2'].value
+                        if curr_matches is None:
+                            curr_matches = 0
+                        
+                        # get max row and column count and iterate over the sheet
+                        max_row= team_sheet.max_row
+                        
+                        for i in range(1,max_row+1):
+                             # scan for a row that has Match in the first column to identify rows where data will be stored
+                             cell_value = team_sheet.cell(row=i,column=1).value
+                             if team_sheet.cell(row=i,column=1).value == 'Match':
+                                 attr_row = i
+                                 data_row = i+1
+                                 data_cell = team_sheet.cell(row=i+1,column=1).value
+                                 if data_cell is None:
+                                     team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
+                                     team_sheet['B2'].value = curr_matches+1
+                                     break
+                                 elif data_cell == int(scouting_data['Setup']['Match']):
+                                     # Update an existing row
+                                     team_sheet = update_data_row( team_sheet, attr_row, data_row, scouting_data )
+                                     break
+                                     
+                                 # Jump over the next two rows
+                                 i += 2
+                    # ######################################################### #
+                
+                shutil.copyfile(input_dir+verified_file, input_dir+verified_file.replace('verified','processed'))
+                
             if xlsx_workbook is not None:             
                 xlsx_workbook.save(output_file)
 

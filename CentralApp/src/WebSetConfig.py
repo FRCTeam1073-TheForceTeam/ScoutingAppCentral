@@ -21,8 +21,11 @@ cfg_issues_db_name_label = "Issues Database Name:"
 cfg_issues_db_master_label = "Issues Database Master:"
 cfg_users_db_name_label = "Users Database Name:"
 cfg_issue_types_label = "Issue Types (comma-separated):"
+cfg_google_sheets_intf_label = "Google Sheets Interface:"
+cfg_excel_sheets_intf_label = "Excel Spreadsheet Interface:"
 
 
+cfg_enable_disable_options = ['Enabled', 'Disabled']
 cfg_issues_db_master_options = ['Yes', 'No']
 cfg_season_options = ['2019', '2018']
 cfg_comp_options = ['NHDUR', 'MAREA', 'NECMP', 'WEEK0']
@@ -32,6 +35,8 @@ cfgform = pureform(
     form.Textbox(cfg_my_district_label, size=60),
     form.Dropdown(cfg_this_comp_season_label, cfg_season_options),
     form.Dropdown(cfg_this_comp_label, cfg_comp_options),
+    form.Dropdown(cfg_google_sheets_intf_label, cfg_enable_disable_options),
+    form.Dropdown(cfg_excel_sheets_intf_label, cfg_enable_disable_options),
     #form.Textbox(cfg_this_event_code_label, size=60),
     #form.Textbox(cfg_other_comp_label, size=60),
     form.Textbox(cfg_attr_defs_label, size=60),
@@ -50,6 +55,8 @@ def get_form(global_config):
     form[cfg_my_district_label].value = global_config['my_district']
     form[cfg_this_comp_label].value = global_config['this_competition']
     form[cfg_this_comp_season_label].value = global_config['this_season']
+    form[cfg_google_sheets_intf_label].value = global_config['google_sheets_intf']
+    form[cfg_excel_sheets_intf_label].value = global_config['excel_sheets_intf']
     #form[cfg_this_event_code_label].value = global_config['event_code']
     #form[cfg_other_comp_label].value = global_config['other_competitions']
     form[cfg_issue_types_label].value = global_config['issue_types']
@@ -69,6 +76,8 @@ def process_form(global_config, form):
     global_config['my_district'] = form[cfg_my_district_label].value
     global_config['this_competition'] = form[cfg_this_comp_label].value
     global_config['this_season'] = form[cfg_this_comp_season_label].value
+    global_config['google_sheets_intf'] = form[cfg_google_sheets_intf_label].value
+    global_config['excel_sheets_intf'] = form[cfg_excel_sheets_intf_label].value
     #global_config['event_code'] = form[cfg_this_event_code_label].value
     #global_config['other_competitions'] = form[cfg_other_comp_label].value
     global_config['attr_definitions'] = form[cfg_attr_defs_label].value

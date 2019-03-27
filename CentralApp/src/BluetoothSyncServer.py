@@ -185,7 +185,7 @@ class BluetoothSyncServer(Thread):
                     elif request_type == "GET":
                                                 
                         # Parse any params attached to this GET request
-			if len(request_params) > 0:
+                        if len(request_params) > 0:
                             params = request_params.split(';')
                             for param in params:
                                 # split the parameter into the tag and value
@@ -213,7 +213,7 @@ class BluetoothSyncServer(Thread):
                                 
                         if not request_complete:
                             if os.path.isdir(fullpath):
-                                file_list = FileSync.get_file_list(fullpath)
+                                file_list = FileSync.get_file_list(fullpath, ext='.processed', exclude=True)
                                 response_body = ''
                                 for file_name in file_list:
                                     response_body += file_name + '\n'
